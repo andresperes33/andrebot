@@ -1,0 +1,43 @@
+# Credenciais e segredos — NUNCA commitar!
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# Ambiente virtual
+venv/
+env/
+.venv/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Pytest / Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Build / dist
+dist/
+build/
+*.egg-info/
