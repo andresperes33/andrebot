@@ -57,6 +57,24 @@ def get_product_info(url):
                     price_val = float(price_match.group(1))
                     price = f"R$ {price_val:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
 
+            # Preço Mercado Livre
+            elif 'mercadolivre' in final_url:
+                price_match = re.search(r'<meta[^>]+itemprop=["\']price["\'][^>]+content=["\'](\d+\.?\d*)["\']', html)
+                if price_match:
+                    price_val = float(price_match.group(1))
+                    price = f"R$ {price_val:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+
+            # Preço Amazon
+            elif 'amazon' in final_url:
+                # Tenta várias classes comuns de preço na Amazon
+                price_match = re.search(r'class=["\']a-offscreen["\']>(.*?)</span>', html)
+                if price_match:
+                    price = price_match.group(1).strip()
+                else:
+                    price_match = re.search(r'class=["\']a-price-whole["\']>(.*?)</span>', html)
+                    if price_match:
+                        price = f"R$ {price_match.group(1).strip()}"
+
             # Imagem: tenta várias tags comuns (og:image, twitter:image, image_src)
             img_patterns = [
                 r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\'](https?://[^"\']+)["\']',
@@ -69,11 +87,17 @@ def get_product_info(url):
                 img_match = re.search(pattern, html)
                 if img_match:
                     image_url = img_match.group(1).strip()
-                    # Limpa URLs de imagem do AliExpress que podem vir com parâmetros de redimensionamento
+                    # Limpeza para AliExpress
                     if 'aliexpress' in final_url and '_' in image_url:
                         image_url = image_url.split('_')[0]
                         if not image_url.endswith(('.jpg', '.png', '.webp')):
                             image_url += '.jpg'
+                    # Limpeza para Mercado Livre (Alta Resolução)
+                    if 'mercadolivre' in final_url and '-O.jpg' in image_url:
+                        image_url = image_url.replace('-O.jpg', '-F.jpg')
+                    # Limpeza para Amazon (Pega imagem maior)
+                    if 'amazon' in final_url and '._AC_' in image_url:
+                        image_url = re.sub(r'\._AC_.*_\.', '.', image_url)
                     break
 
         except Exception as page_err:
@@ -86,7 +110,9 @@ def get_product_info(url):
     return name, image_url, price
 
 
-def convert_to_affiliate_link(url):
+import urllib.parse
+
+def convert_to_affiliate_link(url, final_url=None):
     """
     Decide qual API usar com base na URL.
     """
@@ -94,7 +120,42 @@ def convert_to_affiliate_link(url):
         return convert_shopee_link(url)
     elif 'aliexpress.com' in url or 's.click.aliexpress' in url:
         return convert_aliexpress_link(url)
+    elif 'amazon.com.br' in url or 'amzn.to' in url:
+        return convert_amazon_link(url)
+    # Mercado Livre: Desativado conversão automática para evitar links inexistentes. 
+    # O bot apenas extrairá infos no handle_message.
     return None
+
+
+def convert_amazon_link(url):
+    """
+    Gera link de afiliado Amazon injetando a TAG.
+    """
+    tag = getattr(settings, 'AMAZON_ASSOCIATE_TAG', 'andreindica00-20')
+    
+    # Se for link curto da Amazon, precisamos expandir para pegar o ID do produto
+    if 'amzn.to' in url:
+        try:
+            resp = requests.get(url, allow_redirects=True, timeout=5)
+            url = resp.url
+        except:
+            pass
+            
+    # Limpa a URL de tags antigas e adiciona a sua
+    clean_url = url.split('?')[0]
+    return f"{clean_url}?tag={tag}"
+
+
+def convert_mercado_livre_link(url):
+    """
+    Simula o link de redirecionamento do ML Criadores usando a TAG.
+    Usa a URL completa (expandida) para evitar erro de "Página não existe".
+    """
+    tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'pean3412407')
+    # Codifica a URL expandida para o formato web
+    clean_url = url.split('?')[0]
+    encoded_url = urllib.parse.quote_plus(clean_url)
+    return f"https://www.mercadolivre.com.br/social/p/api/p/link-builder/redirect?url={encoded_url}&m_tag={tag}"
 
 
 def convert_shopee_link(url):

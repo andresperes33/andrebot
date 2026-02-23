@@ -39,6 +39,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for link in links:
         is_shopee = 'shopee.com.br' in link or 's.shopee' in link
         is_aliexpress = 'aliexpress.com' in link or 's.click.aliexpress' in link
+        is_ml = 'mercadolivre.com' in link or 'mlstatic.com' in link
+        is_amazon = 'amazon.com.br' in link or 'amzn.to' in link
         is_telegram = 't.me/' in link
 
         if is_telegram:
@@ -49,18 +51,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 converted_any = True
             
             # 2. Depois limpa o RESTO do texto (nomes, apelidos)
-            channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'André Indica')
-            modified_text = re.sub(r'(?i)zFinnY|CaCau', channel_name, modified_text)
+            channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'andreindicatech')
+            modified_text = re.sub(r'(?i)zFinnY|CaCau|André Indica', channel_name, modified_text)
             continue
 
-        if not is_shopee and not is_aliexpress:
+        if not is_shopee and not is_aliexpress and not is_ml and not is_amazon:
             continue
 
-        await update.message.reply_text(f"⏳ Convertendo link {'Shopee' if is_shopee else 'AliExpress'}...")
+        platform_name = "Shopee" if is_shopee else "AliExpress" if is_aliexpress else "Mercado Livre" if is_ml else "Amazon"
+        await update.message.reply_text(f"⏳ Processando {platform_name}...")
+
+        if is_ml:
+            # Para ML, usamos o link que você mandar (original ou já de afiliado)
+            # mas o bot ainda vai pegar a foto e o preço sozinho.
+            original_link = link
+            converted_any = True
+            continue
 
         converted = convert_to_affiliate_link(link)
         if not converted:
-            await update.message.reply_text(f"❌ Não foi possível converter o link.")
+            await update.message.reply_text(f"❌ Não foi possível converter.")
             continue
 
         original_link = link
@@ -86,7 +96,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         else:
             # Se não tinha foto, tentamos buscar uma da página (como fizemos antes)
-            _, image_url, _ = get_product_info(original_link)
+            _, image_url, _, _ = get_product_info(original_link)
             
             if image_url:
                 await context.bot.send_photo(

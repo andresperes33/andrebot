@@ -141,3 +141,10 @@ ALIEXPRESS_TRACKING_ID = os.getenv('ALIEXPRESS_TRACKING_ID', 'default')
 
 # Personal Settings
 PERSONAL_CHANNEL_LINK = os.getenv('PERSONAL_CHANNEL_LINK', 'https://t.me/andreindica33')
+PERSONAL_CHANNEL_NAME = os.getenv('PERSONAL_CHANNEL_NAME', 'andreindicatech')
+
+# Mercado Livre Settings
+MERCADO_LIVRE_TAG = os.getenv('MERCADO_LIVRE_TAG', 'pean3412407')
+
+# Amazon Settings
+AMAZON_ASSOCIATE_TAG = os.getenv('AMAZON_ASSOCIATE_TAG', 'andreindica00-20')
