@@ -122,8 +122,8 @@ def convert_to_affiliate_link(url, final_url=None):
         return convert_aliexpress_link(url)
     elif 'amazon.com.br' in url or 'amzn.to' in url:
         return convert_amazon_link(url)
-    # Mercado Livre: Desativado conversão automática para evitar links inexistentes. 
-    # O bot apenas extrairá infos no handle_message.
+    elif 'mercadolivre.com' in url or 'mlstatic.com' in url or 'mercadolivre.com.br' in url:
+        return convert_mercado_livre_link(url)
     return None
 
 
@@ -148,14 +148,48 @@ def convert_amazon_link(url):
 
 def convert_mercado_livre_link(url):
     """
-    Simula o link de redirecionamento do ML Criadores usando a TAG.
-    Usa a URL completa (expandida) para evitar erro de "Página não existe".
+    Gera link de afiliado oficial do Mercado Livre via API /affiliates/links.
+    Usa Access Token OAuth2 e a Tag configurados no .env.
     """
+    access_token = getattr(settings, 'MERCADO_LIVRE_ACCESS_TOKEN', None)
     tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'pean3412407')
-    # Codifica a URL expandida para o formato web
-    clean_url = url.split('?')[0]
-    encoded_url = urllib.parse.quote_plus(clean_url)
-    return f"https://www.mercadolivre.com.br/social/p/api/p/link-builder/redirect?url={encoded_url}&m_tag={tag}"
+
+    if not access_token or not tag:
+        print("ML: access_token ou tag nao configurados.")
+        return None
+
+    # Expande links curtos (mercadolivre.com/sec/...) antes de enviar para a API
+    try:
+        if '/sec/' in url or 'mercadolivre.com/s/' in url:
+            resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=8, allow_redirects=True)
+            url = resp.url.split('?')[0]
+            print(f"ML: URL expandida para: {url}")
+    except Exception as e:
+        print(f"ML: Erro ao expandir URL: {e}")
+
+    endpoint = "https://api.mercadolibre.com/affiliates/links"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "url": url,
+        "tag_label": tag
+    }
+
+    try:
+        response = requests.post(endpoint, headers=headers, json=payload, timeout=10)
+        data = response.json()
+        print(f"ML API Response: {data}")
+        # Tenta pegar o link em diferentes campos possíveis da resposta
+        affiliate_url = data.get("link") or data.get("short_url") or data.get("url")
+        if affiliate_url:
+            return affiliate_url
+        print(f"ML: API nao retornou link. Resposta completa: {data}")
+        return None
+    except Exception as e:
+        print(f"ML API Erro: {e}")
+        return None
 
 
 def convert_shopee_link(url):

@@ -61,16 +61,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         platform_name = "Shopee" if is_shopee else "AliExpress" if is_aliexpress else "Mercado Livre" if is_ml else "Amazon"
         await update.message.reply_text(f"⏳ Processando {platform_name}...")
 
-        if is_ml:
-            # Para ML, usamos o link que você mandar (original ou já de afiliado)
-            # mas o bot ainda vai pegar a foto e o preço sozinho.
-            original_link = link
-            converted_any = True
-            continue
-
         converted = convert_to_affiliate_link(link)
         if not converted:
-            await update.message.reply_text(f"❌ Não foi possível converter.")
+            await update.message.reply_text(f"❌ Não foi possível converter o link {platform_name}.")
             continue
 
         original_link = link
