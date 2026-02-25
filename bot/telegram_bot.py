@@ -42,17 +42,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_ml = 'mercadolivre.com' in link or 'mlstatic.com' in link
         is_amazon = 'amazon.com.br' in link or 'amzn.to' in link
         is_telegram = 't.me/' in link
+        is_tecnan = 'tecnan.com.br' in link
 
-        if is_telegram:
-            # 1. Primeiro troca o LINK de forma exata para não quebrar o URL
-            personal_link = getattr(settings, 'PERSONAL_CHANNEL_LINK', 'https://t.me/andreindica33')
+        if is_telegram or is_tecnan:
+            # Troca qualquer link externo pelo seu site (fixo no settings)
+            personal_link = settings.PERSONAL_CHANNEL_LINK
             if personal_link not in link:
                 modified_text = modified_text.replace(link, personal_link)
                 converted_any = True
             
-            # 2. Depois limpa o RESTO do texto (nomes, apelidos)
-            channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'andreindicatech')
-            modified_text = re.sub(r'(?i)zFinnY|CaCau|André Indica', channel_name, modified_text)
+            # Limpa nomes de outros canais pelo seu nome (fixo no settings)
+            channel_name = settings.PERSONAL_CHANNEL_NAME
+            modified_text = re.sub(r'(?i)zFinnY|CaCau|André Indica|Tecnan', channel_name, modified_text)
             continue
 
         if not is_shopee and not is_aliexpress and not is_ml and not is_amazon:
