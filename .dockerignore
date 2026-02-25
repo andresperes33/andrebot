@@ -1,0 +1,33 @@
+# Ambiente virtual local — NÃO enviar para o container
+venv/
+.venv/
+env/
+
+# Arquivos de cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pycache
+
+# Banco de dados local (será criado fresh em produção)
+db.sqlite3
+
+# Arquivo .env local (as variáveis serão definidas no EasyPanel)
+.env
+
+# Git
+.git/
+.gitignore
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+
+# Arquivos do SO
+.DS_Store
+Thumbs.db
