@@ -205,36 +205,33 @@ def convert_awin_link(url, merchant_id='17729'):
 
 def convert_magalu_link(url):
     """
-    Gera link de afiliado Parceiro Magalu (magazinevoce) de forma ultra-robusta.
-    Copia o caminho completo do produto para a loja do parceiro.
+    Gera link de afiliado Parceiro Magalu (magazinevoce) de forma universal.
+    Copia o caminho real do produto para a loja do parceiro.
     """
+    from urllib.parse import urlparse
     magalu_id = getattr(settings, 'MAGALU_ID', 'in_1546179')
     
-    # 1. Expandir links curtos (mgl.io, divulgador, magalu.com/)
-    if any(domain in url for domain in ['mgl.io', 'divulgador.magalu.com', 'magalu.com/']):
+    # 1. Expandir qualquer link curto ou de celular
+    if any(domain in url for domain in ['mgl.io', 'divulgador.magalu.com', 'magalu.com', 'bit.ly']):
         try:
             resp = requests.get(url, allow_redirects=True, timeout=12, headers={"User-Agent": "Mozilla/5.0"})
             url = resp.url
         except Exception as e:
             print(f"Magalu Expansão Erro: {e}")
 
-    # 2. Se ja for um link de vitrine (magazinevoce), apenas troca o ID do parceiro
+    # 2. Se ja for um link de vitrine (magazinevoce), apenas troca o ID
     if 'magazinevoce.com.br' in url:
-        # Substitui o ID antigo pelo do usuario
-        url = re.sub(r'magazinevoce\.com\.br/[^/]+', f'magazinevoce.com.br/{magalu_id}', url)
-        return url
+        return re.sub(r'magazinevoce\.com\.br/[^/]+', f'magazinevoce.com.br/{magalu_id}', url)
 
-    # 3. Estrategia Principal: Capturar o caminho completo apos o dominio
-    # Isso preserva Slug, ID, depto e categoria, evitando 404.
-    path_match = re.search(r'(?:magazineluiza\.com\.br|magalu\.com)/(.*)', url)
-    if path_match:
-        path = path_match.group(1).split('?')[0] # Pega o caminho sem os UTMs originais
-        if path and path != '/':
-            # Remove barras duplas se houver
-            path = path.strip('/')
-            return f"https://www.magazinevoce.com.br/{magalu_id}/{path}/"
+    # 3. Pegar o caminho exato usando urlparse
+    parsed = urlparse(url)
+    path = parsed.path.strip('/')
+    
+    # Se houver um caminho (produto), monta o link da loja
+    if path and len(path) > 2:
+        return f"https://www.magazinevoce.com.br/{magalu_id}/{path}/"
 
-    # Fallback caso nada funcione
+    # Se cair aqui e tiver query (como p=ID), tenta reconstruir ou manda para vitrine
     return f"https://www.magazinevoce.com.br/{magalu_id}/"
 
 
