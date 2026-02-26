@@ -205,33 +205,38 @@ def convert_awin_link(url, merchant_id='17729'):
 
 def convert_magalu_link(url):
     """
-    Gera link de afiliado Parceiro Magalu (magazinevoce) de forma universal.
-    Copia o caminho real do produto para a loja do parceiro.
+    Gera link de afiliado Parceiro Magalu (magazinevoce).
+    Monta exatamente como o exemplo: magazinevoce.com.br/{LOJA}/{PATH_COMPLETO}
     """
-    from urllib.parse import urlparse
-    magalu_id = getattr(settings, 'MAGALU_ID', 'in_1546179')
+    magalu_id = getattr(settings, 'MAGALU_ID', 'magazinein_1546179')
     
-    # 1. Expandir qualquer link curto ou de celular
+    # 1. Expandir links curtos
     if any(domain in url for domain in ['mgl.io', 'divulgador.magalu.com', 'magalu.com', 'bit.ly']):
         try:
             resp = requests.get(url, allow_redirects=True, timeout=12, headers={"User-Agent": "Mozilla/5.0"})
             url = resp.url
-        except Exception as e:
-            print(f"Magalu Expansão Erro: {e}")
+        except:
+            pass
 
-    # 2. Se ja for um link de vitrine (magazinevoce), apenas troca o ID
+    # 2. Se ja for magazinevoce, troca o ID da loja
     if 'magazinevoce.com.br' in url:
+        # Troca o que vem depois da primeira barra por seu magalu_id
         return re.sub(r'magazinevoce\.com\.br/[^/]+', f'magazinevoce.com.br/{magalu_id}', url)
 
-    # 3. Pegar o caminho exato usando urlparse
-    parsed = urlparse(url)
-    path = parsed.path.strip('/')
-    
-    # Se houver um caminho (produto), monta o link da loja
-    if path and len(path) > 2:
-        return f"https://www.magazinevoce.com.br/{magalu_id}/{path}/"
+    # 3. Extrair o PATH (tudo depois do dominio)
+    # Exemplo: magazineluiza.com.br/azeite-de-oliva/p/225388400/me/azet/
+    # O path seria: azeite-de-oliva/p/225388400/me/azet/
+    match_path = re.search(r'(?:magazineluiza\.com\.br|magalu\.com)/(.*)', url)
+    if match_path:
+        path = match_path.group(1).split('?')[0].strip('/')
+        if path:
+            return f"https://www.magazinevoce.com.br/{magalu_id}/{path}/"
 
-    # Se cair aqui e tiver query (como p=ID), tenta reconstruir ou manda para vitrine
+    # Fallback para o ID do produto se o path falhar
+    pid_match = re.search(r'/(?:p|produto)/([a-zA-Z0-9]+)', url)
+    if pid_match:
+        return f"https://www.magazinevoce.com.br/{magalu_id}/p/{pid_match.group(1)}/"
+
     return f"https://www.magazinevoce.com.br/{magalu_id}/"
 
 
