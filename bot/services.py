@@ -209,34 +209,40 @@ def convert_magalu_link(url):
     Monta exatamente como o exemplo: magazinevoce.com.br/{LOJA}/{PATH_COMPLETO}
     """
     magalu_id = getattr(settings, 'MAGALU_ID', 'magazinein_1546179')
+    print(f"Magalu: Convertendo {url} para a loja {magalu_id}")
     
     # 1. Expandir links curtos
-    if any(domain in url for domain in ['mgl.io', 'divulgador.magalu.com', 'magalu.com', 'bit.ly']):
+    if any(domain in url for domain in ['mgl.io', 'divulgador.magalu.com', 'magalu.com', 'bit.ly', 't.co']):
         try:
             resp = requests.get(url, allow_redirects=True, timeout=12, headers={"User-Agent": "Mozilla/5.0"})
             url = resp.url
-        except:
-            pass
+            print(f"Magalu: URL expandida: {url}")
+        except Exception as e:
+            print(f"Magalu: Erro expansao: {e}")
 
     # 2. Se ja for magazinevoce, troca o ID da loja
     if 'magazinevoce.com.br' in url:
-        # Troca o que vem depois da primeira barra por seu magalu_id
-        return re.sub(r'magazinevoce\.com\.br/[^/]+', f'magazinevoce.com.br/{magalu_id}', url)
+        res = re.sub(r'magazinevoce\.com\.br/[^/]+', f'magazinevoce.com.br/{magalu_id}', url)
+        return res
 
     # 3. Extrair o PATH (tudo depois do dominio)
-    # Exemplo: magazineluiza.com.br/azeite-de-oliva/p/225388400/me/azet/
-    # O path seria: azeite-de-oliva/p/225388400/me/azet/
-    match_path = re.search(r'(?:magazineluiza\.com\.br|magalu\.com)/(.*)', url)
+    # Tenta encontrar o inicio do path apos .com.br/ ou .com/
+    match_path = re.search(r'(?:magazineluiza\.com\.br|magalu\.com\.br|magalu\.com)/(.*)', url)
     if match_path:
         path = match_path.group(1).split('?')[0].strip('/')
-        if path:
-            return f"https://www.magazinevoce.com.br/{magalu_id}/{path}/"
+        if path and len(path) > 5: # Garante que nao pegou um path vazio ou irrelevante
+            final_link = f"https://www.magazinevoce.com.br/{magalu_id}/{path}/"
+            print(f"Magalu: Link gerado via Path: {final_link}")
+            return final_link
 
-    # Fallback para o ID do produto se o path falhar
+    # Fallback para o ID do produto (/p/ID/)
     pid_match = re.search(r'/(?:p|produto)/([a-zA-Z0-9]+)', url)
     if pid_match:
-        return f"https://www.magazinevoce.com.br/{magalu_id}/p/{pid_match.group(1)}/"
+        final_link = f"https://www.magazinevoce.com.br/{magalu_id}/p/{pid_match.group(1)}/"
+        print(f"Magalu: Link gerado via PID: {final_link}")
+        return final_link
 
+    print("Magalu: Nao foi possivel extrair o produto. Retornando home da loja.")
     return f"https://www.magazinevoce.com.br/{magalu_id}/"
 
 
