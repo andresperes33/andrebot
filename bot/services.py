@@ -146,58 +146,45 @@ def convert_to_affiliate_link(url, final_url=None):
 
 def convert_awin_link(url, merchant_id='17729'):
     """
-    Gera link de afiliado Awin. Tenta usar a API para link curto (tidd.ly),
-    caso contrário gera o deep link longo. Expande links curtos se necessário.
+    Gera link de afiliado Awin. Limpa a URL da Kabum para evitar bugs de tela preta
+    e links gigantes com rastreios de terceiros.
     """
     publisher_id = getattr(settings, 'AWIN_PUBLISHER_ID', '1670083')
     api_token = getattr(settings, 'AWIN_API_TOKEN', None)
 
-    # Se for link curto, precisamos expandir para saber o destino real
+    # 1. Expandir links curtos (tidd.ly) para pegar a URL real
     if 'tidd.ly' in url:
         try:
             resp = requests.get(url, allow_redirects=True, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
             url = resp.url
-            print(f"Awin: URL expandida: {url}")
-            # Se a URL destino for Kabum, garantimos o MID correto
-            if 'kabum.com.br' in url:
-                merchant_id = '17729'
         except Exception as e:
-            print(f"Awin: Erro ao expandir link curto: {e}")
-    
-    # Limpeza de URL: remove parâmetros de rastreio de terceiros (utm, aff_id, sv_campaign, etc)
-    if '?' in url:
-        base_url = url.split('?')[0]
-        # Mantém apenas a URL base para evitar links gigantes e com rastreio de outros
-        url = base_url
+            print(f"Awin: Erro ao expandir: {e}")
 
+    # 2. LIMPEZA PROFUNDA: Extrair apenas o link essencial da Kabum
+    # Exemplo: https://www.kabum.com.br/produto/123/nome-do-produto
+    kabum_match = re.search(r'(https?://(?:www\.)?kabum\.com\.br/produto/\d+/[^/?\s]+)', url)
+    if kabum_match:
+        url = kabum_match.group(1)
+    elif 'kabum.com.br' in url:
+        # Fallback se o regex falhar mas for kabum
+        url = url.split('?')[0]
+
+    # 3. Tentar encurtar via API
     if api_token:
         try:
             endpoint = f"https://api.awin.com/publishers/{publisher_id}/link-generator"
-            headers = {
-                "Authorization": f"Bearer {api_token}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "destinationUrl": url,
-                "advertiserId": int(merchant_id),
-                "shorten": True
-            }
+            headers = {"Authorization": f"Bearer {api_token}", "Content-Type": "application/json"}
+            payload = {"destinationUrl": url, "advertiserId": int(merchant_id), "shorten": True}
             response = requests.post(endpoint, headers=headers, json=payload, timeout=10)
-            data = response.json()
-            
-            # A API retorna o link curto no campo 'shortUrl'
-            short_url = data.get("shortUrl")
+            short_url = response.json().get("shortUrl")
             if short_url:
-                print(f"Awin API: Link curto gerado: {short_url}")
                 return short_url
-            else:
-                print(f"Awin API: Nao retornou shortUrl. Resposta: {data}")
         except Exception as e:
             print(f"Erro Awin API: {e}")
 
-    # Fallback: Usando awinclick.php (mais robusto para evitar tela preta)
+    # 4. Fallback: Deep Link (Formato mais estável para Kabum)
     encoded_url = urllib.parse.quote(url, safe='')
-    return f"https://www.awin1.com/awinclick.php?mid={merchant_id}&id={publisher_id}&p={encoded_url}"
+    return f"https://www.awin1.com/cread.php?awinmid={merchant_id}&awinaffid={publisher_id}&ued={encoded_url}"
 
 
 def convert_amazon_link(url):
