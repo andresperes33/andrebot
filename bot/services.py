@@ -220,7 +220,7 @@ def convert_magalu_link(url):
 
     # Tenta extrair o ID do produto da URL final
     # Magalu usa formatos como /p/237243300/ ou /p/gj70aeaj7k/
-    product_id_match = re.search(r'/p/([a-zA-Z0-0]+)/', url)
+    product_id_match = re.search(r'/p/([a-zA-Z0-9]+)/?', url)
     
     if product_id_match:
         product_id = product_id_match.group(1)
@@ -228,7 +228,7 @@ def convert_magalu_link(url):
     
     # Se ainda assim nao achar o ID, tenta pegar da URL se for o formato antigo
     # magazineluiza.com.br/produto/ID/
-    id_match = re.search(r'/produto/([a-zA-Z0-0]+)/', url)
+    id_match = re.search(r'/produto/([a-zA-Z0-9]+)/?', url)
     if id_match:
         return f"https://www.magazinevoce.com.br/{magalu_id}/p/{id_match.group(1)}/"
 
