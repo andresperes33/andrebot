@@ -195,9 +195,9 @@ def convert_awin_link(url, merchant_id='17729'):
         except Exception as e:
             print(f"Erro Awin API: {e}")
 
-    # Fallback: Deep Link Seguro (Codifica todas as barras para evitar tela preta)
+    # Fallback: Usando awinclick.php (mais robusto para evitar tela preta)
     encoded_url = urllib.parse.quote(url, safe='')
-    return f"https://www.awin1.com/cread.php?awinmid={merchant_id}&awinaffid={publisher_id}&platform=dl&ued={encoded_url}"
+    return f"https://www.awin1.com/awinclick.php?mid={merchant_id}&id={publisher_id}&p={encoded_url}"
 
 
 def convert_amazon_link(url):
