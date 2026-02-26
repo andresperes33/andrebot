@@ -91,7 +91,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         else:
             # Se não tinha foto, tentamos buscar uma da página (como fizemos antes)
-            _, image_url, _, _ = get_product_info(original_link)
+            name, image_url, price = get_product_info(original_link)
             
             if image_url:
                 await context.bot.send_photo(
