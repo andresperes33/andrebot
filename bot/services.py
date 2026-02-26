@@ -75,6 +75,18 @@ def get_product_info(url):
                     if price_match:
                         price = f"R$ {price_match.group(1).strip()}"
 
+            # Preço Kabum
+            elif 'kabum.com.br' in final_url:
+                price_match = re.search(r'["\']price["\']:["\'](\d+\.?\d*)["\']', html)
+                if not price_match:
+                    price_match = re.search(r'class=["\']finalPrice["\']>(.*?)</strong>', html)
+                
+                if price_match:
+                    price_val = price_match.group(1).replace('R$', '').strip()
+                    if '</span>' in price_val: # Limpeza extra se pegar tag
+                        price_val = re.sub(r'<[^>]+>', '', price_val)
+                    price = f"R$ {price_val}"
+
             # Imagem: tenta várias tags comuns (og:image, twitter:image, image_src)
             img_patterns = [
                 r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\'](https?://[^"\']+)["\']',
@@ -98,6 +110,9 @@ def get_product_info(url):
                     # Limpeza para Amazon (Pega imagem maior)
                     if 'amazon' in final_url and '._AC_' in image_url:
                         image_url = re.sub(r'\._AC_.*_\.', '.', image_url)
+                    # Limpeza para Kabum (Geralmente ja vem em boa resolucao)
+                    if 'kabum.com.br' in final_url and '?' in image_url:
+                        image_url = image_url.split('?')[0]
                     break
 
         except Exception as page_err:
@@ -124,7 +139,44 @@ def convert_to_affiliate_link(url, final_url=None):
         return convert_amazon_link(url)
     elif 'mercadolivre.com' in url or 'mlstatic.com' in url or 'mercadolivre.com.br' in url:
         return convert_mercado_livre_link(url)
+    elif 'kabum.com.br' in url:
+        return convert_awin_link(url, merchant_id='17729') # Kabum MID na Awin Brasil
     return None
+
+
+def convert_awin_link(url, merchant_id):
+    """
+    Gera link de afiliado Awin. Tenta usar a API para link curto (tidd.ly),
+    caso contrário gera o deep link longo.
+    """
+    publisher_id = getattr(settings, 'AWIN_PUBLISHER_ID', '1670083')
+    api_token = getattr(settings, 'AWIN_API_TOKEN', None)
+    
+    if api_token:
+        try:
+            endpoint = f"https://api.awin.com/publishers/{publisher_id}/link-generator"
+            headers = {
+                "Authorization": f"Bearer {api_token}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "destinationUrl": url,
+                "advertiserId": int(merchant_id)
+            }
+            response = requests.post(endpoint, headers=headers, json=payload, timeout=10)
+            data = response.json()
+            
+            # A API retorna o link curto no campo 'shortUrl'
+            short_url = data.get("shortUrl")
+            if short_url:
+                print(f"Awin API: Link curto gerado: {short_url}")
+                return short_url
+        except Exception as e:
+            print(f"Erro Awin API: {e}")
+
+    # Fallback: Deep Link Longo
+    encoded_url = urllib.parse.quote(url)
+    return f"https://www.awin1.com/cread.php?awinmid={merchant_id}&awinaffid={publisher_id}&ued={encoded_url}"
 
 
 def convert_amazon_link(url):

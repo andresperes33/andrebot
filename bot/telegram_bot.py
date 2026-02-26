@@ -41,6 +41,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_aliexpress = 'aliexpress.com' in link or 's.click.aliexpress' in link
         is_ml = 'mercadolivre.com' in link or 'mlstatic.com' in link
         is_amazon = 'amazon.com.br' in link or 'amzn.to' in link
+        is_kabum = 'kabum.com.br' in link
         is_telegram = 't.me/' in link
         is_tecnan = 'tecnan.com.br' in link
 
@@ -56,10 +57,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             modified_text = re.sub(r'(?i)zFinnY|CaCau|André Indica|Tecnan', channel_name, modified_text)
             continue
 
-        if not is_shopee and not is_aliexpress and not is_ml and not is_amazon:
+        if not is_shopee and not is_aliexpress and not is_ml and not is_amazon and not is_kabum:
             continue
-
-        platform_name = "Shopee" if is_shopee else "AliExpress" if is_aliexpress else "Mercado Livre" if is_ml else "Amazon"
+        
+        platform_name = "Shopee" if is_shopee else "AliExpress" if is_aliexpress else "Mercado Livre" if is_ml else "Amazon" if is_amazon else "Kabum"
         await update.message.reply_text(f"⏳ Processando {platform_name}...")
 
         converted = convert_to_affiliate_link(link)
