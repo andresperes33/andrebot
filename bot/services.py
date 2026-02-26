@@ -205,41 +205,45 @@ def convert_awin_link(url, merchant_id='17729'):
 
 def convert_magalu_link(url):
     """
-    Gera link de afiliado Parceiro Magalu (magazinevoce).
-    Formato: https://www.magazinevoce.com.br/{MAGALU_ID}/p/{ID}/{SLUG}/
+    Gera link de afiliado Parceiro Magalu (magazinevoce) de forma robusta.
     """
     magalu_id = getattr(settings, 'MAGALU_ID', 'in_1546179')
     
-    # Se for link curto, expande (mgl.io ou divulgador.magalu.com)
-    if 'mgl.io' in url or 'divulgador.magalu.com' in url:
+    # Se for link curto, expande (mgl.io ou divulgador.magalu.com ou magalu.com)
+    if any(domain in url for domain in ['mgl.io', 'divulgador.magalu.com', 'magalu.com/']):
         try:
-            resp = requests.get(url, allow_redirects=True, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+            resp = requests.get(url, allow_redirects=True, timeout=12, headers={"User-Agent": "Mozilla/5.0"})
             url = resp.url
-        except:
-            pass
+        except Exception as e:
+            print(f"Magalu Expansão Erro: {e}")
 
-    # 1. Tenta o formato completo com SLUG e ID: magazineluiza.com.br/SLUG/p/ID/
-    # Exemplo: magazineluiza.com.br/headset-qcy-h3-anc/p/hh175d6k1b/
-    slug_p_id_match = re.search(r'magazineluiza\.com\.br/([^/]+)/p/([a-zA-Z0-9]+)', url)
-    if slug_p_id_match:
-        slug = slug_p_id_match.group(1)
-        product_id = slug_p_id_match.group(2)
-        return f"https://www.magazinevoce.com.br/{magalu_id}/{slug}/p/{product_id}/"
+    # Lista de tentativas para pegar o ID e o Slug
+    # 1. Tenta padrão de link longo: magazineluiza.com.br/SLUG/p/ID/
+    match_long = re.search(r'(?:magazineluiza\.com\.br|magalu\.com)/([^/]+)/p/([a-zA-Z0-9]+)', url)
+    if match_long:
+        slug, pid = match_long.group(1), match_long.group(2)
+        return f"https://www.magazinevoce.com.br/{magalu_id}/{slug}/p/{pid}/"
 
-    # 2. Caso o SLUG esteja antes do /p/ no formato curto ou mgl.io expandido
-    # Exemplo: /p/gj70aeaj7k/ (Tenta pegar o slug se existir na URL)
-    product_id_match = re.search(r'/p/([a-zA-Z0-9]+)/?', url)
-    if product_id_match:
-        product_id = product_id_match.group(1)
-        # Tenta pegar um possível slug que venha antes do /p/
-        slug_match = re.search(r'/([^/]+)/p/', url)
-        slug = slug_match.group(1) if slug_match else "produto"
-        return f"https://www.magazinevoce.com.br/{magalu_id}/{slug}/p/{product_id}/"
-    
-    # 3. Fallback para formato antigo /produto/ID/
-    id_match = re.search(r'/produto/([a-zA-Z0-9]+)/?', url)
-    if id_match:
-        return f"https://www.magazinevoce.com.br/{magalu_id}/produto/p/{id_match.group(1)}/"
+    # 2. Tenta padrão apenas com ID: /p/ID/
+    match_p_only = re.search(r'/p/([a-zA-Z0-9]+)', url)
+    if match_p_only:
+        pid = match_p_only.group(1)
+        # Tenta pegar um slug da URL se existir, senao usa 'p'
+        slug_candidates = [s for s in url.split('/') if s and s not in ['p', 'produto', 'https:', 'www.magazineluiza.com.br', 'magalu.com']]
+        slug = slug_candidates[0] if slug_candidates else "produto"
+        return f"https://www.magazinevoce.com.br/{magalu_id}/{slug}/p/{pid}/"
+
+    # 3. Tenta padrão antigo: /produto/ID
+    match_old = re.search(r'/produto/([a-zA-Z0-9]+)', url)
+    if match_old:
+        pid = match_old.group(1)
+        return f"https://www.magazinevoce.com.br/{magalu_id}/produto/p/{pid}/"
+
+    # 4. Caso extremo: tenta pegar qualquer código alfanumérico de 10 caracteres que pareça um ID Magalu
+    # IDs da Magalu geralmente tem 10 caracteres como 'kj38f5f87b'
+    potential_ids = re.findall(r'/([a-z0-9]{10})/', url)
+    if potential_ids:
+        return f"https://www.magazinevoce.com.br/{magalu_id}/produto/p/{potential_ids[0]}/"
 
     return f"https://www.magazinevoce.com.br/{magalu_id}/"
 
