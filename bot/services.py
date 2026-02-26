@@ -164,6 +164,12 @@ def convert_awin_link(url, merchant_id='17729'):
         except Exception as e:
             print(f"Awin: Erro ao expandir link curto: {e}")
     
+    # Limpeza de URL: remove parâmetros de rastreio de terceiros (utm, aff_id, sv_campaign, etc)
+    if '?' in url:
+        base_url = url.split('?')[0]
+        # Mantém apenas a URL base para evitar links gigantes e com rastreio de outros
+        url = base_url
+
     if api_token:
         try:
             endpoint = f"https://api.awin.com/publishers/{publisher_id}/link-generator"
@@ -183,10 +189,12 @@ def convert_awin_link(url, merchant_id='17729'):
             if short_url:
                 print(f"Awin API: Link curto gerado: {short_url}")
                 return short_url
+            else:
+                print(f"Awin API: Nao retornou shortUrl. Resposta: {data}")
         except Exception as e:
             print(f"Erro Awin API: {e}")
 
-    # Fallback: Deep Link Longo
+    # Fallback: Deep Link Simplificado (Removido parâmetros extras para garantir abertura)
     encoded_url = urllib.parse.quote(url)
     return f"https://www.awin1.com/cread.php?awinmid={merchant_id}&awinaffid={publisher_id}&ued={encoded_url}"
 
