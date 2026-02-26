@@ -161,30 +161,38 @@ def convert_awin_link(url, merchant_id='17729'):
             print(f"Awin: Erro ao expandir: {e}")
 
     # 2. LIMPEZA PROFUNDA: Extrair apenas o link essencial da Kabum
-    # Exemplo: https://www.kabum.com.br/produto/123/nome-do-produto
-    kabum_match = re.search(r'(https?://(?:www\.)?kabum\.com\.br/produto/\d+/[^/?\s]+)', url)
+    # Aceita tanto /produto/ID/NOME quanto apenas /produto/ID
+    kabum_match = re.search(r'(https?://(?:www\.)?kabum\.com\.br/produto/\d+(?:/[^/?\s]+)?)', url)
     if kabum_match:
         url = kabum_match.group(1)
     elif 'kabum.com.br' in url:
-        # Fallback se o regex falhar mas for kabum
         url = url.split('?')[0]
 
-    # 3. Tentar encurtar via API
+    # 3. Tentar encurtar via API (Tidd.ly)
     if api_token:
         try:
             endpoint = f"https://api.awin.com/publishers/{publisher_id}/link-generator"
             headers = {"Authorization": f"Bearer {api_token}", "Content-Type": "application/json"}
-            payload = {"destinationUrl": url, "advertiserId": int(merchant_id), "shorten": True}
+            payload = {
+                "destinationUrl": url,
+                "advertiserId": int(merchant_id),
+                "shorten": True
+            }
             response = requests.post(endpoint, headers=headers, json=payload, timeout=10)
-            short_url = response.json().get("shortUrl")
+            res_data = response.json()
+            short_url = res_data.get("shortUrl")
             if short_url:
+                print(f"Awin API Sucesso: {short_url}")
                 return short_url
+            else:
+                print(f"Awin API falhou em encurtar: {res_data}")
         except Exception as e:
             print(f"Erro Awin API: {e}")
 
-    # 4. Fallback: Deep Link (Formato mais estável para Kabum)
+    # 4. Fallback: Deep Link (Formato com clickref para tentar burlar a tela preta)
+    # Alguns navegadores travam se a URL nao estiver 100% limpa ou bem codificada
     encoded_url = urllib.parse.quote(url, safe='')
-    return f"https://www.awin1.com/cread.php?awinmid={merchant_id}&awinaffid={publisher_id}&ued={encoded_url}"
+    return f"https://www.awin1.com/cread.php?awinmid={merchant_id}&awinaffid={publisher_id}&clickref=bot&ued={encoded_url}"
 
 
 def convert_amazon_link(url):
