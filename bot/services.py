@@ -139,18 +139,30 @@ def convert_to_affiliate_link(url, final_url=None):
         return convert_amazon_link(url)
     elif 'mercadolivre.com' in url or 'mlstatic.com' in url or 'mercadolivre.com.br' in url:
         return convert_mercado_livre_link(url)
-    elif 'kabum.com.br' in url:
-        return convert_awin_link(url, merchant_id='17729') # Kabum MID na Awin Brasil
+    elif 'kabum.com.br' in url or 'tidd.ly' in url:
+        return convert_awin_link(url, merchant_id='17729') # Kabum MID padrao
     return None
 
 
-def convert_awin_link(url, merchant_id):
+def convert_awin_link(url, merchant_id='17729'):
     """
     Gera link de afiliado Awin. Tenta usar a API para link curto (tidd.ly),
-    caso contrário gera o deep link longo.
+    caso contrário gera o deep link longo. Expande links curtos se necessário.
     """
     publisher_id = getattr(settings, 'AWIN_PUBLISHER_ID', '1670083')
     api_token = getattr(settings, 'AWIN_API_TOKEN', None)
+
+    # Se for link curto, precisamos expandir para saber o destino real
+    if 'tidd.ly' in url:
+        try:
+            resp = requests.get(url, allow_redirects=True, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+            url = resp.url
+            print(f"Awin: URL expandida: {url}")
+            # Se a URL destino for Kabum, garantimos o MID correto
+            if 'kabum.com.br' in url:
+                merchant_id = '17729'
+        except Exception as e:
+            print(f"Awin: Erro ao expandir link curto: {e}")
     
     if api_token:
         try:
