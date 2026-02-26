@@ -189,10 +189,15 @@ def convert_awin_link(url, merchant_id='17729'):
         except Exception as e:
             print(f"Erro Awin API: {e}")
 
-    # 4. Fallback: Formato PCLICK (O mais direto/estável para evitar tela preta na Kabum)
-    # Formato: pclick.php?p=URL_CODIFICADA&a=PUBLISHER_ID&m=MERCHANT_ID
-    encoded_url = urllib.parse.quote(url, safe='')
-    return f"https://www.awin1.com/pclick.php?p={encoded_url}&a={publisher_id}&m={merchant_id}"
+    # 4. Fallback: Deep Link (Formato hibrido para evitar home e tela preta)
+    # Mantemos o https:// visível e codificamos o restante do link
+    if url.startswith('https://'):
+        url_part = url.replace('https://', '', 1)
+        encoded_url = 'https://' + urllib.parse.quote(url_part, safe='')
+    else:
+        encoded_url = urllib.parse.quote(url, safe='')
+        
+    return f"https://www.awin1.com/cread.php?awinmid={merchant_id}&awinaffid={publisher_id}&platform=dl&ued={encoded_url}"
 
 
 def convert_amazon_link(url):
