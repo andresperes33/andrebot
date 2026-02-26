@@ -218,19 +218,28 @@ def convert_magalu_link(url):
         except:
             pass
 
-    # Tenta extrair o ID do produto da URL final
-    # Magalu usa formatos como /p/237243300/ ou /p/gj70aeaj7k/
+    # 1. Tenta o formato completo com SLUG e ID: magazineluiza.com.br/SLUG/p/ID/
+    # Exemplo: magazineluiza.com.br/headset-qcy-h3-anc/p/hh175d6k1b/
+    slug_p_id_match = re.search(r'magazineluiza\.com\.br/([^/]+)/p/([a-zA-Z0-9]+)', url)
+    if slug_p_id_match:
+        slug = slug_p_id_match.group(1)
+        product_id = slug_p_id_match.group(2)
+        return f"https://www.magazinevoce.com.br/{magalu_id}/{slug}/p/{product_id}/"
+
+    # 2. Caso o SLUG esteja antes do /p/ no formato curto ou mgl.io expandido
+    # Exemplo: /p/gj70aeaj7k/ (Tenta pegar o slug se existir na URL)
     product_id_match = re.search(r'/p/([a-zA-Z0-9]+)/?', url)
-    
     if product_id_match:
         product_id = product_id_match.group(1)
-        return f"https://www.magazinevoce.com.br/{magalu_id}/p/{product_id}/"
+        # Tenta pegar um possível slug que venha antes do /p/
+        slug_match = re.search(r'/([^/]+)/p/', url)
+        slug = slug_match.group(1) if slug_match else "produto"
+        return f"https://www.magazinevoce.com.br/{magalu_id}/{slug}/p/{product_id}/"
     
-    # Se ainda assim nao achar o ID, tenta pegar da URL se for o formato antigo
-    # magazineluiza.com.br/produto/ID/
+    # 3. Fallback para formato antigo /produto/ID/
     id_match = re.search(r'/produto/([a-zA-Z0-9]+)/?', url)
     if id_match:
-        return f"https://www.magazinevoce.com.br/{magalu_id}/p/{id_match.group(1)}/"
+        return f"https://www.magazinevoce.com.br/{magalu_id}/produto/p/{id_match.group(1)}/"
 
     return f"https://www.magazinevoce.com.br/{magalu_id}/"
 
