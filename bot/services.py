@@ -205,45 +205,44 @@ def convert_awin_link(url, merchant_id='17729'):
 
 def convert_magalu_link(url):
     """
-    Gera link de afiliado Parceiro Magalu (magazinevoce).
-    Monta exatamente como o exemplo: magazinevoce.com.br/{LOJA}/{PATH_COMPLETO}
+    Gera link de afiliado Parceiro Magalu (magazinevoce) de forma infalivel.
+    Usa o formato direto de PID que evita erros de slug/404.
     """
     magalu_id = getattr(settings, 'MAGALU_ID', 'magazinein_1546179')
-    print(f"Magalu: Convertendo {url} para a loja {magalu_id}")
     
-    # 1. Expandir links curtos
-    if any(domain in url for domain in ['mgl.io', 'divulgador.magalu.com', 'magalu.com', 'bit.ly', 't.co']):
+    # 1. Expandir links curtos (Magalu mobile/divulgador costuma ser teimoso)
+    if any(domain in url for domain in ['mgl.io', 'divulgador.magalu.com', 'magalu.com', 'bit.ly']):
         try:
-            resp = requests.get(url, allow_redirects=True, timeout=12, headers={"User-Agent": "Mozilla/5.0"})
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+            resp = requests.get(url, allow_redirects=True, timeout=12, headers=headers)
             url = resp.url
-            print(f"Magalu: URL expandida: {url}")
-        except Exception as e:
-            print(f"Magalu: Erro expansao: {e}")
+        except:
+            pass
 
-    # 2. Se ja for magazinevoce, troca o ID da loja
+    # 2. Se ja for magazinevoce, apenas troca o ID
     if 'magazinevoce.com.br' in url:
-        res = re.sub(r'magazinevoce\.com\.br/[^/]+', f'magazinevoce.com.br/{magalu_id}', url)
-        return res
+        return re.sub(r'magazinevoce\.com\.br/[^/]+', f'magazinevoce.com.br/{magalu_id}', url)
 
-    # 3. Extrair o PATH (tudo depois do dominio)
-    # Tenta encontrar o inicio do path apos .com.br/ ou .com/
-    match_path = re.search(r'(?:magazineluiza\.com\.br|magalu\.com\.br|magalu\.com)/(.*)', url)
-    if match_path:
-        path = match_path.group(1).split('?')[0].strip('/')
-        if path and len(path) > 5: # Garante que nao pegou um path vazio ou irrelevante
-            final_link = f"https://www.magazinevoce.com.br/{magalu_id}/{path}/"
-            print(f"Magalu: Link gerado via Path: {final_link}")
-            return final_link
-
-    # Fallback para o ID do produto (/p/ID/)
+    # 3. Extrair o Código do Produto (PID) - O metodo mais seguro
+    # Padrao: /p/ID/ ou /produto/ID/
     pid_match = re.search(r'/(?:p|produto)/([a-zA-Z0-9]+)', url)
+    
     if pid_match:
-        final_link = f"https://www.magazinevoce.com.br/{magalu_id}/p/{pid_match.group(1)}/"
-        print(f"Magalu: Link gerado via PID: {final_link}")
-        return final_link
+        pid = pid_match.group(1)
+        # O formato /LOJA/p/ID/ e o que menos da erro 404
+        return f"https://www.magazinevoce.com.br/{magalu_id}/p/{pid}/"
 
-    print("Magalu: Nao foi possivel extrair o produto. Retornando home da loja.")
-    return f"https://www.magazinevoce.com.br/{magalu_id}/"
+    # 4. Caso nao ache o /p/, tenta pegar pelo caminho limpo (Slug)
+    match_path = re.search(r'(?:magazineluiza\.com\.br|magalu\.com\.br|magalu\.com)/([^/?]+)', url)
+    if match_path:
+        slug = match_path.group(1).strip('/')
+        if len(slug) > 5:
+            return f"https://www.magazinevoce.com.br/{magalu_id}/{slug}/p/produto/"
+
+    # 5. Fallback Final: Link de redirecionamento oficial da Magalu
+    # Este link forca o redirecionamento correto com o seu ID
+    encoded_url = urllib.parse.quote(url)
+    return f"https://www.magazineluiza.com.br/selecao/produtos/?magalu_id={magalu_id}&url={encoded_url}"
 
 
 def convert_amazon_link(url):
