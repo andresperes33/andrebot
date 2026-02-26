@@ -159,3 +159,6 @@ AMAZON_ASSOCIATE_TAG = os.getenv('AMAZON_ASSOCIATE_TAG', 'andreindica00-20')
 # Awin Settings
 AWIN_PUBLISHER_ID = os.getenv('AWIN_PUBLISHER_ID', '1670083')
 AWIN_API_TOKEN = os.getenv('AWIN_API_TOKEN')
+
+# Magalu Settings
+MAGALU_ID = os.getenv('MAGALU_ID', 'in_1546179')

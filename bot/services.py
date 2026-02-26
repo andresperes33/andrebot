@@ -75,16 +75,17 @@ def get_product_info(url):
                     if price_match:
                         price = f"R$ {price_match.group(1).strip()}"
 
-            # Preço Kabum
-            elif 'kabum.com.br' in final_url:
-                price_match = re.search(r'["\']price["\']:["\'](\d+\.?\d*)["\']', html)
+                    price = f"R$ {price_val}"
+
+            # Preço Magalu
+            elif 'magazineluiza.com.br' in final_url or 'magalu.com' in final_url:
+                # Tenta JSON de preço
+                price_match = re.search(r'["\']price["\']:["\']?(\d+\.?\d*)["\']?', html)
                 if not price_match:
-                    price_match = re.search(r'class=["\']finalPrice["\']>(.*?)</strong>', html)
+                    price_match = re.search(r'class=["\']sc-[^>]+price-value["\']>(.*?)</span>', html)
                 
                 if price_match:
                     price_val = price_match.group(1).replace('R$', '').strip()
-                    if '</span>' in price_val: # Limpeza extra se pegar tag
-                        price_val = re.sub(r'<[^>]+>', '', price_val)
                     price = f"R$ {price_val}"
 
             # Imagem: tenta várias tags comuns (og:image, twitter:image, image_src)
@@ -141,6 +142,8 @@ def convert_to_affiliate_link(url, final_url=None):
         return convert_mercado_livre_link(url)
     elif 'kabum.com.br' in url or 'tidd.ly' in url:
         return convert_awin_link(url, merchant_id='17729') # Kabum MID padrao
+    elif 'magazineluiza.com.br' in url or 'magalu.com' in url or 'mgl.io' in url:
+        return convert_magalu_link(url)
     return None
 
 
@@ -198,6 +201,35 @@ def convert_awin_link(url, merchant_id='17729'):
         encoded_url = urllib.parse.quote(url, safe='')
         
     return f"https://www.awin1.com/cread.php?awinmid={merchant_id}&awinaffid={publisher_id}&platform=dl&ued={encoded_url}"
+
+
+def convert_magalu_link(url):
+    """
+    Gera link de afiliado Parceiro Magalu (magazinevoce).
+    Formato: https://www.magazinevoce.com.br/{MAGALU_ID}/p/{ID}/{SLUG}/
+    """
+    magalu_id = getattr(settings, 'MAGALU_ID', 'in_1546179')
+    
+    # Se for link curto (mgl.io), expande
+    if 'mgl.io' in url:
+        try:
+            resp = requests.get(url, allow_redirects=True, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+            url = resp.url
+        except:
+            pass
+
+    # Tenta extrair o ID do produto e o slug da URL original
+    # Exemplo: magazineluiza.com.br/produto-nome/p/ID/DEPARTAMENTO/
+    # Ou magazineluiza.com.br/p/ID/
+    product_id_match = re.search(r'/p/(\w+)/', url)
+    
+    if product_id_match:
+        product_id = product_id_match.group(1)
+        # Monta o link da sua loja no magazinevoce
+        return f"https://www.magazinevoce.com.br/{magalu_id}/p/{product_id}/"
+    
+    # Se não conseguir extrair o ID no formato padrão, tenta limpar o link e injetar na URL de busca ou redirecionamento
+    return f"https://www.magazineluiza.com.br/selecao/produtos/?magalu_id={magalu_id}&url={urllib.parse.quote(url)}"
 
 
 def convert_amazon_link(url):
