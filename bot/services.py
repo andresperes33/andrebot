@@ -142,7 +142,7 @@ def convert_to_affiliate_link(url, final_url=None):
         return convert_mercado_livre_link(url)
     elif 'kabum.com.br' in url or 'tidd.ly' in url:
         return convert_awin_link(url, merchant_id='17729') # Kabum MID padrao
-    elif 'magazineluiza.com.br' in url or 'magalu.com' in url or 'mgl.io' in url:
+    elif 'magazineluiza.com.br' in url or 'magalu.com' in url or 'mgl.io' in url or 'divulgador.magalu.com' in url:
         return convert_magalu_link(url)
     return None
 
@@ -210,26 +210,29 @@ def convert_magalu_link(url):
     """
     magalu_id = getattr(settings, 'MAGALU_ID', 'in_1546179')
     
-    # Se for link curto (mgl.io), expande
-    if 'mgl.io' in url:
+    # Se for link curto, expande (mgl.io ou divulgador.magalu.com)
+    if 'mgl.io' in url or 'divulgador.magalu.com' in url:
         try:
             resp = requests.get(url, allow_redirects=True, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
             url = resp.url
         except:
             pass
 
-    # Tenta extrair o ID do produto e o slug da URL original
-    # Exemplo: magazineluiza.com.br/produto-nome/p/ID/DEPARTAMENTO/
-    # Ou magazineluiza.com.br/p/ID/
-    product_id_match = re.search(r'/p/(\w+)/', url)
+    # Tenta extrair o ID do produto da URL final
+    # Magalu usa formatos como /p/237243300/ ou /p/gj70aeaj7k/
+    product_id_match = re.search(r'/p/([a-zA-Z0-0]+)/', url)
     
     if product_id_match:
         product_id = product_id_match.group(1)
-        # Monta o link da sua loja no magazinevoce
         return f"https://www.magazinevoce.com.br/{magalu_id}/p/{product_id}/"
     
-    # Se não conseguir extrair o ID no formato padrão, tenta limpar o link e injetar na URL de busca ou redirecionamento
-    return f"https://www.magazineluiza.com.br/selecao/produtos/?magalu_id={magalu_id}&url={urllib.parse.quote(url)}"
+    # Se ainda assim nao achar o ID, tenta pegar da URL se for o formato antigo
+    # magazineluiza.com.br/produto/ID/
+    id_match = re.search(r'/produto/([a-zA-Z0-0]+)/', url)
+    if id_match:
+        return f"https://www.magazinevoce.com.br/{magalu_id}/p/{id_match.group(1)}/"
+
+    return f"https://www.magazinevoce.com.br/{magalu_id}/"
 
 
 def convert_amazon_link(url):
