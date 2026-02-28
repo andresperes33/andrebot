@@ -9,41 +9,56 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Monitora o zFinnY e apenas encaminha para o André Bot'
+    help = 'Monitora o zFinnY Promos e encaminha para o André Bot'
 
     def handle(self, *args, **options):
         api_id = getattr(settings, 'TELEGRAM_API_ID', None)
         api_hash = getattr(settings, 'TELEGRAM_API_HASH', None)
-        source_channel = getattr(settings, 'SOURCE_CHANNEL_USERNAME', 'zFinnY')
         
-        # ID fixo do seu bot (André Bot) extraído dos seus logs
+        # ID do seu bot (@andreindica_bot)
         bot_id = 8549195241
 
         if not api_id or not api_hash:
-            self.stdout.write(self.style.ERROR('Erro: chaves de API faltando no .env'))
+            logger.error('Erro: TELEGRAM_API_ID e TELEGRAM_API_HASH devem estar no .env')
             return
 
         async def main():
-            # Inicializa apenas o UserBot (Sua conta)
             client = TelegramClient('session_monitor', api_id, api_hash)
+            await client.start()
+            
+            logger.info("UserBot conectado. Procurando canal 'zFinnY Promos'...")
+            
+            # Procura o canal correto nos seus chats para não errar o ID
+            target_chat = None
+            async for dialog in client.iter_dialogs():
+                if "zFinnY" in dialog.name:
+                    target_chat = dialog.id
+                    logger.info(f"✅ Canal encontrado: {dialog.name} (ID: {dialog.id})")
+                    break
+            
+            if not target_chat:
+                logger.warning("⚠️ Canal 'zFinnY' não encontrado na sua lista de chats. Tentando pelo username padrão...")
+                target_chat = 'zFinnY'
 
-            # Escuta novas mensagens e edições (para capturar o texto que vem depois da foto)
-            @client.on(events.NewMessage(chats=source_channel))
-            @client.on(events.MessageEdited(chats=source_channel))
+            # Handler para mensagens e edições
+            @client.on(events.NewMessage(chats=target_chat))
+            @client.on(events.MessageEdited(chats=target_chat))
             async def forward_handler(event):
                 try:
-                    # Apenas encaminha a mensagem original para o André Bot
-                    logger.info(f"Encaminhando postagem de {source_channel} para o André Bot...")
+                    # Log para debug
+                    text_preview = (event.message.text[:50] + "...") if event.message.text else "Mídia/Foto"
+                    logger.info(f"Capturado do zFinnY: {text_preview}")
+                    
+                    # Encaminha para o André Bot
                     await client.forward_messages(bot_id, event.message)
-                    logger.info("✅ Encaminhado com sucesso!")
+                    logger.info("🚀 Encaminhado para o André Bot com sucesso!")
                 except Exception as e:
                     logger.error(f"Erro ao encaminhar: {e}")
 
-            await client.start()
-            self.stdout.write(self.style.SUCCESS('Monitor de Encaminhamento Ativo!'))
+            logger.info("✅ Monitoramento ativo e aguardando postagens...")
             await client.run_until_disconnected()
 
         try:
             asyncio.run(main())
         except KeyboardInterrupt:
-            self.stdout.write(self.style.WARNING('Encaminhador parado.'))
+            logger.warning('Monitor parado.')
