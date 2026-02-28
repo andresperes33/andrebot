@@ -4,48 +4,58 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from telethon import TelegramClient, events
 
-# Configuração de Logs detalhada
+# Configuração de Logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Monitor Oficial zFinnY -> André Bot'
+    help = 'Monitor zFinnY -> André Bot (Versão Diagnóstico)'
 
     def handle(self, *args, **options):
         api_id = getattr(settings, 'TELEGRAM_API_ID', None)
         api_hash = getattr(settings, 'TELEGRAM_API_HASH', None)
-        bot_id = 8549195241 # ID do @andreindica_bot
+        bot_username = 'andreindica_bot' # Usando o username para garantir
 
         async def main():
             client = TelegramClient('session_monitor', api_id, api_hash)
             await client.start()
             
-            # ID exato capturado do seu log anterior
-            target_chat_id = -1002216599534 
-            
-            logger.info(f"🚀 MONITOR ATIVO para o canal ID: {target_chat_id} (zFinnY Promos)")
+            logger.info("🚀 MONITOR INICIADO! Escutando todas as mensagens da conta...")
 
-            # Captura Mensagens Novas E Mensagens Editadas
-            @client.on(events.NewMessage(chats=target_chat_id))
-            @client.on(events.MessageEdited(chats=target_chat_id))
-            async def fast_forwarder(event):
-                # Pegamos o texto da mensagem (ou a legenda da foto)
-                msg_text = event.message.message or ""
-                
-                logger.info(f"🔔 Evento detectado! Texto: {msg_text[:100]}...")
-                
-                if not msg_text and not event.message.media:
-                    logger.info("Mídia vazia ou sem texto, ignorando...")
-                    return
-
+            # Handler universal: escuta TUDO e filtra por nome
+            @client.on(events.NewMessage)
+            @client.on(events.MessageEdited)
+            async def universal_handler(event):
                 try:
-                    # Encaminha o post ORIGINAL (com foto e tudo) para o André Bot
-                    await client.forward_messages(bot_id, event.message)
-                    logger.info(f"✅ Postagem encaminhada para o @andreindica_bot")
+                    chat = await event.get_chat()
+                    chat_name = getattr(chat, 'title', '') or getattr(chat, 'username', '') or ''
+                    
+                    # Se a mensagem vier do zFinnY
+                    if "zFinnY" in chat_name:
+                        msg_text = event.message.message or ""
+                        logger.info(f"🔥 MENSAGEM CAPTURADA de '{chat_name}': {msg_text[:50]}...")
+                        
+                        # Encaminha para o André Bot
+                        await client.forward_messages(bot_username, event.message)
+                        logger.info(f"✅ Encaminhado para @{bot_username}")
                 except Exception as e:
-                    logger.error(f"❌ Falha ao encaminhar: {e}")
+                    pass # Evita travar o monitor por erros bobos
 
-            logger.info("📡 Aguardando a próxima oferta do zFinnY...")
-            await client.run_until_disconnected()
+            # Sinal de vida a cada 60 segundos nos logs
+            async def heatbeat():
+                while True:
+                    logger.info("💓 Monitor está vivo e escutando...")
+                    await asyncio.sleep(60)
 
-        asyncio.run(main())
+            # Roda o heartbeat e o monitor juntos
+            await asyncio.gather(
+                client.run_until_disconnected(),
+                heatbeat()
+            )
+
+        try:
+            asyncio.run(main())
+        except KeyboardInterrupt:
+            logger.warning('Monitor parado.')
+        except Exception as e:
+            logger.error(f"Erro fatal no monitor: {e}")
