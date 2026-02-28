@@ -143,10 +143,6 @@ ALIEXPRESS_APP_KEY = os.getenv('ALIEXPRESS_APP_KEY')
 ALIEXPRESS_APP_SECRET = os.getenv('ALIEXPRESS_APP_SECRET')
 ALIEXPRESS_TRACKING_ID = os.getenv('ALIEXPRESS_TRACKING_ID', 'default')
 
-# Personal Settings
-PERSONAL_CHANNEL_LINK = 'https://www.andreindica.com.br'
-PERSONAL_CHANNEL_NAME = 'André Indica'
-
 # Mercado Livre Settings
 MERCADO_LIVRE_TAG = os.getenv('MERCADO_LIVRE_TAG', 'pean3412407')
 MERCADO_LIVRE_CLIENT_ID = os.getenv('MERCADO_LIVRE_CLIENT_ID')
@@ -162,3 +158,12 @@ AWIN_API_TOKEN = os.getenv('AWIN_API_TOKEN')
 
 # Magalu Settings
 MAGALU_ID = os.getenv('MAGALU_ID', 'magazinein_1546179')
+
+# Monitor Settings (Telethon)
+TELEGRAM_API_ID = os.getenv('TELEGRAM_API_ID')
+TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH')
+SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'zFinnY')
+
+# Personal Settings (Overrides)
+PERSONAL_CHANNEL_LINK = os.getenv('PERSONAL_CHANNEL_LINK', 'https://t.me/andreindica33')
+PERSONAL_CHANNEL_NAME = os.getenv('PERSONAL_CHANNEL_NAME', 'andreindicatech')

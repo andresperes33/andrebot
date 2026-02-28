@@ -379,3 +379,88 @@ def convert_aliexpress_link(url):
 
 def extract_links(text):
     return re.findall(r'(https?://\S+)', text)
+
+
+async def process_offer_to_group(bot_app, text, photo=None):
+    """
+    Processa uma oferta (texto + foto opcional), converte links e posta no grupo.
+    bot_app: Instância do bot do Telegram (python-telegram-bot)
+    """
+    if not text:
+        return False
+
+    links = extract_links(text)
+    if not links:
+        return False
+
+    modified_text = text
+    original_link = None
+    converted_any = False
+
+    # 1. Substituições de Links e Nomes (Canais de terceiros)
+    personal_link = getattr(settings, 'PERSONAL_CHANNEL_LINK', '')
+    channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
+    
+    # Limpa nomes de outros canais
+    modified_text = re.sub(r'(?i)zFinnY|CaCau|André Indica|Tecnan', channel_name, modified_text)
+
+    for link in links:
+        is_shopee = 'shopee.com.br' in link or 's.shopee' in link
+        is_aliexpress = 'aliexpress.com' in link or 's.click.aliexpress' in link
+        is_ml = 'mercadolivre.com' in link or 'mlstatic.com' in link or 'mercadolivre.com.br' in link
+        is_amazon = 'amazon.com.br' in link or 'amzn.to' in link
+        is_kabum = 'kabum.com.br' in link or 'tidd.ly' in link
+        is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link
+        is_telegram = 't.me/' in link
+        is_tecnan = 'tecnan.com.br' in link
+
+        if is_telegram or is_tecnan:
+            if personal_link and personal_link not in link:
+                modified_text = modified_text.replace(link, personal_link)
+                converted_any = True
+            continue
+
+        if not any([is_shopee, is_aliexpress, is_ml, is_amazon, is_kabum, is_magalu]):
+            continue
+
+        print(f"Convertendo link: {link}")
+        converted = convert_to_affiliate_link(link)
+        if converted:
+            original_link = link
+            modified_text = modified_text.replace(link, converted)
+            converted_any = True
+
+    if not converted_any:
+        return False
+
+    group_id = settings.TELEGRAM_GROUP_ID
+    if not group_id:
+        print("Erro: TELEGRAM_GROUP_ID não configurado.")
+        return False
+
+    try:
+        if photo:
+            await bot_app.bot.send_photo(
+                chat_id=group_id,
+                photo=photo,
+                caption=modified_text[:1024]
+            )
+        else:
+            # Tenta buscar info do produto se não tiver foto
+            _, image_url, _ = get_product_info(original_link)
+            if image_url:
+                await bot_app.bot.send_photo(
+                    chat_id=group_id,
+                    photo=image_url,
+                    caption=modified_text[:1024]
+                )
+            else:
+                await bot_app.bot.send_message(
+                    chat_id=group_id,
+                    text=modified_text,
+                    disable_web_page_preview=False
+                )
+        return True
+    except Exception as e:
+        print(f"Erro ao processar oferta automática: {e}")
+        return False
