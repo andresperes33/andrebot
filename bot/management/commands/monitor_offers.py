@@ -40,16 +40,22 @@ class Command(BaseCommand):
             client = TelegramClient('session_monitor', api_id, api_hash)
 
             @client.on(events.NewMessage(chats=source_channel))
+            @client.on(events.MessageEdited(chats=source_channel))
             async def my_event_handler(event):
                 try:
                     text = event.message.text
                     photo = None
                     
+                    if not text:
+                        # Se não tiver texto, pode ser uma mensagem apenas com mídia que foi editada
+                        logger.info("Mensagem sem texto detectada, ignorando...")
+                        return
+
+                    logger.info(f"Conteúdo detectado em {source_channel}: {text[:50]}...")
+                    
                     if event.message.photo:
                         # Baixa a foto na memória para enviar via bot
                         photo = await event.message.download_media(file=bytes)
-                    
-                    logger.info(f"Nova mensagem detectada em {source_channel}")
                     
                     # Processa e envia para o grupo usando a lógica do bot
                     success = await process_offer_to_group(bot_app, text, photo)
@@ -57,7 +63,7 @@ class Command(BaseCommand):
                     if success:
                         logger.info("✅ Oferta processada e encaminhada com sucesso.")
                     else:
-                        logger.info("ℹ️ Mensagem ignorada (sem links de ofertas ou erro).")
+                        logger.info("ℹ️ Mensagem ignorada (sem links de ofertas ou já processada).")
                         
                 except Exception as e:
                     logger.error(f"Erro ao processar mensagem: {e}")
