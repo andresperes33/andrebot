@@ -31,9 +31,9 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f'Iniciando monitoramento do canal: {source_channel}'))
 
         async def main():
-            # 1. Inicializa o Bot (apenas para enviar as mensagens)
-            bot_app = ApplicationBuilder().token(bot_token).build()
-            await bot_app.initialize()
+            # 1. Inicializa o Bot apenas para envio (sem polling para evitar conflito)
+            from telegram import Bot
+            bot_client = Bot(token=bot_token)
 
             # 2. Inicializa o UserBot (Telethon)
             # O arquivo 'session_monitor' salvará sua sessão para não precisar logar sempre
@@ -58,7 +58,7 @@ class Command(BaseCommand):
                         photo = await event.message.download_media(file=bytes)
                     
                     # Processa e envia para o grupo usando a lógica do bot
-                    success = await process_offer_to_group(bot_app, text, photo)
+                    success = await process_offer_to_group(bot_client, text, photo)
                     
                     if success:
                         logger.info("✅ Oferta processada e encaminhada com sucesso.")

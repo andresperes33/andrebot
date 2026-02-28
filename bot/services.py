@@ -384,10 +384,13 @@ def extract_links(text):
 async def process_offer_to_group(bot_app, text, photo=None):
     """
     Processa uma oferta (texto + foto opcional), converte links e posta no grupo.
-    bot_app: Instância do bot do Telegram (python-telegram-bot)
+    bot_app: Instância do bot do Telegram (Bot ou Application)
     """
     if not text:
         return False
+
+    # Detecta se é o Application ou o Bot direto para saber qual objeto usar
+    bot = getattr(bot_app, 'bot', bot_app)
 
     links = extract_links(text)
     if not links:
@@ -440,7 +443,7 @@ async def process_offer_to_group(bot_app, text, photo=None):
 
     try:
         if photo:
-            await bot_app.bot.send_photo(
+            await bot.send_photo(
                 chat_id=group_id,
                 photo=photo,
                 caption=modified_text[:1024]
@@ -449,13 +452,13 @@ async def process_offer_to_group(bot_app, text, photo=None):
             # Tenta buscar info do produto se não tiver foto
             _, image_url, _ = get_product_info(original_link)
             if image_url:
-                await bot_app.bot.send_photo(
+                await bot.send_photo(
                     chat_id=group_id,
                     photo=image_url,
                     caption=modified_text[:1024]
                 )
             else:
-                await bot_app.bot.send_message(
+                await bot.send_message(
                     chat_id=group_id,
                     text=modified_text,
                     disable_web_page_preview=False
