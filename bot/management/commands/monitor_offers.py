@@ -3,54 +3,81 @@ import logging
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from telethon import TelegramClient, events
+from telethon.tl.functions.messages import GetFullChatRequest
+from telethon.tl.functions.channels import GetFullChannelRequest
 
 # Configuração de Logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Monitor zFinnY -> André Bot (Versão Diagnóstico)'
+    help = 'Monitor zFinnY -> André Bot (Alta Velocidade "Humana")'
 
     def handle(self, *args, **options):
         api_id = getattr(settings, 'TELEGRAM_API_ID', None)
         api_hash = getattr(settings, 'TELEGRAM_API_HASH', None)
-        bot_username = 'andreindica_bot' # Usando o username para garantir
+        bot_username = 'andreindica_bot'
+        
+        # ID exato do zFinnY Promos
+        target_id = -1002216599534 
 
         async def main():
-            client = TelegramClient('session_monitor', api_id, api_hash)
+            # connection_retries elevado para manter a conexão ativa
+            client = TelegramClient('session_monitor', api_id, api_hash, connection_retries=None)
             await client.start()
             
-            logger.info("🚀 MONITOR INICIADO! Escutando todas as mensagens da conta...")
+            # Cache simples para não repetir postagens
+            processed_ids = set()
 
-            # Handler universal: escuta TUDO e filtra por nome
-            @client.on(events.NewMessage)
-            @client.on(events.MessageEdited)
-            async def universal_handler(event):
+            logger.info(f"🚀 MONITOR DE ALTA VELOCIDADE ATIVO!")
+            logger.info(f"🎯 Focado no zFinnY (ID: {target_id})")
+
+            @client.on(events.NewMessage(chats=target_id))
+            @client.on(events.MessageEdited(chats=target_id))
+            async def event_handler(event):
                 try:
-                    chat = await event.get_chat()
-                    chat_name = getattr(chat, 'title', '') or getattr(chat, 'username', '') or ''
+                    msg_id = event.message.id
                     
-                    # Se a mensagem vier do zFinnY
-                    if "zFinnY" in chat_name:
-                        msg_text = event.message.message or ""
-                        logger.info(f"🔥 MENSAGEM CAPTURADA de '{chat_name}': {msg_text[:50]}...")
-                        
-                        # Encaminha para o André Bot
-                        await client.forward_messages(bot_username, event.message)
-                        logger.info(f"✅ Encaminhado para @{bot_username}")
+                    if msg_id in processed_ids:
+                        return
+
+                    msg_text = event.message.message or ""
+                    
+                    # Log imediato assim que detecta
+                    logger.info(f"⚡ DETECTADO AGORA: {msg_text[:30]}...")
+                    
+                    # Adiciona ao cache
+                    processed_ids.add(msg_id)
+                    if len(processed_ids) > 200:
+                        processed_ids.clear()
+                        processed_ids.add(msg_id)
+
+                    # Encaminha na hora
+                    await client.forward_messages(bot_username, event.message)
+                    logger.info(f"✅ Encaminhado instantaneamente para @{bot_username}")
+                    
                 except Exception as e:
-                    pass # Evita travar o monitor por erros bobos
+                    logger.error(f"Erro ao encaminhar: {e}")
 
-            # Sinal de vida a cada 60 segundos nos logs
-            async def heatbeat():
+            # Esta função simula um "humano" abrindo e olhando o grupo a cada 20 segundos
+            # Isso força o Telegram a mandar as atualizações desse chat com prioridade máxima
+            async def force_human_view():
                 while True:
-                    logger.info("💓 Monitor está vivo e escutando...")
-                    await asyncio.sleep(60)
+                    try:
+                        # "Olha" para o canal (simula abrir o chat)
+                        await client(GetFullChannelRequest(channel=target_id))
+                        # Mantém a conexão TCP "quente"
+                        await client.get_me()
+                        logger.info("👀 Bot 'olhando' para o grupo zFinnY... (Conexão 100% quente)")
+                    except Exception as e:
+                        logger.warning(f"Aviso de conexão: {e}")
+                    
+                    await asyncio.sleep(20) # Repete a cada 20 segundos
 
-            # Roda o heartbeat e o monitor juntos
+            # Roda o monitor e a simulação humana juntos
             await asyncio.gather(
                 client.run_until_disconnected(),
-                heatbeat()
+                force_human_view()
             )
 
         try:
@@ -58,4 +85,4 @@ class Command(BaseCommand):
         except KeyboardInterrupt:
             logger.warning('Monitor parado.')
         except Exception as e:
-            logger.error(f"Erro fatal no monitor: {e}")
+            logger.error(f"Erro fatal: {e}")
