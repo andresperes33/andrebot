@@ -3,7 +3,6 @@ import logging
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from telethon import TelegramClient, events
-from telethon.tl.functions.messages import GetFullChatRequest
 from telethon.tl.functions.channels import GetFullChannelRequest
 
 # Configuração de Logs
@@ -11,73 +10,78 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Monitor zFinnY -> André Bot (Alta Velocidade "Humana")'
+    help = 'Monitor zFinnY -> André Bot (Radar Total Alta Velocidade)'
 
     def handle(self, *args, **options):
         api_id = getattr(settings, 'TELEGRAM_API_ID', None)
         api_hash = getattr(settings, 'TELEGRAM_API_HASH', None)
         bot_username = 'andreindica_bot'
-        
-        # ID exato do zFinnY Promos
-        target_id = -1002216599534 
 
         async def main():
-            # connection_retries elevado para manter a conexão ativa
+            # connection_retries=None mantém tentando reconectar sempre
             client = TelegramClient('session_monitor', api_id, api_hash, connection_retries=None)
             await client.start()
             
-            # Cache simples para não repetir postagens
+            logger.info("🔍 Procurando canal zFinnY nos seus chats...")
+            target_id = None
+            async for dialog in client.iter_dialogs():
+                if "zFinnY" in dialog.name:
+                    target_id = dialog.id
+                    logger.info(f"✅ CANAL ALVO IDENTIFICADO: {dialog.name} (ID: {target_id})")
+                    break
+
+            if not target_id:
+                logger.warning("⚠️ Não achei canal com nome 'zFinnY'. Usando ID padrão.")
+                target_id = -1002216599534
+
+            # Cache para evitar duplicidade
             processed_ids = set()
 
-            logger.info(f"🚀 MONITOR DE ALTA VELOCIDADE ATIVO!")
-            logger.info(f"🎯 Focado no zFinnY (ID: {target_id})")
-
-            @client.on(events.NewMessage(chats=target_id))
-            @client.on(events.MessageEdited(chats=target_id))
-            async def event_handler(event):
+            # Listener Universal (escuta tudo e filtramos na mão para mais velocidade)
+            @client.on(events.NewMessage)
+            @client.on(events.MessageEdited)
+            async def universal_handler(event):
                 try:
-                    msg_id = event.message.id
+                    # Se não for do canal que queremos, ignora na hora
+                    if event.chat_id != target_id:
+                        return
                     
+                    msg_id = event.message.id
                     if msg_id in processed_ids:
                         return
 
                     msg_text = event.message.message or ""
-                    
-                    # Log imediato assim que detecta
-                    logger.info(f"⚡ DETECTADO AGORA: {msg_text[:30]}...")
-                    
-                    # Adiciona ao cache
+                    logger.info(f"⚡ CAPTURADO DO zFinnY: {msg_text[:30]}...")
+
+                    # Marca como enviado
                     processed_ids.add(msg_id)
                     if len(processed_ids) > 200:
                         processed_ids.clear()
                         processed_ids.add(msg_id)
 
-                    # Encaminha na hora
+                    # Encaminha o objeto da mensagem direto (é instantâneo)
                     await client.forward_messages(bot_username, event.message)
-                    logger.info(f"✅ Encaminhado instantaneamente para @{bot_username}")
-                    
+                    logger.info("✅ Encaminhado para o Bot!")
                 except Exception as e:
-                    logger.error(f"Erro ao encaminhar: {e}")
+                    logger.error(f"Erro no processamento: {e}")
 
-            # Esta função simula um "humano" abrindo e olhando o grupo a cada 20 segundos
-            # Isso força o Telegram a mandar as atualizações desse chat com prioridade máxima
-            async def force_human_view():
+            # Função "Pé no Acelerador"
+            # Mantém a conexão com o Telegram 'pregada' na rede
+            async def keep_alive():
                 while True:
                     try:
-                        # "Olha" para o canal (simula abrir o chat)
+                        # Pede o status do canal (força o Telegram a mandar atualizações)
                         await client(GetFullChannelRequest(channel=target_id))
-                        # Mantém a conexão TCP "quente"
+                        # Ping na conta
                         await client.get_me()
-                        logger.info("👀 Bot 'olhando' para o grupo zFinnY... (Conexão 100% quente)")
-                    except Exception as e:
-                        logger.warning(f"Aviso de conexão: {e}")
-                    
-                    await asyncio.sleep(20) # Repete a cada 20 segundos
+                    except Exception:
+                        pass
+                    await asyncio.sleep(15) # A cada 15 segundos ele "cutuca" o Telegram
 
-            # Roda o monitor e a simulação humana juntos
+            logger.info("🚀 Radar de Alta Velocidade ATIVO e monitorando...")
             await asyncio.gather(
                 client.run_until_disconnected(),
-                force_human_view()
+                keep_alive()
             )
 
         try:
