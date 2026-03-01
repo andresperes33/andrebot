@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Monitor zFinnY -> André Bot (Radar Total Alta Velocidade)'
+    help = 'Monitor zFinnY -> André Bot (Modo Autônomo Independente)'
 
     def handle(self, *args, **options):
         api_id = getattr(settings, 'TELEGRAM_API_ID', None)
@@ -18,75 +18,78 @@ class Command(BaseCommand):
         bot_username = 'andreindica_bot'
 
         async def main():
-            # connection_retries=None mantém tentando reconectar sempre
+            # Inicia o cliente
             client = TelegramClient('session_monitor', api_id, api_hash, connection_retries=None)
             await client.start()
             
-            logger.info("🔍 Procurando canal zFinnY nos seus chats...")
+            logger.info("🔍 Localizando ID do canal zFinnY...")
             target_id = None
             async for dialog in client.iter_dialogs():
                 if "zFinnY" in dialog.name:
                     target_id = dialog.id
-                    logger.info(f"✅ CANAL ALVO IDENTIFICADO: {dialog.name} (ID: {target_id})")
+                    logger.info(f"✅ CANAL ENCONTRADO: {dialog.name} (ID: {target_id})")
                     break
 
             if not target_id:
-                logger.warning("⚠️ Não achei canal com nome 'zFinnY'. Usando ID padrão.")
                 target_id = -1002216599534
+                logger.warning(f"⚠️ 'zFinnY' não achado na lista. Usando ID padrão: {target_id}")
 
-            # Cache para evitar duplicidade
+            # Cache para evitar duplicados
             processed_ids = set()
 
-            # Listener Universal (escuta tudo e filtramos na mão para mais velocidade)
-            @client.on(events.NewMessage)
-            @client.on(events.MessageEdited)
-            async def universal_handler(event):
-                try:
-                    # Se não for do canal que queremos, ignora na hora
-                    if event.chat_id != target_id:
-                        return
-                    
-                    msg_id = event.message.id
-                    if msg_id in processed_ids:
-                        return
-
-                    msg_text = event.message.message or ""
-                    logger.info(f"⚡ CAPTURADO DO zFinnY: {msg_text[:30]}...")
-
-                    # Marca como enviado
+            async def process_message(message):
+                """Função central para processar e encaminhar se for novo"""
+                msg_id = message.id
+                if msg_id in processed_ids:
+                    return False
+                
+                # Marca como processado
+                processed_ids.add(msg_id)
+                if len(processed_ids) > 500:
+                    processed_ids.clear()
                     processed_ids.add(msg_id)
-                    if len(processed_ids) > 200:
-                        processed_ids.clear()
-                        processed_ids.add(msg_id)
 
-                    # Encaminha o objeto da mensagem direto (é instantâneo)
-                    await client.forward_messages(bot_username, event.message)
-                    logger.info("✅ Encaminhado para o Bot!")
-                except Exception as e:
-                    logger.error(f"Erro no processamento: {e}")
+                msg_text = message.message or "Mídia"
+                logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:40]}...")
+                
+                # Encaminha para o André Bot
+                await client.forward_messages(bot_username, message)
+                logger.info("✅ Encaminhado com sucesso!")
+                return True
 
-            # Função "Pé no Acelerador"
-            # Mantém a conexão com o Telegram 'pregada' na rede
-            async def keep_alive():
+            # 1. LISTENER (Instantâneo quando o Telegram manda o 'push')
+            @client.on(events.NewMessage(chats=target_id))
+            @client.on(events.MessageEdited(chats=target_id))
+            async def handler(event):
+                await process_message(event.message)
+
+            # 2. POLLING (Fallback Manual - Funciona mesmo com Telegram do PC desligado)
+            # Ele checa as últimas 3 mensagens a cada 30 segundos
+            async def manual_polling():
                 while True:
                     try:
-                        # Pede o status do canal (força o Telegram a mandar atualizações)
-                        await client(GetFullChannelRequest(channel=target_id))
-                        # Ping na conta
+                        # Pede as últimas mensagens manualmente pro servidor
+                        messages = await client.get_messages(target_id, limit=3)
+                        for msg in reversed(messages): # Pega da mais antiga pra mais nova
+                            await process_message(msg)
+                        
+                        # "Cutuca" o servidor para manter a conexão ativa
                         await client.get_me()
-                    except Exception:
-                        pass
-                    await asyncio.sleep(15) # A cada 15 segundos ele "cutuca" o Telegram
+                        logger.info("💓 Check-up automático realizado (Sistema Online/PC Independente)")
+                    except Exception as e:
+                        logger.error(f"Erro no polling: {e}")
+                    
+                    await asyncio.sleep(30)
 
-            logger.info("🚀 Radar de Alta Velocidade ATIVO e monitorando...")
+            logger.info("🚀 MONITOR AUTÔNOMO INICIADO! (Pode desligar o PC agora)")
             await asyncio.gather(
                 client.run_until_disconnected(),
-                keep_alive()
+                manual_polling()
             )
 
         try:
             asyncio.run(main())
         except KeyboardInterrupt:
-            logger.warning('Monitor parado.')
+            logger.warning('Monitor parado pelo usuário.')
         except Exception as e:
-            logger.error(f"Erro fatal: {e}")
+            logger.error(f"Erro Crítico: {e}")
