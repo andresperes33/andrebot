@@ -163,13 +163,42 @@ def convert_to_affiliate_link(url, final_url=None):
         return convert_aliexpress_link(url)
     elif 'amazon.com.br' in url or 'amzn.to' in url:
         return convert_amazon_link(url)
-    elif 'mercadolivre.com' in url or 'mlstatic.com' in url or 'mercadolivre.com.br' in url:
+    elif 'mercadolivre.com' in url or 'meli.la' in url or 'mlstatic.com' in url or 'mercadolibre.com' in url:
         return convert_mercado_livre_link(url)
     elif 'kabum.com.br' in url or 'tidd.ly' in url:
         return convert_awin_link(url, merchant_id='17729') # Kabum MID padrao
     elif 'magazineluiza.com.br' in url or 'magalu.com' in url or 'mgl.io' in url or 'divulgador.magalu.com' in url:
         return convert_magalu_link(url)
     return None
+
+
+def convert_mercado_livre_link(url):
+    """
+    Gera link de afiliado do Mercado Livre adicionando matt_tool e matt_word.
+    Expande links curtos (meli.la) e limpa parâmetros desnecessários.
+    """
+    tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'codepysystems')
+    matt_tool = getattr(settings, 'MERCADO_LIVRE_MATT_TOOL', '13013217')
+
+    try:
+        # 1. Expande links curtos (meli.la, mercadolivre.com/s/...)
+        if 'meli.la' in url or ('/s/' in url and 'mercadolivre' in url):
+            hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            resp = requests.get(url, allow_redirects=True, timeout=10, headers=hdrs)
+            url = resp.url
+            print(f"ML: Link expandido para: {url}")
+
+        # 2. Remove parâmetros de rastreamento de terceiros
+        clean_url = url.split('?')[0].split('#')[0]
+
+        # 3. Adiciona parâmetros de afiliado
+        affiliate_url = f"{clean_url}?matt_tool={matt_tool}&matt_word={tag}"
+        print(f"ML Afiliado: {affiliate_url}")
+        return affiliate_url
+
+    except Exception as e:
+        print(f"Erro ML Afiliado: {e}")
+        return None
 
 
 def convert_awin_link(url, merchant_id='17729'):
