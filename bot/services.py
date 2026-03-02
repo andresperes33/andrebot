@@ -2,6 +2,7 @@ import re
 import time
 import hashlib
 import json
+import urllib.parse
 import requests
 from django.conf import settings
 
@@ -174,30 +175,43 @@ def convert_to_affiliate_link(url, final_url=None):
 
 def convert_mercado_livre_link(url):
     """
-    Gera link de afiliado do Mercado Livre adicionando matt_tool e matt_word.
-    Expande links curtos (meli.la) e limpa parâmetros de terceiros.
+    Gera link de afiliado do Mercado Livre.
+    Expande o link curto (meli.la), mantém o ref token original (obrigatório para
+    a página funcionar) e substitui apenas matt_tool e matt_word pela nossa tag.
     """
     tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'codepysystems')
     matt_tool = getattr(settings, 'MERCADO_LIVRE_MATT_TOOL', '13013217')
     hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
     try:
-        # 1. Sempre expande para pegar a URL real (funciona para meli.la e outros curtos)
-        resp = requests.get(url, allow_redirects=True, timeout=12, headers=hdrs)
-        expanded_url = resp.url
-        print(f"ML: Expandido para: {expanded_url[:100]}")
+        # 1. Expande o link e captura o redirect com ref token
+        r = requests.get(url, allow_redirects=True, timeout=12, headers=hdrs)
 
-        # 2. Remove parâmetros de terceiros (limpa o link)
-        clean_url = expanded_url.split('?')[0].split('#')[0]
+        # Procura no histórico de redirects a URL com o ref (vinda do ML)
+        ml_url = None
+        for resp in r.history:
+            loc = resp.headers.get('Location', '')
+            if 'mercadolivre.com.br' in loc and 'ref=' in loc:
+                ml_url = loc
+                break
 
-        # 3. Adiciona nossos parâmetros de afiliado
-        affiliate_url = f"{clean_url}?matt_tool={matt_tool}&matt_word={tag}"
-        print(f"ML Afiliado: {affiliate_url}")
+        if not ml_url:
+            ml_url = r.url
+
+        # 2. Substitui APENAS matt_tool e matt_word — mantém ref intacto
+        parsed = urllib.parse.urlparse(ml_url)
+        params = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
+        params['matt_tool'] = [matt_tool]
+        params['matt_word'] = [tag]
+        params.pop('forceInApp', None)
+
+        new_query = urllib.parse.urlencode({k: v[0] for k, v in params.items()})
+        affiliate_url = urllib.parse.urlunparse(parsed._replace(query=new_query))
+        print(f"ML Afiliado: {affiliate_url[:100]}...")
         return affiliate_url
 
     except Exception as e:
-        # Fallback: tenta limpar e converter a URL original
-        print(f"ML: Erro na expansão ({e}), usando URL original")
+        print(f"ML: Erro na conversão ({e}), fallback para URL original")
         try:
             clean_url = url.split('?')[0].split('#')[0]
             return f"{clean_url}?matt_tool={matt_tool}&matt_word={tag}"
@@ -322,50 +336,6 @@ def convert_amazon_link(url):
     return f"{clean_url}?tag={tag}"
 
 
-def convert_mercado_livre_link(url):
-    """
-    Gera link de afiliado oficial do Mercado Livre via API /affiliates/links.
-    Usa Access Token OAuth2 e a Tag configurados no .env.
-    """
-    access_token = getattr(settings, 'MERCADO_LIVRE_ACCESS_TOKEN', None)
-    tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'pean3412407')
-
-    if not access_token or not tag:
-        print("ML: access_token ou tag nao configurados.")
-        return None
-
-    # Expande links curtos (mercadolivre.com/sec/...) antes de enviar para a API
-    try:
-        if '/sec/' in url or 'mercadolivre.com/s/' in url:
-            resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=8, allow_redirects=True)
-            url = resp.url.split('?')[0]
-            print(f"ML: URL expandida para: {url}")
-    except Exception as e:
-        print(f"ML: Erro ao expandir URL: {e}")
-
-    endpoint = "https://api.mercadolibre.com/affiliates/links"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "url": url,
-        "tag_label": tag
-    }
-
-    try:
-        response = requests.post(endpoint, headers=headers, json=payload, timeout=10)
-        data = response.json()
-        print(f"ML API Response: {data}")
-        # Tenta pegar o link em diferentes campos possíveis da resposta
-        affiliate_url = data.get("link") or data.get("short_url") or data.get("url")
-        if affiliate_url:
-            return affiliate_url
-        print(f"ML: API nao retornou link. Resposta completa: {data}")
-        return None
-    except Exception as e:
-        print(f"ML API Erro: {e}")
-        return None
 
 
 def convert_shopee_link(url):
