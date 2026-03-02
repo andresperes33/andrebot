@@ -405,11 +405,9 @@ def convert_aliexpress_link(url):
 def send_whatsapp_message(text, image_path=None):
     """
     Envia mensagem para o WhatsApp via Evolution API.
-    Suporta envio de imagem local (binário base64) ou URL.
+    Utiliza multipart/form-data para garantir o envio correto da imagem com legenda.
     """
-    import base64
     import os
-    import mimetypes
 
     url_base = getattr(settings, 'EVOLUTION_API_URL', '').strip('/')
     instance = getattr(settings, 'EVOLUTION_API_INSTANCE', '')
@@ -421,31 +419,28 @@ def send_whatsapp_message(text, image_path=None):
         return False
 
     headers = {
-        "Content-Type": "application/json",
         "apikey": token
     }
 
     try:
         if image_path and os.path.exists(image_path):
-            # Envia imagem local como Base64 (O que o Telegram baixou)
+            # Envia como arquivo REAL (Multipart/form-data) - Muito mais estável!
             endpoint = f"{url_base}/message/sendMedia/{instance}"
-            with open(image_path, "rb") as image_file:
-                base64_image = base64.b64encode(image_file.read()).decode('utf-8')
             
-            mime_type, _ = mimetypes.guess_type(image_path)
-            if not mime_type:
-                mime_type = "image/jpeg"
-
-            payload = {
-                "number": jid,
-                "mediaMessage": {
+            with open(image_path, "rb") as img_file:
+                files = {
+                    "file": (os.path.basename(image_path), img_file, "image/jpeg")
+                }
+                data = {
+                    "number": jid,
                     "mediatype": "image",
                     "caption": text,
-                    "media": f"data:{mime_type};base64,{base64_image}"
+                    "delay": "1200"
                 }
-            }
+                response = requests.post(endpoint, headers=headers, data=data, files=files, timeout=40)
+        
         elif image_path and image_path.startswith('http'):
-            # Envia via URL se for uma URL
+            # Envia via URL (JSON)
             endpoint = f"{url_base}/message/sendMedia/{instance}"
             payload = {
                 "number": jid,
@@ -455,6 +450,7 @@ def send_whatsapp_message(text, image_path=None):
                     "media": image_path
                 }
             }
+            response = requests.post(endpoint, headers=(headers := {"apikey": token, "Content-Type": "application/json"}), json=payload, timeout=30)
         else:
             # Envia apenas texto
             endpoint = f"{url_base}/message/sendText/{instance}"
@@ -462,12 +458,12 @@ def send_whatsapp_message(text, image_path=None):
                 "number": jid,
                 "text": text
             }
+            response = requests.post(endpoint, headers=(headers := {"apikey": token, "Content-Type": "application/json"}), json=payload, timeout=30)
 
-        response = requests.post(endpoint, headers=headers, json=payload, timeout=30)
-        print(f"WhatsApp Response: {response.status_code}")
+        print(f"WhatsApp Response Status: {response.status_code}")
         return response.status_code in [200, 201]
     except Exception as e:
-        print(f"Erro ao enviar para WhatsApp: {e}")
+        print(f"Erro crítico no WhatsApp: {e}")
         return False
 
 
