@@ -25,9 +25,15 @@ def get_product_info(url):
         # ── Scraping Geral (Meta tags e Preço) ────────────────────────────
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-            "Accept-Language": "pt-BR,pt;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
         }
         try:
+            # Se for link curto da Amazon, aproveita para expandir aqui e pegar o nome/imagem real
+            if 'amzn.to' in url:
+                resp_expand = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
+                url = resp_expand.url
+
             # Segue redirecionamentos para chegar na página real do produto
             resp = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
             html = resp.text
@@ -36,8 +42,16 @@ def get_product_info(url):
             # Nome via meta tag (og:title ou twitter:title)
             if not name:
                 meta_name = re.search(r'<meta[^>]+property=["\'](?:og:title|twitter:title)["\'][^>]+content=["\'](.*?)["\']', html)
+                if not meta_name:
+                    meta_name = re.search(r'<meta[^>]+name=["\'](?:og:title|twitter:title|title)["\'][^>]+content=["\'](.*?)["\']', html)
+                
                 if meta_name:
                     name = meta_name.group(1).split('|')[0].strip()
+                else:
+                    # Fallback para o <title> da página
+                    title_match = re.search(r'<title>(.*?)</title>', html)
+                    if title_match:
+                        name = title_match.group(1).split(':')[0].strip()
 
             # Preço Shopee (centavos)
             if 'shopee' in final_url:
@@ -93,28 +107,39 @@ def get_product_info(url):
                 r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\'](https?://[^"\']+)["\']',
                 r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\'](https?://[^"\']+)["\']',
                 r'<link[^>]+rel=["\']image_src["\'][^>]+href=["\'](https?://[^"\']+)["\']',
-                r'["\']image["\']:["\'](https?://[^"\']+)["\']'
+                r'["\']image["\']:["\'](https?://[^"\']+)["\']',
+                r'["\']landingImage["\']:["\'](https?://[^"\']+)["\']', # Amazon especifico
+                r'id=["\']landingImage["\'][^>]+src=["\'](https?://[^"\']+)["\']', # Amazon seletor
             ]
             
             for pattern in img_patterns:
                 img_match = re.search(pattern, html)
                 if img_match:
-                    image_url = img_match.group(1).strip()
+                    found_img = img_match.group(1).strip()
+                    # Evita ícones de app ou logos genéricos se possível
+                    if 'favicon' in found_img or 'logo' in found_img and image_url:
+                        continue
+                    image_url = found_img
                     # Limpeza para AliExpress
                     if 'aliexpress' in final_url and '_' in image_url:
                         image_url = image_url.split('_')[0]
-                        if not image_url.endswith(('.jpg', '.png', '.webp')):
-                            image_url += '.jpg'
+                    
                     # Limpeza para Mercado Livre (Alta Resolução)
                     if 'mercadolivre' in final_url and '-O.jpg' in image_url:
                         image_url = image_url.replace('-O.jpg', '-F.jpg')
-                    # Limpeza para Amazon (Pega imagem maior)
+                    
+                    # Limpeza para Amazon (Pegar imagem original sem redimensionamento)
                     if 'amazon' in final_url and '._AC_' in image_url:
-                        image_url = re.sub(r'\._AC_.*_\.', '.', image_url)
-                    # Limpeza para Kabum (Geralmente ja vem em boa resolucao)
+                        image_url = re.sub(r'\._AC_.*?\.', '.', image_url)
+                    
+                    # Limpeza para Kabum (Geralmente já vem em boa resolução)
                     if 'kabum.com.br' in final_url and '?' in image_url:
                         image_url = image_url.split('?')[0]
-                    break
+                    
+                    if image_url and not any(ext in image_url.lower() for ext in ['.jpg', '.png', '.webp', '.jpeg']):
+                        image_url += '.jpg'
+                    
+                    break # Encontrou uma boa, para.
 
         except Exception as page_err:
             print(f"Aviso na página: {page_err}")
