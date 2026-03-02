@@ -65,15 +65,21 @@ class Command(BaseCommand):
 
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
-                # ─── Converte links ──────────────────────────────────────────
+                # ─── Converte links e processa texto ─────────────────────────
                 from bot.services import convert_to_affiliate_link, send_whatsapp_message
 
-                personal_link = getattr(settings, 'PERSONAL_CHANNEL_LINK', '')
                 channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
 
                 modified_text = msg_text
+                
+                # 1. Substitui nomes de canais
                 modified_text = re.sub(r'(?i)zFinnY|CaCau|André Indica|Tecnan', channel_name, modified_text)
 
+                # 2. Remove o rodapé antigo do grupo (ícone de sacola e links externos de Telegram)
+                modified_text = re.sub(r'🛍️.*?\nhttps?://t\.me/\S+', '', modified_text)
+                modified_text = re.sub(r'https?://t\.me/andreindica\S*', '', modified_text)
+
+                # 3. Converte links de produtos
                 links = re.findall(r'(https?://\S+)', modified_text)
                 converted_any = False
                 for link in links:
@@ -88,9 +94,7 @@ class Command(BaseCommand):
                     is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link
 
                     if is_telegram or is_tecnan:
-                        if personal_link and personal_link not in link:
-                            modified_text = modified_text.replace(link, personal_link)
-                        converted_any = True
+                        modified_text = modified_text.replace(link, '') # Remove links de outros telegrams
                         continue
 
                     if is_awin:
@@ -106,6 +110,10 @@ class Command(BaseCommand):
                 if not converted_any:
                     logger.info("ℹ️ Nenhum link convertível. Ignorando.")
                     return False
+
+                # 4. Adiciona o novo rodapé do site
+                modified_text = modified_text.strip()
+                modified_text += "\n\n✨ Conheça mais sobre meu trabalho:\nwww.andreindica.com.br"
 
                 # ─── Baixa foto ──────────────────────────────────────────────
                 photo_path = None
@@ -160,12 +168,10 @@ class Command(BaseCommand):
                     save_last_id(msg.id)
 
             # ─── POLLING INTELIGENTE (Para quando PC está desligado) ─────────
-            # Usa last_id persistido: nunca reprocessa mensagens já enviadas
             async def smart_polling():
                 while True:
                     try:
                         last_id = load_last_id()
-                        # Busca apenas mensagens NOVAS (após o último ID processado)
                         messages = await client.get_messages(target_id, limit=10, min_id=last_id)
                         if messages:
                             for msg in reversed(list(messages)):
@@ -180,7 +186,7 @@ class Command(BaseCommand):
                         logger.error(f"Erro no polling: {e}")
                     await asyncio.sleep(30)
 
-            logger.info("🚀 MONITOR AUTÔNOMO INICIADO! (PC pode ser desligado)")
+            logger.info("🚀 MONITOR AUTÔNOMO INICIADO! (Rodapé Atualizado)")
             await asyncio.gather(
                 client.run_until_disconnected(),
                 smart_polling()
