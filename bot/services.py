@@ -479,6 +479,22 @@ async def process_offer_to_group(bot_app, text, photo=None):
                 converted_any = True
             continue
 
+        is_awin = 'awin1.com' in link or 'tidd.ly' in link
+        
+        if is_awin:
+            # Se já for link awin, consideramos como convertido para não bloquear a postagem
+            converted_any = True
+            original_link = link
+            continue
+
+        is_awin = 'awin1.com' in link or 'tidd.ly' in link
+        
+        if is_awin:
+            # Se já for link awin, consideramos como válido para prosseguir para o Zap/Grupo
+            converted_any = True
+            original_link = link
+            continue
+
         if not any([is_shopee, is_aliexpress, is_ml, is_amazon, is_kabum, is_magalu]):
             continue
 
