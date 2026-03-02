@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import re
+import json
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from telethon import TelegramClient, events
@@ -9,9 +10,30 @@ from telethon import TelegramClient, events
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Arquivo para persistir o último ID processado (evita duplicatas mesmo após reiniciar)
+LAST_ID_FILE = os.path.join(os.getcwd(), 'last_processed_id.json')
+
+
+def load_last_id():
+    try:
+        if os.path.exists(LAST_ID_FILE):
+            with open(LAST_ID_FILE, 'r') as f:
+                return json.load(f).get('last_id', 0)
+    except Exception:
+        pass
+    return 0
+
+
+def save_last_id(msg_id):
+    try:
+        with open(LAST_ID_FILE, 'w') as f:
+            json.dump({'last_id': msg_id}, f)
+    except Exception:
+        pass
+
 
 class Command(BaseCommand):
-    help = 'Monitor zFinnY -> Telegram + WhatsApp (Modo Autônomo)'
+    help = 'Monitor zFinnY -> Telegram + WhatsApp (Autônomo, PC pode estar desligado)'
 
     def handle(self, *args, **options):
         api_id = getattr(settings, 'TELEGRAM_API_ID', None)
@@ -34,20 +56,8 @@ class Command(BaseCommand):
                 target_id = -1002216599534
                 logger.warning(f"⚠️ Usando ID padrão: {target_id}")
 
-            # Cache para evitar duplicados
-            processed_ids = set()
-
             async def process_message(message):
-                """Processa a mensagem: converte links, envia para Telegram + WhatsApp"""
-                msg_id = message.id
-                if msg_id in processed_ids:
-                    return False
-
-                processed_ids.add(msg_id)
-                if len(processed_ids) > 500:
-                    processed_ids.clear()
-                    processed_ids.add(msg_id)
-
+                """Converte links e envia para Telegram + WhatsApp"""
                 msg_text = message.message or ""
 
                 if not msg_text and not message.photo:
@@ -55,7 +65,7 @@ class Command(BaseCommand):
 
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
-                # ─── Converte links e processa texto ─────────────────────────
+                # ─── Converte links ──────────────────────────────────────────
                 from bot.services import convert_to_affiliate_link, send_whatsapp_message
 
                 personal_link = getattr(settings, 'PERSONAL_CHANNEL_LINK', '')
@@ -97,7 +107,7 @@ class Command(BaseCommand):
                     logger.info("ℹ️ Nenhum link convertível. Ignorando.")
                     return False
 
-                # ─── Baixa foto do Telegram ───────────────────────────────────
+                # ─── Baixa foto ──────────────────────────────────────────────
                 photo_path = None
                 if message.photo:
                     temp_dir = os.path.join(os.getcwd(), 'tmp_photos')
@@ -107,7 +117,7 @@ class Command(BaseCommand):
                         photo_path = os.path.abspath(photo_path)
                         logger.info(f"📸 Foto baixada: {photo_path}")
 
-                # ─── Envia para o Telegram ──────────────────────────────────
+                # ─── Envia para o Telegram ───────────────────────────────────
                 try:
                     if photo_path and os.path.exists(photo_path):
                         await client.send_file(group_id, photo_path, caption=modified_text[:1024])
@@ -125,7 +135,7 @@ class Command(BaseCommand):
                 except Exception as wa_err:
                     logger.error(f"❌ Erro WhatsApp: {wa_err}")
 
-                # ─── Limpa foto do disco após 90s ────────────────────────────
+                # ─── Limpa foto após 90s ─────────────────────────────────────
                 if photo_path:
                     async def cleanup(path):
                         await asyncio.sleep(90)
@@ -138,25 +148,42 @@ class Command(BaseCommand):
 
                 return True
 
-            # Listener instantâneo (SEM polling para evitar duplicatas)
+            # ─── LISTENER (Tempo Real) ───────────────────────────────────────
             @client.on(events.NewMessage(chats=target_id))
             async def handler(event):
-                await process_message(event.message)
+                msg = event.message
+                last_id = load_last_id()
+                if msg.id <= last_id:
+                    return
+                success = await process_message(msg)
+                if success:
+                    save_last_id(msg.id)
 
-            # Heartbeat apenas para manter a conexão viva (não reprocessa mensagens)
-            async def heartbeat():
+            # ─── POLLING INTELIGENTE (Para quando PC está desligado) ─────────
+            # Usa last_id persistido: nunca reprocessa mensagens já enviadas
+            async def smart_polling():
                 while True:
                     try:
-                        await client.get_me()
+                        last_id = load_last_id()
+                        # Busca apenas mensagens NOVAS (após o último ID processado)
+                        messages = await client.get_messages(target_id, limit=10, min_id=last_id)
+                        if messages:
+                            for msg in reversed(list(messages)):
+                                if msg.id > last_id:
+                                    success = await process_message(msg)
+                                    if success:
+                                        save_last_id(msg.id)
+                                        last_id = msg.id
+                        await client.get_me()  # Mantém conexão viva
                         logger.info("💓 Check-up automático em 1 canais realizado")
                     except Exception as e:
-                        logger.error(f"Erro no heartbeat: {e}")
-                    await asyncio.sleep(60)
+                        logger.error(f"Erro no polling: {e}")
+                    await asyncio.sleep(30)
 
-            logger.info("🚀 MONITOR AUTÔNOMO INICIADO!")
+            logger.info("🚀 MONITOR AUTÔNOMO INICIADO! (PC pode ser desligado)")
             await asyncio.gather(
                 client.run_until_disconnected(),
-                heartbeat()
+                smart_polling()
             )
 
         try:
