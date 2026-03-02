@@ -425,7 +425,7 @@ def send_whatsapp_message(text, image_url=None):
                 }
             }
 
-        response = requests.post(endpoint, (headers := headers), json=payload, timeout=20)
+        response = requests.post(endpoint, headers=headers, json=payload, timeout=20)
         print(f"WhatsApp Response: {response.status_code} - {response.text}")
         return response.status_code in [200, 201]
     except Exception as e:
