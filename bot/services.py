@@ -175,30 +175,34 @@ def convert_to_affiliate_link(url, final_url=None):
 def convert_mercado_livre_link(url):
     """
     Gera link de afiliado do Mercado Livre adicionando matt_tool e matt_word.
-    Expande links curtos (meli.la) e limpa parâmetros desnecessários.
+    Expande links curtos (meli.la) e limpa parâmetros de terceiros.
     """
     tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'codepysystems')
     matt_tool = getattr(settings, 'MERCADO_LIVRE_MATT_TOOL', '13013217')
+    hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
     try:
-        # 1. Expande links curtos (meli.la, mercadolivre.com/s/...)
-        if 'meli.la' in url or ('/s/' in url and 'mercadolivre' in url):
-            hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            resp = requests.get(url, allow_redirects=True, timeout=10, headers=hdrs)
-            url = resp.url
-            print(f"ML: Link expandido para: {url}")
+        # 1. Sempre expande para pegar a URL real (funciona para meli.la e outros curtos)
+        resp = requests.get(url, allow_redirects=True, timeout=12, headers=hdrs)
+        expanded_url = resp.url
+        print(f"ML: Expandido para: {expanded_url[:100]}")
 
-        # 2. Remove parâmetros de rastreamento de terceiros
-        clean_url = url.split('?')[0].split('#')[0]
+        # 2. Remove parâmetros de terceiros (limpa o link)
+        clean_url = expanded_url.split('?')[0].split('#')[0]
 
-        # 3. Adiciona parâmetros de afiliado
+        # 3. Adiciona nossos parâmetros de afiliado
         affiliate_url = f"{clean_url}?matt_tool={matt_tool}&matt_word={tag}"
         print(f"ML Afiliado: {affiliate_url}")
         return affiliate_url
 
     except Exception as e:
-        print(f"Erro ML Afiliado: {e}")
-        return None
+        # Fallback: tenta limpar e converter a URL original
+        print(f"ML: Erro na expansão ({e}), usando URL original")
+        try:
+            clean_url = url.split('?')[0].split('#')[0]
+            return f"{clean_url}?matt_tool={matt_tool}&matt_word={tag}"
+        except Exception:
+            return None
 
 
 def convert_awin_link(url, merchant_id='17729'):
