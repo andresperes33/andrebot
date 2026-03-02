@@ -75,9 +75,12 @@ class Command(BaseCommand):
                 # 1. Substitui nomes de canais
                 modified_text = re.sub(r'(?i)zFinnY|CaCau|André Indica|Tecnan', channel_name, modified_text)
 
-                # 2. Remove o rodapé antigo do grupo (ícone de sacola e links externos de Telegram)
-                modified_text = re.sub(r'🛍️.*?\nhttps?://t\.me/\S+', '', modified_text)
-                modified_text = re.sub(r'https?://t\.me/andreindica\S*', '', modified_text)
+                # 2. Remove o rodapé antigo do grupo (Regex mais agressiva)
+                # Remove linhas que contenham a sacola 🛍️ ou "Grupo de promos"
+                modified_text = re.sub(r'🛍️.*?(?:\n|$)', '', modified_text)
+                modified_text = re.sub(r'(?i)Grupo de promos.*?(?:\n|$)', '', modified_text)
+                # Remove qualquer link do telegram que tenha sobrado
+                modified_text = re.sub(r'https?://t\.me/\S+', '', modified_text)
 
                 # 3. Converte links de produtos
                 links = re.findall(r'(https?://\S+)', modified_text)
