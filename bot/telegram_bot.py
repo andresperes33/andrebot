@@ -31,16 +31,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not text:
         return
 
-    # Usamos a função de serviço que agora centraliza a lógica
-    await update.message.reply_text("⏳ Processando oferta...")
-    
-    success = await process_offer_to_group(context.application, text, photo)
-    
-    if success:
-        await update.message.reply_text("✅ Postado no grupo com o link de afiliado!")
-    else:
-        # Se falhou, pode ser que não tenha links monitorados ou erro na API
-        pass
+    # Processa silenciosamente, sem responder no chat
+    await process_offer_to_group(context.application, text, photo)
 
 
 def start_bot():
