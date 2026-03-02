@@ -176,47 +176,48 @@ def convert_to_affiliate_link(url, final_url=None):
 def convert_mercado_livre_link(url):
     """
     Gera link de afiliado do Mercado Livre.
-    Expande o link curto (meli.la), mantém o ref token original (obrigatório para
-    a página funcionar) e substitui apenas matt_tool e matt_word pela nossa tag.
+    1. Expande o link curto (meli.la)
+    2. Carrega a página social do ML
+    3. Extrai a URL real do produto (MLB) do HTML
+    4. Gera link afiliado limpo com nossa tag
     """
     tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'codepysystems')
     matt_tool = getattr(settings, 'MERCADO_LIVRE_MATT_TOOL', '13013217')
-    hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"}
 
     try:
-        # 1. Expande o link e captura o redirect com ref token
+        # 1. Expande o link (meli.la → social/sv...)
         r = requests.get(url, allow_redirects=True, timeout=12, headers=hdrs)
+        page_html = r.text
 
-        # Procura no histórico de redirects a URL com o ref (vinda do ML)
-        ml_url = None
-        for resp in r.history:
-            loc = resp.headers.get('Location', '')
-            if 'mercadolivre.com.br' in loc and 'ref=' in loc:
-                ml_url = loc
-                break
+        # 2. Extrai URL do produto real no HTML da página
+        import re as _re
+        prod_urls = _re.findall(
+            r'https://www\.mercadolivre\.com\.br/[^"<>\s]+/p/MLB\d+',
+            page_html
+        )
 
-        if not ml_url:
-            ml_url = r.url
+        if prod_urls:
+            # Pega o primeiro produto e limpa parâmetros extras
+            produto_url = prod_urls[0].split('?')[0].split('#')[0]
+            affiliate_url = f"{produto_url}?matt_tool={matt_tool}&matt_word={tag}"
+            print(f"ML Afiliado (produto): {affiliate_url[:100]}...")
+            return affiliate_url
 
-        # 2. Substitui APENAS matt_tool e matt_word — mantém ref intacto
-        parsed = urllib.parse.urlparse(ml_url)
-        params = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
-        params['matt_tool'] = [matt_tool]
-        params['matt_word'] = [tag]
-        params.pop('forceInApp', None)
+        # Fallback: tenta pegar pelo ID MLB
+        mlb_ids = list(set(_re.findall(r'MLB\d+', page_html)))
+        if mlb_ids:
+            mlb_id = mlb_ids[0]
+            affiliate_url = f"https://www.mercadolivre.com.br/p/{mlb_id}?matt_tool={matt_tool}&matt_word={tag}"
+            print(f"ML Afiliado (MLB ID): {affiliate_url}")
+            return affiliate_url
 
-        new_query = urllib.parse.urlencode({k: v[0] for k, v in params.items()})
-        affiliate_url = urllib.parse.urlunparse(parsed._replace(query=new_query))
-        print(f"ML Afiliado: {affiliate_url[:100]}...")
-        return affiliate_url
+        print("ML: Nenhum produto encontrado na página.")
+        return None
 
     except Exception as e:
-        print(f"ML: Erro na conversão ({e}), fallback para URL original")
-        try:
-            clean_url = url.split('?')[0].split('#')[0]
-            return f"{clean_url}?matt_tool={matt_tool}&matt_word={tag}"
-        except Exception:
-            return None
+        print(f"ML: Erro na conversão ({e})")
+        return None
 
 
 def convert_awin_link(url, merchant_id='17729'):
