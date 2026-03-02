@@ -377,6 +377,62 @@ def convert_aliexpress_link(url):
         return None
 
 
+def send_whatsapp_message(text, image_url=None):
+    """
+    Envia mensagem para o WhatsApp via Evolution API.
+    """
+    url_base = getattr(settings, 'EVOLUTION_API_URL', '').strip('/')
+    instance = getattr(settings, 'EVOLUTION_API_INSTANCE', '')
+    token = getattr(settings, 'EVOLUTION_API_TOKEN', '')
+    jid = getattr(settings, 'WHATSAPP_GROUP_JID', '')
+
+    if not all([url_base, instance, token, jid]) or jid == 'seu_jid_do_grupo_aqui@g.us':
+        print("WhatsApp: Credenciais ou JID não configurados.")
+        return False
+
+    headers = {
+        "Content-Type": "application/json",
+        "apikey": token
+    }
+
+    try:
+        if image_url:
+            # Envia mídia (imagem) com legenda
+            endpoint = f"{url_base}/message/sendMedia/{instance}"
+            payload = {
+                "number": jid,
+                "mediaMessage": {
+                    "mediatype": "image",
+                    "caption": text,
+                    "media": image_url
+                },
+                "options": {
+                    "delay": 1200,
+                    "presence": "composing",
+                    "linkPreview": True
+                }
+            }
+        else:
+            # Envia apenas texto
+            endpoint = f"{url_base}/message/sendText/{instance}"
+            payload = {
+                "number": jid,
+                "text": text,
+                "options": {
+                    "delay": 1200,
+                    "presence": "composing",
+                    "linkPreview": True
+                }
+            }
+
+        response = requests.post(endpoint, (headers := headers), json=payload, timeout=20)
+        print(f"WhatsApp Response: {response.status_code} - {response.text}")
+        return response.status_code in [200, 201]
+    except Exception as e:
+        print(f"Erro ao enviar para WhatsApp: {e}")
+        return False
+
+
 def extract_links(text):
     return re.findall(r'(https?://\S+)', text)
 
@@ -442,15 +498,21 @@ async def process_offer_to_group(bot_app, text, photo=None):
         return False
 
     try:
+        final_image_url = None
         if photo:
+            # Se for um objeto de foto do Telegram, o Telethon/Telegram bot lida com isso.
+            # No entanto, para o WhatsApp precisamos de uma URL.
             await bot.send_photo(
                 chat_id=group_id,
                 photo=photo,
                 caption=modified_text[:1024]
             )
+            # Tenta pegar a URL da imagem se for possível (fallback para o produto se não)
+            _, final_image_url, _ = get_product_info(original_link)
         else:
             # Tenta buscar info do produto se não tiver foto
             _, image_url, _ = get_product_info(original_link)
+            final_image_url = image_url
             if image_url:
                 await bot.send_photo(
                     chat_id=group_id,
@@ -463,6 +525,10 @@ async def process_offer_to_group(bot_app, text, photo=None):
                     text=modified_text,
                     disable_web_page_preview=False
                 )
+        
+        # Envia também para o WhatsApp
+        send_whatsapp_message(modified_text, final_image_url)
+        
         return True
     except Exception as e:
         print(f"Erro ao processar oferta automática: {e}")

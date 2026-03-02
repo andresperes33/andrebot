@@ -167,3 +167,9 @@ SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'zFinnY')
 # Personal Settings (Overrides)
 PERSONAL_CHANNEL_LINK = os.getenv('PERSONAL_CHANNEL_LINK', 'https://t.me/andreindica33')
 PERSONAL_CHANNEL_NAME = os.getenv('PERSONAL_CHANNEL_NAME', 'andreindicatech')
+
+# Evolution API (WhatsApp) Settings
+EVOLUTION_API_URL = os.getenv('EVOLUTION_API_URL')
+EVOLUTION_API_INSTANCE = os.getenv('EVOLUTION_API_INSTANCE')
+EVOLUTION_API_TOKEN = os.getenv('EVOLUTION_API_TOKEN')
+WHATSAPP_GROUP_JID = os.getenv('WHATSAPP_GROUP_JID')
