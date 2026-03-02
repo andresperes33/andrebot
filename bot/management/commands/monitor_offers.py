@@ -49,6 +49,31 @@ class Command(BaseCommand):
                     processed_ids.clear()
                     processed_ids.add(msg_id)
 
+                # Se tiver foto, baixa ela
+                photo_path = None
+                if message.photo:
+                    import os
+                    # Salva temporariamente em uma pasta acessível
+                    temp_dir = os.path.join(os.getcwd(), 'tmp_photos')
+                    if not os.path.exists(temp_dir):
+                        os.makedirs(temp_dir)
+                    photo_path = await message.download_media(file=temp_dir)
+                    if photo_path:
+                        photo_path = os.path.abspath(photo_path)
+                
+                # Chama o serviço de processamento original do seu bot
+                from bot.services import process_offer_to_group
+                await process_offer_to_group(client, message.text, photo_path)
+                
+                # Tenta limpar a foto após um tempo para não encher o disco
+                if photo_path and os.path.exists(photo_path):
+                    try:
+                        # Aguarda um pouco para dar tempo do envio terminar antes de apagar
+                        await asyncio.sleep(60) 
+                        os.remove(photo_path)
+                    except:
+                        pass
+                
                 msg_text = message.message or "Mídia"
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:40]}...")
                 
