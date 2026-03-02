@@ -34,9 +34,11 @@ class Command(BaseCommand):
                 target_id = -1002216599534
                 logger.warning(f"⚠️ Usando ID padrão: {target_id}")
 
+            # Cache para evitar duplicados
             processed_ids = set()
 
             async def process_message(message):
+                """Processa a mensagem: converte links, envia para Telegram + WhatsApp"""
                 msg_id = message.id
                 if msg_id in processed_ids:
                     return False
@@ -53,17 +55,15 @@ class Command(BaseCommand):
 
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
-                # ─── Converte os links e processa texto ───────────────────────
+                # ─── Converte links e processa texto ─────────────────────────
                 from bot.services import convert_to_affiliate_link, send_whatsapp_message
 
                 personal_link = getattr(settings, 'PERSONAL_CHANNEL_LINK', '')
                 channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
 
                 modified_text = msg_text
-                # Substitui nomes de canais de terceiros pelo seu nome
                 modified_text = re.sub(r'(?i)zFinnY|CaCau|André Indica|Tecnan', channel_name, modified_text)
 
-                # Converte links
                 links = re.findall(r'(https?://\S+)', modified_text)
                 converted_any = False
                 for link in links:
@@ -74,7 +74,7 @@ class Command(BaseCommand):
                     is_shopee = 'shopee.com.br' in link or 's.shopee' in link
                     is_ml = 'mercadolivre' in link or 'meli.la' in link or 'mlstatic' in link
                     is_ali = 'aliexpress.com' in link or 's.click.ali' in link
-                    is_kabum = 'kabum.com.br' in link or 'tidd.ly' in link
+                    is_kabum = 'kabum.com.br' in link
                     is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link
 
                     if is_telegram or is_tecnan:
@@ -107,32 +107,25 @@ class Command(BaseCommand):
                         photo_path = os.path.abspath(photo_path)
                         logger.info(f"📸 Foto baixada: {photo_path}")
 
-                # ─── Envia para o Telegram (Telethon) ────────────────────────
+                # ─── Envia para o Telegram ──────────────────────────────────
                 try:
-                    if not group_id:
-                        raise ValueError("TELEGRAM_GROUP_ID não configurado")
-
                     if photo_path and os.path.exists(photo_path):
-                        await client.send_file(
-                            group_id,
-                            photo_path,
-                            caption=modified_text[:1024]
-                        )
+                        await client.send_file(group_id, photo_path, caption=modified_text[:1024])
                         logger.info("✅ Enviado para Telegram (com foto)")
                     else:
                         await client.send_message(group_id, modified_text)
                         logger.info("✅ Enviado para Telegram (só texto)")
                 except Exception as tg_err:
-                    logger.error(f"❌ Erro ao enviar para Telegram: {tg_err}")
+                    logger.error(f"❌ Erro Telegram: {tg_err}")
 
                 # ─── Envia para o WhatsApp ───────────────────────────────────
                 try:
                     send_whatsapp_message(modified_text, photo_path)
                     logger.info("✅ Enviado para WhatsApp")
                 except Exception as wa_err:
-                    logger.error(f"❌ Erro ao enviar para WhatsApp: {wa_err}")
+                    logger.error(f"❌ Erro WhatsApp: {wa_err}")
 
-                # ─── Limpa a foto do disco após 90s ─────────────────────────
+                # ─── Limpa foto do disco após 90s ────────────────────────────
                 if photo_path:
                     async def cleanup(path):
                         await asyncio.sleep(90)
@@ -145,29 +138,25 @@ class Command(BaseCommand):
 
                 return True
 
-            # Listener instantâneo
+            # Listener instantâneo (SEM polling para evitar duplicatas)
             @client.on(events.NewMessage(chats=target_id))
-            @client.on(events.MessageEdited(chats=target_id))
             async def handler(event):
                 await process_message(event.message)
 
-            # Polling de fallback a cada 30s
-            async def manual_polling():
+            # Heartbeat apenas para manter a conexão viva (não reprocessa mensagens)
+            async def heartbeat():
                 while True:
                     try:
-                        messages = await client.get_messages(target_id, limit=3)
-                        for msg in reversed(messages):
-                            await process_message(msg)
                         await client.get_me()
                         logger.info("💓 Check-up automático em 1 canais realizado")
                     except Exception as e:
-                        logger.error(f"Erro no polling: {e}")
-                    await asyncio.sleep(30)
+                        logger.error(f"Erro no heartbeat: {e}")
+                    await asyncio.sleep(60)
 
             logger.info("🚀 MONITOR AUTÔNOMO INICIADO!")
             await asyncio.gather(
                 client.run_until_disconnected(),
-                manual_polling()
+                heartbeat()
             )
 
         try:
