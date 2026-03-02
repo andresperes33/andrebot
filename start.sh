@@ -8,10 +8,10 @@
 echo "🚀 Aplicando migrações do banco de dados..."
 python manage.py migrate --noinput
 
-# 2. Iniciar o Monitor de Ofertas (Background)
-echo "🔍 Iniciando Monitor do zFinnY em segundo plano..."
-python manage.py monitor_offers &
+# 2. Iniciar o Monitor de Ofertas (Processo Principal)
+echo "🔍 Iniciando Monitor do zFinnY..."
+python manage.py monitor_offers
 
-# 3. Iniciar o bot principal (Foreground)
-echo "🤖 Iniciando o bot do Telegram..."
-python manage.py run_bot
+# O André Bot (run_bot) está desativado pois o monitor já envia para Telegram + WhatsApp
+# Para reativar: descomentar abaixo e adicionar & no monitor_offers acima
+# python manage.py run_bot
