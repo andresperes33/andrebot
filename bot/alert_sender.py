@@ -1,37 +1,95 @@
 """
 Função utilitária para enviar alertas de promoções
 para os usuários que possuem palavras-chave compatíveis.
-Chamada pelo monitor_offers.py após cada nova promo publicada.
 """
 import logging
+import unicodedata
 import requests as http_requests
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+# ─── Grupos de sinônimos tech ─────────────────────────────────────────────────
+# Qualquer termo do grupo casa com qualquer outro
+SYNONYM_GROUPS = [
+    {'placa de video', 'placa grafica', 'gpu', 'vga', 'placa de vídeo', 'placa grafica', 'video card'},
+    {'processador', 'cpu', 'proc'},
+    {'memoria ram', 'ram', 'memória ram', 'memoria'},
+    {'notebook', 'laptop', 'computador portatil', 'computador portátil'},
+    {'celular', 'smartphone', 'telefone', 'phone'},
+    {'televisao', 'tv', 'smart tv', 'televisão'},
+    {'geladeira', 'refrigerador', 'frigorifico'},
+    {'airfryer', 'air fryer', 'fritadeira eletrica', 'fritadeira elétrica'},
+    {'monitor', 'display', 'tela'},
+    {'teclado mecanico', 'teclado mecânico', 'teclado'},
+    {'fone de ouvido', 'headphone', 'headset', 'auricular', 'fone'},
+    {'ssd', 'solid state', 'hd ssd'},
+    {'hd externo', 'hd', 'disco rigido', 'disco rígido', 'hard drive'},
+    {'placa mae', 'placa mãe', 'motherboard', 'mainboard'},
+    {'fonte', 'fonte de alimentacao', 'fonte atx'},
+    {'gabinete', 'case', 'chassis', 'caixa pc'},
+    {'water cooler', 'watercooler', 'cooler agua', 'refrigeracao liquida', 'refrigeração líquida'},
+    {'cooler', 'ventoinha', 'fan cooler'},
+    {'impressora', 'printer'},
+    {'kindle', 'e-reader', 'ereader', 'leitor digital'},
+    {'iphone', 'ios phone'},
+    {'samsung', 'galaxy'},
+]
+
+
+def normalize(text: str) -> str:
+    """Remove acentos e converte para minúsculas."""
+    nfkd = unicodedata.normalize('NFD', text.lower())
+    return ''.join(c for c in nfkd if not unicodedata.combining(c))
+
+
+def expand_with_synonyms(keyword: str) -> list[str]:
+    """
+    Retorna o keyword + todos os sinônimos equivalentes.
+    Exemplo: 'placa de vídeo' → ['placa de video', 'placa grafica', 'gpu', 'vga', ...]
+    """
+    kw_norm = normalize(keyword)
+    expanded = {kw_norm}
+
+    for group in SYNONYM_GROUPS:
+        group_norm = {normalize(s) for s in group}
+        if any(term in kw_norm or kw_norm in term for term in group_norm):
+            expanded.update(group_norm)
+
+    return list(expanded)
+
 
 def keyword_matches(offer_text: str, keyword: str) -> bool:
     """
-    Verifica se o texto da oferta corresponde à palavra-chave do usuário.
+    Verifica se o texto da oferta corresponde à palavra-chave.
 
     Lógica:
-      +  →  E  (todos os termos separados por + devem estar presentes)
-      /  →  OU (pelo menos um dos termos separados por / deve estar presente)
+      +  → E  (todos os termos devem estar presentes)
+      /  → OU (pelo menos um deve estar presente)
+
+    Também considera sinônimos e normaliza acentos.
 
     Exemplo: "samsung+s23/s24/s25"
-    → Deve conter "samsung" E pelo menos um de ("s23", "s24", "s25")
+    → tem "samsung" E pelo menos um de ("s23", "s24", "s25")
     """
-    text_lower = offer_text.lower()
-    keyword_lower = keyword.lower()
+    text_norm = normalize(offer_text)
+    keyword_lower = normalize(keyword)
 
     # Divide pelos termos obrigatórios (+)
     required_groups = keyword_lower.split('+')
 
     for group in required_groups:
-        # Dentro de cada grupo, qualquer uma das opções (/) serve
-        options = group.split('/')
-        if not any(opt.strip() in text_lower for opt in options if opt.strip()):
+        options = [opt.strip() for opt in group.split('/') if opt.strip()]
+
+        # Para cada opção, expande com sinônimos
+        all_variants = []
+        for opt in options:
+            all_variants.extend(expand_with_synonyms(opt))
+
+        # Pelo menos uma variante deve aparecer no texto
+        if not any(variant in text_norm for variant in all_variants):
             return False
+
     return True
 
 
@@ -41,6 +99,7 @@ def send_alerts(offer_text: str, photo_path: str = None):
     cuja palavra-chave combina com a oferta.
     """
     from bot.models import UserAlert
+    import os
 
     bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
     if not bot_token:
@@ -55,8 +114,6 @@ def send_alerts(offer_text: str, photo_path: str = None):
 
     for alert in alerts:
         user_id = alert.telegram_user_id
-
-        # Evita mandar duplicata para o mesmo usuário (com keywords diferentes que batem)
         if user_id in notified_users:
             continue
 
@@ -69,8 +126,7 @@ def send_alerts(offer_text: str, photo_path: str = None):
                 )
                 full_text = header + offer_text
 
-                if photo_path and __import__('os').path.exists(photo_path):
-                    # Envia com foto
+                if photo_path and os.path.exists(photo_path):
                     url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
                     with open(photo_path, 'rb') as img:
                         resp = http_requests.post(url, data={
@@ -79,7 +135,6 @@ def send_alerts(offer_text: str, photo_path: str = None):
                             'parse_mode': 'Markdown'
                         }, files={'photo': img}, timeout=20)
                 else:
-                    # Envia só texto
                     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
                     resp = http_requests.post(url, json={
                         'chat_id': user_id,
@@ -90,7 +145,7 @@ def send_alerts(offer_text: str, photo_path: str = None):
                 if resp.status_code == 200:
                     logger.info(f"✅ Alerta enviado para {user_id} ({alert.keyword})")
                 else:
-                    logger.warning(f"⚠️ Erro ao enviar alerta para {user_id}: {resp.text[:100]}")
+                    logger.warning(f"⚠️ Erro alerta {user_id}: {resp.text[:100]}")
 
             except Exception as e:
-                logger.error(f"❌ Exceção ao enviar alerta para {user_id}: {e}")
+                logger.error(f"❌ Erro ao enviar alerta para {user_id}: {e}")
