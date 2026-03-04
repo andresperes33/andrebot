@@ -153,24 +153,25 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     text = update.message.text.strip().lower()
 
-    if not context.user_data.get('waiting_keyword'):
+    # Ignora comandos
+    if text.startswith('/'):
+        return
+
+    # Valida tamanho
+    if len(text) < 2:
         await update.message.reply_text(
-            "Use os botões abaixo para gerenciar seus alertas! 👇",
+            "❌ Palavra muito curta. Digite pelo menos 2 caracteres.",
+            reply_markup=main_keyboard()
+        )
+        return
+    if len(text) > 200:
+        await update.message.reply_text(
+            "❌ Palavra muito longa. Máximo 200 caracteres.",
             reply_markup=main_keyboard()
         )
         return
 
-    context.user_data['waiting_keyword'] = False
-
-    # Valida tamanho
-    if len(text) < 2:
-        await update.message.reply_text("❌ Palavra muito curta. Digite pelo menos 2 caracteres.", reply_markup=main_keyboard())
-        return
-    if len(text) > 200:
-        await update.message.reply_text("❌ Palavra muito longa. Máximo 200 caracteres.", reply_markup=main_keyboard())
-        return
-
-    # Salva no banco
+    # Salva no banco automaticamente
     alert, created = UserAlert.objects.get_or_create(
         telegram_user_id=user.id,
         keyword=text,
@@ -181,21 +182,28 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
     )
 
-    if created:
+    if not created and not alert.is_active:
+        alert.is_active = True
+        alert.save()
+
+    if created or not alert.is_active:
         await update.message.reply_text(
-            f"✅ Alerta *{text}* cadastrado com sucesso!\n\n"
-            "Você será notificado quando uma promoção compatível aparecer no grupo André Indica! 🔔",
+            f"✅ Alerta salvo com sucesso!\n\n"
+            f"🔍 Palavra monitorada: `{text}`\n\n"
+            f"Você será notificado no privado quando uma promoção compatível "
+            f"aparecer no grupo *Alerta Tech Brasil*! 🔔",
             parse_mode="Markdown",
             reply_markup=main_keyboard()
         )
     else:
-        alert.is_active = True
-        alert.save()
         await update.message.reply_text(
-            f"ℹ️ Você já tem o alerta *{text}* cadastrado!",
+            f"ℹ️ Você já está monitorando `{text}`!\n\n"
+            f"Use *Ver Minhas Palavras* para ver todos os seus alertas ativos.",
             parse_mode="Markdown",
             reply_markup=main_keyboard()
         )
+    # Limpa estado de espera se existir
+    context.user_data.pop('waiting_keyword', None)
 
 # ─── Inicializa o bot ────────────────────────────────────────────────────────
 def run_alert_bot():
