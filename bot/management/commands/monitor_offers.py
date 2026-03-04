@@ -171,25 +171,25 @@ class Command(BaseCommand):
             @client.on(events.NewMessage(chats=target_id))
             async def handler(event):
                 msg = event.message
-                last_id = load_last_id()
+                last_id = await asyncio.to_thread(load_last_id)
                 if msg.id <= last_id:
                     return
                 success = await process_message(msg)
                 if success:
-                    save_last_id(msg.id)
+                    await asyncio.to_thread(save_last_id, msg.id)
 
             # ─── POLLING INTELIGENTE (Para quando PC está desligado) ─────────
             async def smart_polling():
                 while True:
                     try:
-                        last_id = load_last_id()
+                        last_id = await asyncio.to_thread(load_last_id)
                         messages = await client.get_messages(target_id, limit=10, min_id=last_id)
                         if messages:
                             for msg in reversed(list(messages)):
                                 if msg.id > last_id:
                                     success = await process_message(msg)
                                     if success:
-                                        save_last_id(msg.id)
+                                        await asyncio.to_thread(save_last_id, msg.id)
                                         last_id = msg.id
                         await client.get_me()  # Mantém conexão viva
                         logger.info("💓 Check-up automático em 1 canais realizado")
