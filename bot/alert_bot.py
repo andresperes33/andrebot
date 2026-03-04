@@ -212,12 +212,14 @@ def run_alert_bot():
         return
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("ajuda", lambda u, c: u.message.reply_text(HELP_TEXT, parse_mode="Markdown", reply_markup=main_keyboard())))
-    app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
-    logger.info("🤖 Bot de Alertas iniciado! @andreindica_bot")
+    # Todos os handlers só funcionam em chat PRIVADO (DM) — ignora mensagens do grupo
+    app.add_handler(CommandHandler("start", start, filters=filters.ChatType.PRIVATE))
+    app.add_handler(CommandHandler("ajuda", lambda u, c: u.message.reply_text(HELP_TEXT, parse_mode="Markdown", reply_markup=main_keyboard()), filters=filters.ChatType.PRIVATE))
+    app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, message_handler))
+
+    logger.info("🤖 Bot de Alertas iniciado! @andreindica_bot (somente DM)")
     app.run_polling(drop_pending_updates=True)
 
 
