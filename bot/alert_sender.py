@@ -43,18 +43,57 @@ def normalize(text: str) -> str:
     return ''.join(c for c in nfkd if not unicodedata.combining(c))
 
 
+def get_plural_variants(term: str) -> set[str]:
+    """
+    Gera variantes de singular e plural para português.
+    Exemplos:
+      monitor     → {monitor, monitores}
+      monitores   → {monitores, monitor}
+      placa       → {placa, placas}
+      placas      → {placas, placa}
+      processador → {processador, processadores}
+    """
+    variants = {term}
+    if term.endswith('oes'):       # impressoes → impressao
+        variants.add(term[:-3] + 'ao')
+        variants.add(term[:-3] + 'ão')
+    elif term.endswith('ões'):     # impressões → impressão
+        variants.add(term[:-3] + 'ao')
+        variants.add(term[:-3] + 'ão')
+    elif term.endswith('es') and len(term) > 4:
+        base = term[:-2]           # monitores → monitor
+        variants.add(base)
+        variants.add(base + 's')   # monitors (ingles)
+    elif term.endswith('s') and len(term) > 3:
+        base = term[:-1]           # placas → placa
+        variants.add(base)
+        variants.add(base + 'es')  # placa → placaes (raro, mas cobre casos)
+    else:
+        variants.add(term + 's')   # placa → placas
+        variants.add(term + 'es')  # monitor → monitores
+    return variants
+
+
 def expand_with_synonyms(keyword: str) -> list[str]:
     """
-    Retorna o keyword + todos os sinônimos equivalentes.
+    Retorna o keyword + todos os sinônimos equivalentes + variantes plural/singular.
     Exemplo: 'placa de vídeo' → ['placa de video', 'placa grafica', 'gpu', 'vga', ...]
+             'monitores'      → ['monitores', 'monitor', 'display', 'tela', ...]
     """
     kw_norm = normalize(keyword)
-    expanded = {kw_norm}
 
-    for group in SYNONYM_GROUPS:
-        group_norm = {normalize(s) for s in group}
-        if any(term in kw_norm or kw_norm in term for term in group_norm):
-            expanded.update(group_norm)
+    # Gera variantes plural/singular do próprio termo
+    base_variants = get_plural_variants(kw_norm)
+    expanded = set(base_variants)
+
+    # Para cada variante, verifica sinônimos
+    for variant in base_variants:
+        for group in SYNONYM_GROUPS:
+            group_norm = {normalize(s) for s in group}
+            if any(term in variant or variant in term for term in group_norm):
+                # Adiciona todos os sinônimos + suas formas plural/singular
+                for syn in group_norm:
+                    expanded.update(get_plural_variants(syn))
 
     return list(expanded)
 
