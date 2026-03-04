@@ -98,38 +98,83 @@ def expand_with_synonyms(keyword: str) -> list[str]:
     return list(expanded)
 
 
+def smart_phrase_matches(text_norm: str, keyword_norm: str) -> bool:
+    """
+    Matching inteligente para buscas SEM operadores explícitos (+ ou /).
+
+    Lógica:
+    1. Detecta grupos de sinônimos na keyword (ex.: 'placa de video' → grupo GPU)
+    2. O grupo vira alternativas (OU): qualquer sinônimo serve
+    3. As palavras específicas fora do grupo viram termos obrigatórios (E)
+
+    Exemplos:
+      'placa de video'        → (placa de video | gpu | vga | ...) ← genérico, qualquer GPU
+      'placa de video rx 580' → (placa de video | gpu | ...) E (rx) E (580) ← específico
+      'monitor gamer'         → (monitor | display | tela) E (gamer)
+    """
+    remaining = keyword_norm
+    required_groups = []  # Lista de conjuntos alternativos (OR dentro, AND entre)
+
+    # Detecta grupos de sinônimos dentro da keyword (longest match first)
+    for group in SYNONYM_GROUPS:
+        group_norm = sorted({normalize(s) for s in group}, key=len, reverse=True)
+        for term in group_norm:
+            if term in remaining:
+                syn_variants = set()
+                for syn in group_norm:
+                    syn_variants.update(get_plural_variants(syn))
+                required_groups.append(syn_variants)
+                remaining = remaining.replace(term, '', 1).strip()
+                break
+
+    # Palavras restantes = termos específicos obrigatórios
+    stopwords = {'de', 'do', 'da', 'dos', 'das', 'o', 'a', 'os', 'as', 'um', 'uma', 'e', 'em', 'no', 'na'}
+    remaining_words = [w for w in remaining.split() if w and w not in stopwords and len(w) > 1]
+    for word in remaining_words:
+        required_groups.append(get_plural_variants(word))
+
+    # Se não detectou nada (keyword desconhecida), faz busca direta
+    if not required_groups:
+        return keyword_norm in text_norm
+
+    # Todos os grupos devem bater no texto
+    for variants in required_groups:
+        if not any(v in text_norm for v in variants):
+            return False
+    return True
+
+
 def keyword_matches(offer_text: str, keyword: str) -> bool:
     """
     Verifica se o texto da oferta corresponde à palavra-chave.
 
-    Lógica:
-      +  → E  (todos os termos devem estar presentes)
-      /  → OU (pelo menos um deve estar presente)
+    Dois modos:
+    - COM operadores (+ e /): lógica explícita E/OU
+    - SEM operadores: matching inteligente (detecta sinônimos + termos obrigatórios)
 
-    Também considera sinônimos e normaliza acentos.
-
-    Exemplo: "samsung+s23/s24/s25"
-    → tem "samsung" E pelo menos um de ("s23", "s24", "s25")
+    Exemplos:
+      'placa de video'          → qualquer GPU
+      'placa de video rx 580'   → GPU específica RX 580 (não bate com RX 9060!)
+      'samsung+s25'             → tem samsung E s25
+      'samsung+s23/s24/s25'     → tem samsung E (s23 ou s24 ou s25)
     """
     text_norm = normalize(offer_text)
     keyword_lower = normalize(keyword)
 
-    # Divide pelos termos obrigatórios (+)
-    required_groups = keyword_lower.split('+')
+    # Modo com operadores explícitos
+    if '+' in keyword_lower or '/' in keyword_lower:
+        required_groups = keyword_lower.split('+')
+        for group in required_groups:
+            options = [opt.strip() for opt in group.split('/') if opt.strip()]
+            all_variants = []
+            for opt in options:
+                all_variants.extend(expand_with_synonyms(opt))
+            if not any(variant in text_norm for variant in all_variants):
+                return False
+        return True
 
-    for group in required_groups:
-        options = [opt.strip() for opt in group.split('/') if opt.strip()]
-
-        # Para cada opção, expande com sinônimos
-        all_variants = []
-        for opt in options:
-            all_variants.extend(expand_with_synonyms(opt))
-
-        # Pelo menos uma variante deve aparecer no texto
-        if not any(variant in text_norm for variant in all_variants):
-            return False
-
-    return True
+    # Modo inteligente (sem operadores)
+    return smart_phrase_matches(text_norm, keyword_lower)
 
 
 def send_alerts(offer_text: str, photo_path: str = None):
