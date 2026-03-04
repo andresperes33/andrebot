@@ -29,6 +29,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
+INACTIVITY_TIMEOUT = 60  # segundos
 
 # ─── Texto de Ajuda ──────────────────────────────────────────────────────────
 HELP_TEXT = """🤖 *CENTRAL DE AJUDA E COMANDOS*
@@ -65,15 +66,54 @@ def main_keyboard():
         [InlineKeyboardButton("❓ Ajuda", callback_data="help")],
     ])
 
+# ─── Timer de Inatividade ────────────────────────────────────────────────────
+INACTIVITY_JOB_KEY = 'inactivity_job'
+
+def reset_inactivity_timer(context: ContextTypes.DEFAULT_TYPE, chat_id: int):
+    """Cancela o timer antigo e cria um novo de 1 minuto."""
+    # Remove job antigo se existir
+    old_job = context.user_data.get(INACTIVITY_JOB_KEY)
+    if old_job:
+        old_job.schedule_removal()
+
+    # Agenda novo job de inatividade
+    job = context.job_queue.run_once(
+        inactivity_callback,
+        when=INACTIVITY_TIMEOUT,
+        chat_id=chat_id,
+        user_id=chat_id,
+        data={'chat_id': chat_id}
+    )
+    context.user_data[INACTIVITY_JOB_KEY] = job
+
+async def inactivity_callback(context: ContextTypes.DEFAULT_TYPE):
+    """Disparado quando o usuário fica 1 minuto inativo."""
+    chat_id = context.job.data['chat_id']
+    try:
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=(
+                "⏰ *Sessão encerrada por inatividade!*\n\n"
+                "Você ficou 1 minuto sem interagir. Reiniciando o bot...\n\n"
+                "👇 Use os botões abaixo para continuar:"
+            ),
+            parse_mode="Markdown",
+            reply_markup=main_keyboard()
+        )
+        logger.info(f"🔄 Sessão reiniciada por inatividade: {chat_id}")
+    except Exception as e:
+        logger.error(f"Erro no callback de inatividade: {e}")
+
 # ─── /start ──────────────────────────────────────────────────────────────────
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     name = user.first_name or "amigo"
+    reset_inactivity_timer(context, update.effective_chat.id)
     await update.message.reply_text(
         f"👋 Olá, *{name}*! Bem-vindo ao bot de alertas de promoções!\n\n"
         "📢 Aqui você cadastra palavras-chave e eu te aviso no privado sempre que "
-        "uma promoção compatível for publicada no grupo *André Indica*! 🔥\n\n"
-        "Use os botões abaixo para começar:",
+        "uma promoção compatível for publicada no grupo *Alerta Tech Brasil*! 🔥\n\n"
+        "👇 Use os botões abaixo para começar:",
         parse_mode="Markdown",
         reply_markup=main_keyboard()
     )
@@ -83,6 +123,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     data = query.data
+    reset_inactivity_timer(context, update.effective_chat.id)
 
     if data == "help":
         await query.message.reply_text(HELP_TEXT, parse_mode="Markdown", reply_markup=main_keyboard())
@@ -152,6 +193,7 @@ async def show_remove_menu(query, user_id):
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     text = update.message.text.strip().lower()
+    reset_inactivity_timer(context, update.effective_chat.id)
 
     # Ignora comandos
     if text.startswith('/'):
@@ -186,7 +228,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         alert.is_active = True
         alert.save()
 
-    if created or not alert.is_active:
+    if created:
         await update.message.reply_text(
             f"✅ Alerta salvo com sucesso!\n\n"
             f"🔍 Palavra monitorada: `{text}`\n\n"
@@ -202,7 +244,6 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
             reply_markup=main_keyboard()
         )
-    # Limpa estado de espera se existir
     context.user_data.pop('waiting_keyword', None)
 
 # ─── Inicializa o bot ────────────────────────────────────────────────────────
@@ -213,13 +254,15 @@ def run_alert_bot():
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    # Todos os handlers só funcionam em chat PRIVADO (DM) — ignora mensagens do grupo
+    # Todos os handlers só funcionam em chat PRIVADO (DM)
     app.add_handler(CommandHandler("start", start, filters=filters.ChatType.PRIVATE))
-    app.add_handler(CommandHandler("ajuda", lambda u, c: u.message.reply_text(HELP_TEXT, parse_mode="Markdown", reply_markup=main_keyboard()), filters=filters.ChatType.PRIVATE))
+    app.add_handler(CommandHandler("ajuda", lambda u, c: u.message.reply_text(
+        HELP_TEXT, parse_mode="Markdown", reply_markup=main_keyboard()
+    ), filters=filters.ChatType.PRIVATE))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, message_handler))
 
-    logger.info("🤖 Bot de Alertas iniciado! @andreindica_bot (somente DM)")
+    logger.info("🤖 Bot de Alertas iniciado! @andreindica_bot (DM only, timeout 1min)")
     app.run_polling(drop_pending_updates=True)
 
 
