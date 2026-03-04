@@ -9,24 +9,50 @@ from telethon import TelegramClient, events
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# ─── Cache em memória para last_processed_id ─────────────────────────────────
+# Evita chamadas constantes ao banco em contexto async — mais seguro e rápido.
+# Na inicialização, carrega do banco (persiste entre deploys).
+# A cada save, atualiza a memória E persiste no banco.
+_last_id: int = 0
+_last_id_loaded: bool = False
 
-def load_last_id():
-    """Carrega o último ID processado do banco de dados (persiste entre deploys)."""
+
+def load_last_id() -> int:
+    """
+    Retorna o último ID processado.
+    Primeira chamada: lê do banco PostgreSQL (persiste entre deploys).
+    Chamadas seguintes: usa cache em memória (rápido, sem issues de thread).
+    """
+    global _last_id, _last_id_loaded
+    if _last_id_loaded:
+        return _last_id
     try:
+        from django.db import close_old_connections
+        close_old_connections()
         from bot.models import BotConfig
         val = BotConfig.get('last_processed_id', '0')
-        return int(val)
-    except Exception:
-        return 0
+        _last_id = int(val)
+        logger.info(f"📌 Último ID carregado do banco: {_last_id}")
+    except Exception as e:
+        logger.warning(f"⚠️ Não foi possível carregar last_id do banco: {e}. Usando 0.")
+        _last_id = 0
+    _last_id_loaded = True
+    return _last_id
 
 
-def save_last_id(msg_id):
-    """Salva o último ID processado no banco de dados."""
+def save_last_id(msg_id: int):
+    """
+    Salva o último ID processado na memória e no banco de dados.
+    """
+    global _last_id
+    _last_id = msg_id  # Atualiza memória imediatamente
     try:
+        from django.db import close_old_connections
+        close_old_connections()
         from bot.models import BotConfig
         BotConfig.set('last_processed_id', msg_id)
     except Exception as e:
-        logger.error(f"Erro ao salvar last_id no banco: {e}")
+        logger.error(f"❌ Erro ao persistir last_id={msg_id} no banco: {e}")
 
 
 class Command(BaseCommand):
@@ -171,27 +197,27 @@ class Command(BaseCommand):
             @client.on(events.NewMessage(chats=target_id))
             async def handler(event):
                 msg = event.message
-                last_id = await asyncio.to_thread(load_last_id)
+                last_id = load_last_id()
                 if msg.id <= last_id:
                     return
                 success = await process_message(msg)
                 if success:
-                    await asyncio.to_thread(save_last_id, msg.id)
+                    save_last_id(msg.id)
 
-            # ─── POLLING INTELIGENTE (Para quando PC está desligado) ─────────
+            # ─── POLLING INTELIGENTE ──────────────────────────────────────────────
             async def smart_polling():
                 while True:
                     try:
-                        last_id = await asyncio.to_thread(load_last_id)
+                        last_id = load_last_id()
                         messages = await client.get_messages(target_id, limit=10, min_id=last_id)
                         if messages:
                             for msg in reversed(list(messages)):
                                 if msg.id > last_id:
                                     success = await process_message(msg)
                                     if success:
-                                        await asyncio.to_thread(save_last_id, msg.id)
+                                        save_last_id(msg.id)
                                         last_id = msg.id
-                        await client.get_me()  # Mantém conexão viva
+                        await client.get_me()
                         logger.info("💓 Check-up automático em 1 canais realizado")
                     except Exception as e:
                         logger.error(f"Erro no polling: {e}")
