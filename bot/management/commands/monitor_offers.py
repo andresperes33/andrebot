@@ -147,6 +147,14 @@ class Command(BaseCommand):
                 except Exception as wa_err:
                     logger.error(f"❌ Erro WhatsApp: {wa_err}")
 
+                # ─── Dispara alertas para usuários do Bot ────────────────────
+                try:
+                    from bot.alert_sender import send_alerts
+                    send_alerts(modified_text, photo_path)
+                    logger.info("🔔 Alertas de usuários verificados/enviados")
+                except Exception as alert_err:
+                    logger.error(f"❌ Erro ao enviar alertas: {alert_err}")
+
                 # ─── Limpa foto após 90s ─────────────────────────────────────
                 if photo_path:
                     async def cleanup(path):
