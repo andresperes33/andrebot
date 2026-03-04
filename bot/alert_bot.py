@@ -84,9 +84,14 @@ def lista_keyboard():
 
 # ─── Timer de Inatividade ────────────────────────────────────────────────────
 def reset_inactivity_timer(context: ContextTypes.DEFAULT_TYPE, chat_id: int):
+    if not context.job_queue:
+        return  # APScheduler nao disponivel, ignora timer
     old_job = context.user_data.get(INACTIVITY_JOB_KEY)
     if old_job:
-        old_job.schedule_removal()
+        try:
+            old_job.schedule_removal()
+        except Exception:
+            pass
     job = context.job_queue.run_once(
         inactivity_callback,
         when=INACTIVITY_TIMEOUT,
