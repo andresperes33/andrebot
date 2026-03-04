@@ -150,7 +150,9 @@ class Command(BaseCommand):
                 # ─── Dispara alertas para usuários do Bot ────────────────────
                 try:
                     from bot.alert_sender import send_alerts
-                    send_alerts(modified_text, photo_path)
+                    # asyncio.to_thread roda send_alerts em thread separada
+                    # evitando SynchronousOnlyOperation do Django ORM em contexto async
+                    await asyncio.to_thread(send_alerts, modified_text, photo_path)
                     logger.info("🔔 Alertas de usuários verificados/enviados")
                 except Exception as alert_err:
                     logger.error(f"❌ Erro ao enviar alertas: {alert_err}")
