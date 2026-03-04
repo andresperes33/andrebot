@@ -18,3 +18,30 @@ class UserAlert(models.Model):
 
     def __str__(self):
         return f"{self.telegram_first_name} ({self.telegram_user_id}) → {self.keyword}"
+
+
+class BotConfig(models.Model):
+    """
+    Armazena configurações persistentes do bot no banco de dados.
+    Persiste entre deploys (diferente de arquivos JSON locais).
+    """
+    key = models.CharField(max_length=100, unique=True)
+    value = models.TextField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuração do Bot"
+
+    def __str__(self):
+        return f"{self.key} = {self.value}"
+
+    @classmethod
+    def get(cls, key, default=None):
+        try:
+            return cls.objects.get(key=key).value
+        except cls.DoesNotExist:
+            return default
+
+    @classmethod
+    def set(cls, key, value):
+        cls.objects.update_or_create(key=key, defaults={'value': str(value)})

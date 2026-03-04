@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import re
-import json
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from telethon import TelegramClient, events
@@ -10,26 +9,24 @@ from telethon import TelegramClient, events
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Arquivo para persistir o último ID processado (evita duplicatas mesmo após reiniciar)
-LAST_ID_FILE = os.path.join(os.getcwd(), 'last_processed_id.json')
-
 
 def load_last_id():
+    """Carrega o último ID processado do banco de dados (persiste entre deploys)."""
     try:
-        if os.path.exists(LAST_ID_FILE):
-            with open(LAST_ID_FILE, 'r') as f:
-                return json.load(f).get('last_id', 0)
+        from bot.models import BotConfig
+        val = BotConfig.get('last_processed_id', '0')
+        return int(val)
     except Exception:
-        pass
-    return 0
+        return 0
 
 
 def save_last_id(msg_id):
+    """Salva o último ID processado no banco de dados."""
     try:
-        with open(LAST_ID_FILE, 'w') as f:
-            json.dump({'last_id': msg_id}, f)
-    except Exception:
-        pass
+        from bot.models import BotConfig
+        BotConfig.set('last_processed_id', msg_id)
+    except Exception as e:
+        logger.error(f"Erro ao salvar last_id no banco: {e}")
 
 
 class Command(BaseCommand):
