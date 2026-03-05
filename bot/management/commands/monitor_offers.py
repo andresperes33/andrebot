@@ -5,6 +5,7 @@ import re
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from telethon import TelegramClient, events
+from telethon.sessions import StringSession
 from asgiref.sync import sync_to_async
 
 logging.basicConfig(level=logging.INFO)
@@ -64,7 +65,14 @@ class Command(BaseCommand):
         group_id = int(getattr(settings, 'TELEGRAM_GROUP_ID', 0))
 
         async def main():
-            client = TelegramClient('session_monitor', api_id, api_hash, connection_retries=None)
+            string_session = getattr(settings, 'TELEGRAM_STRING_SESSION', None)
+            if string_session:
+                logger.info("📡 Iniciando sessão via StringSession...")
+                client = TelegramClient(StringSession(string_session), api_id, api_hash, connection_retries=None)
+            else:
+                logger.info("📂 Iniciando sessão via arquivo local...")
+                client = TelegramClient('session_monitor', api_id, api_hash, connection_retries=None)
+            
             await client.start()
 
             logger.info("🔍 Localizando ID do canal zFinnY...")
