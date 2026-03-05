@@ -12,28 +12,26 @@ logger = logging.getLogger(__name__)
 # ─── Grupos de sinônimos tech ─────────────────────────────────────────────────
 # Qualquer termo do grupo casa com qualquer outro
 SYNONYM_GROUPS = [
-    {'placa de video', 'placa grafica', 'gpu', 'vga', 'placa de vídeo', 'placa grafica', 'video card'},
-    {'processador', 'cpu', 'proc'},
-    {'memoria ram', 'ram', 'memória ram', 'memoria'},
-    {'notebook', 'laptop', 'computador portatil', 'computador portátil'},
-    {'celular', 'smartphone', 'telefone', 'phone'},
-    {'televisao', 'tv', 'smart tv', 'televisão'},
+    {'placa de video', 'placa de vídeo', 'placa grafica', 'placa gráfica', 'gpu', 'vga', 'video card', 'rtx', 'gtx', 'rx', 'radeon'},
+    {'processador', 'cpu', 'proc', 'ryzen', 'core i3', 'core i5', 'core i7', 'core i9', 'intel core'},
+    {'memoria ram', 'ram', 'memória ram', 'memoria', 'memória', 'ddr4', 'ddr5'},
+    {'notebook', 'laptop', 'computador portatil', 'computador portátil', 'macbook'},
+    {'celular', 'smartphone', 'telefone', 'phone', 'iphone', 'galaxy'},
+    {'televisao', 'tv', 'smart tv', 'televisão', 'monitor tv'},
     {'geladeira', 'refrigerador', 'frigorifico'},
     {'airfryer', 'air fryer', 'fritadeira eletrica', 'fritadeira elétrica'},
     {'monitor', 'display', 'tela'},
     {'teclado mecanico', 'teclado mecânico', 'teclado'},
-    {'fone de ouvido', 'headphone', 'headset', 'auricular', 'fone'},
-    {'ssd', 'solid state', 'hd ssd'},
+    {'fone de ouvido', 'headphone', 'headset', 'auricular', 'fone', 'airpods', 'buds'},
+    {'ssd', 'solid state', 'hd ssd', 'nvme', 'm2 ssd'},
     {'hd externo', 'hd', 'disco rigido', 'disco rígido', 'hard drive'},
     {'placa mae', 'placa mãe', 'motherboard', 'mainboard'},
-    {'fonte', 'fonte de alimentacao', 'fonte atx'},
+    {'fonte', 'fonte de alimentacao', 'fonte atx', 'psu'},
     {'gabinete', 'case', 'chassis', 'caixa pc'},
     {'water cooler', 'watercooler', 'cooler agua', 'refrigeracao liquida', 'refrigeração líquida'},
-    {'cooler', 'ventoinha', 'fan cooler'},
+    {'cooler', 'ventoinha', 'fan cooler', 'air cooler'},
     {'impressora', 'printer'},
     {'kindle', 'e-reader', 'ereader', 'leitor digital'},
-    {'iphone', 'ios phone'},
-    {'samsung', 'galaxy'},
 ]
 
 
