@@ -204,11 +204,16 @@ def send_alerts(offer_text: str, photo_path: str = None):
         if keyword_matches(offer_text, alert.keyword):
             notified_users.add(user_id)
             try:
+                # Usa HTML para evitar erros de parse com caracteres especiais do Markdown
+                from django.utils.html import escape
+                safe_kw = escape(alert.keyword)
+                safe_offer = escape(offer_text)
+
                 header = (
-                    f"🔔 *Alerta para:* `{alert.keyword}`\n"
+                    f"🔔 <b>Alerta para:</b> <code>{safe_kw}</code>\n"
                     f"━━━━━━━━━━━━━━━━━━━━\n"
                 )
-                full_text = header + offer_text
+                full_text = header + safe_offer
 
                 if photo_path and os.path.exists(photo_path):
                     url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
@@ -216,14 +221,14 @@ def send_alerts(offer_text: str, photo_path: str = None):
                         resp = http_requests.post(url, data={
                             'chat_id': user_id,
                             'caption': full_text[:1024],
-                            'parse_mode': 'Markdown'
+                            'parse_mode': 'HTML'
                         }, files={'photo': img}, timeout=20)
                 else:
                     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-                    resp = http_requests.post(url, json={
+                    resp = http_requests.post(url, data={
                         'chat_id': user_id,
                         'text': full_text[:4096],
-                        'parse_mode': 'Markdown'
+                        'parse_mode': 'HTML'
                     }, timeout=10)
 
                 if resp.status_code == 200:

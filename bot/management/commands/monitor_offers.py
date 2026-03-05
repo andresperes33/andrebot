@@ -5,6 +5,7 @@ import re
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from telethon import TelegramClient, events
+from asgiref.sync import sync_to_async
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -17,20 +18,26 @@ _last_id: int = 0
 _last_id_loaded: bool = False
 
 
-def load_last_id() -> int:
-    """
-    Retorna o último ID processado.
-    Primeira chamada: lê do banco PostgreSQL (persiste entre deploys).
-    Chamadas seguintes: usa cache em memória (rápido, sem issues de thread).
-    """
+@sync_to_async
+def _db_get_last_id():
+    from django.db import close_old_connections
+    close_old_connections()
+    from bot.models import BotConfig
+    return BotConfig.get('last_processed_id', '0')
+
+@sync_to_async
+def _db_set_last_id(msg_id):
+    from django.db import close_old_connections
+    close_old_connections()
+    from bot.models import BotConfig
+    BotConfig.set('last_processed_id', msg_id)
+
+async def load_last_id() -> int:
     global _last_id, _last_id_loaded
     if _last_id_loaded:
         return _last_id
     try:
-        from django.db import close_old_connections
-        close_old_connections()
-        from bot.models import BotConfig
-        val = BotConfig.get('last_processed_id', '0')
+        val = await _db_get_last_id()
         _last_id = int(val)
         logger.info(f"📌 Último ID carregado do banco: {_last_id}")
     except Exception as e:
@@ -39,18 +46,11 @@ def load_last_id() -> int:
     _last_id_loaded = True
     return _last_id
 
-
-def save_last_id(msg_id: int):
-    """
-    Salva o último ID processado na memória e no banco de dados.
-    """
+async def save_last_id(msg_id: int):
     global _last_id
-    _last_id = msg_id  # Atualiza memória imediatamente
+    _last_id = msg_id
     try:
-        from django.db import close_old_connections
-        close_old_connections()
-        from bot.models import BotConfig
-        BotConfig.set('last_processed_id', msg_id)
+        await _db_set_last_id(msg_id)
     except Exception as e:
         logger.error(f"❌ Erro ao persistir last_id={msg_id} no banco: {e}")
 
@@ -198,25 +198,25 @@ class Command(BaseCommand):
             @client.on(events.NewMessage(chats=target_id))
             async def handler(event):
                 msg = event.message
-                last_id = load_last_id()
+                last_id = await load_last_id()
                 if msg.id <= last_id:
                     return
                 success = await process_message(msg)
                 if success:
-                    save_last_id(msg.id)
+                    await save_last_id(msg.id)
 
             # ─── POLLING INTELIGENTE ──────────────────────────────────────────────
             async def smart_polling():
                 while True:
                     try:
-                        last_id = load_last_id()
+                        last_id = await load_last_id()
                         messages = await client.get_messages(target_id, limit=10, min_id=last_id)
                         if messages:
                             for msg in reversed(list(messages)):
                                 if msg.id > last_id:
                                     success = await process_message(msg)
                                     if success:
-                                        save_last_id(msg.id)
+                                        await save_last_id(msg.id)
                                         last_id = msg.id
                         await client.get_me()
                         logger.info("💓 Check-up automático em 1 canais realizado")
