@@ -149,7 +149,7 @@ class Command(BaseCommand):
                 # 4. Adiciona o novo rodapé do site
                 modified_text = modified_text.strip()
                 modified_text += "\n\n✨ Conheça mais sobre meu trabalho:\nwww.andreindica.com.br"
-                modified_text += "\n\n👇 *Clique abaixo para ativar seus alertas:*\n➡ https://t.me/andreindica_bot"
+                modified_text += "\n\n👇 *Clique abaixo para ativar seus alertas:*\n➡ https://t.me/alertas_andre_bot"
 
                 # ─── Baixa foto ──────────────────────────────────────────────
                 photo_path = None
