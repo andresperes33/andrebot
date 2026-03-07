@@ -132,11 +132,7 @@ class Command(BaseCommand):
                         modified_text = modified_text.replace(link, '') # Remove links de outros telegrams
                         continue
 
-                    if is_awin:
-                        converted_any = True
-                        continue
-
-                    if any([is_amazon, is_shopee, is_ml, is_ali, is_kabum, is_magalu]):
+                    if any([is_amazon, is_shopee, is_ml, is_ali, is_kabum, is_magalu, is_awin]):
                         converted = convert_to_affiliate_link(link)
                         if converted:
                             modified_text = modified_text.replace(link, converted)
