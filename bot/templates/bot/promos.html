@@ -107,7 +107,72 @@
             -webkit-text-fill-color: transparent;
             margin-bottom: 10px;
         }
-        .hero p { color: var(--muted); font-size: 15px; }
+        .hero p { color: var(--muted); font-size: 15px; margin-bottom: 30px; }
+
+        /* ─── CTA Cards ─── */
+        .cta-grid {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .cta-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            text-align: left;
+            transition: transform 0.2s;
+            text-decoration: none;
+            color: #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .cta-card:hover { transform: scale(1.02); }
+        .cta-icon {
+            width: 60px;
+            height: 60px;
+            background: #f0f0f5;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            flex-shrink: 0;
+        }
+        .cta-info { flex: 1; }
+        .cta-info span { display: block; font-size: 12px; color: #666; }
+        .cta-info strong { display: block; font-size: 16px; color: #111; font-weight: 700; }
+        .cta-btn {
+            background: var(--accent);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 8px;
+            display: inline-block;
+        }
+        .social-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .wa-bg { background: #25d366; }
+        .tg-bg { background: #0088cc; }
+        .bot-bg { background: #ff6b00; }
+        .cta-card-wrapper { position: relative; }
 
         /* ─── Filters ─── */
         .filters-bar {
@@ -368,6 +433,47 @@
 <div class="hero">
     <h1>🔥 Promoções de Tech</h1>
     <p>Bot monitorando 24h e jogando as melhores ofertas aqui, no Telegram e no WhatsApp</p>
+    
+    <div class="cta-grid">
+        <!-- WhatsApp -->
+        <div class="cta-card-wrapper">
+            <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" class="cta-card">
+                <div class="cta-icon">📱</div>
+                <div class="cta-info">
+                    <span>Entre no</span>
+                    <strong>Grupo de WhatsApp</strong>
+                    <div class="cta-btn">Abrir WhatsApp →</div>
+                </div>
+                <div class="social-badge wa-bg">W</div>
+            </a>
+        </div>
+        
+        <!-- Telegram -->
+        <div class="cta-card-wrapper">
+            <a href="https://t.me/AlertaTechBrasil" target="_blank" class="cta-card">
+                <div class="cta-icon">✈️</div>
+                <div class="cta-info">
+                    <span>Entre no</span>
+                    <strong>Canal do Telegram</strong>
+                    <div class="cta-btn">Abrir Telegram →</div>
+                </div>
+                <div class="social-badge tg-bg">T</div>
+            </a>
+        </div>
+        
+        <!-- Bot -->
+        <div class="cta-card-wrapper">
+            <a href="https://t.me/alertas_andre_bot" target="_blank" class="cta-card">
+                <div class="cta-icon">🤖</div>
+                <div class="cta-info">
+                    <span>Ative o seu</span>
+                    <strong>Bot de Alerta</strong>
+                    <div class="cta-btn">Ativar Bot →</div>
+                </div>
+                <div class="social-badge bot-bg">B</div>
+            </a>
+        </div>
+    </div>
 </div>
 
 <div class="filters-bar">
