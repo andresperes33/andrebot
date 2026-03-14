@@ -448,9 +448,9 @@
         });
     }
 
-    // Auto-refresh a cada 3 minutos quando estiver na aba "Hoje"
+    // Auto-refresh a cada 1 minuto quando estiver na aba "Hoje"
     {% if periodo == 'hoje' %}
-    setTimeout(() => location.reload(), 3 * 60 * 1000);
+    setTimeout(() => location.reload(), 1 * 60 * 1000);
     {% endif %}
 </script>
 </body>
