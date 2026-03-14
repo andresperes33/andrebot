@@ -382,8 +382,13 @@
     <!-- Filtros de categoria -->
     <div class="cat-chips">
         <a href="?periodo={{ periodo }}{% if q %}&q={{ q }}{% endif %}" class="chip {% if not categoria_ativa %}active{% endif %}">🔖 Todas</a>
+        <a href="?periodo={{ periodo }}&cat=ssd{% if q %}&q={{ q }}{% endif %}" class="chip {% if categoria_ativa == 'ssd' %}active{% endif %}">SSD / HD</a>
+        <a href="?periodo={{ periodo }}&cat=placa_video{% if q %}&q={{ q }}{% endif %}" class="chip {% if categoria_ativa == 'placa_video' %}active{% endif %}">Placa de Vídeo</a>
+        <a href="?periodo={{ periodo }}&cat=placa_mae{% if q %}&q={{ q }}{% endif %}" class="chip {% if categoria_ativa == 'placa_mae' %}active{% endif %}">Placa-mãe</a>
         {% for slug, nome in categorias %}
-        <a href="?periodo={{ periodo }}&cat={{ slug }}{% if q %}&q={{ q }}{% endif %}" class="chip {% if categoria_ativa == slug %}active{% endif %}">{{ nome }}</a>
+            {% if slug != 'ssd' and slug != 'placa_video' and slug != 'placa_mae' %}
+            <a href="?periodo={{ periodo }}&cat={{ slug }}{% if q %}&q={{ q }}{% endif %}" class="chip {% if categoria_ativa == slug %}active{% endif %}">{{ nome }}</a>
+            {% endif %}
         {% endfor %}
     </div>
 </div>

@@ -65,33 +65,45 @@ def _save_promo_db(texto: str, photo_path: str = None):
     close_old_connections()
     from bot.models import Promo
 
-    # Detecta categoria pelo texto
+    # Detecta categoria pelo texto (Ordem de prioridade importa!)
     texto_lower = texto.lower()
     categoria = 'outros'
-    if any(k in texto_lower for k in ['ssd', 'nvme', 'm.2', 'hd ', 'armazenamento']):
-        categoria = 'ssd'
-    elif any(k in texto_lower for k in ['placa de vídeo', 'placa de video', 'rtx', 'gtx', 'rx ', 'radeon', 'geforce']):
-        categoria = 'placa_video'
-    elif any(k in texto_lower for k in ['processador', 'ryzen', 'intel core', 'amd core']):
-        categoria = 'processador'
-    elif any(k in texto_lower for k in ['notebook', 'laptop']):
+    
+    # 1. Produtos Completos
+    if any(k in texto_lower for k in ['notebook', 'laptop', 'macbook']):
         categoria = 'notebook'
-    elif any(k in texto_lower for k in ['monitor', 'display', 'ips ', 'oled']):
-        categoria = 'monitor'
     elif any(k in texto_lower for k in ['smartphone', 'celular', 'iphone', 'galaxy', 'moto g', 'poco', 'redmi']):
         categoria = 'celular'
-    elif any(k in texto_lower for k in ['televisão', 'televisao', 'tv ', 'smart tv']):
+    elif any(k in texto_lower for k in ['televisão', 'televisao', 'tv ', 'smart tv', 'polegada']):
         categoria = 'tv'
-    elif any(k in texto_lower for k in ['headset', 'headphone', 'fone', 'airpods', 'buds']):
+        
+    # 2. Peças Principais
+    elif any(k in texto_lower for k in ['placa de vídeo', 'placa de video', 'rtx', 'gtx', 'rx ', 'radeon', 'geforce']):
+        categoria = 'placa_video'
+    elif any(k in texto_lower for k in ['placa-mãe', 'placa mae', 'placa-mae', 'motherboard', ' b450 ', ' b550 ', ' a520 ', ' h610 ', ' b660 ', ' x670 ', ' am4 ', ' lga ']):
+        categoria = 'placa_mae'
+    elif any(k in texto_lower for k in ['processador', 'ryzen', 'intel core', 'amd core', ' i3 ', ' i5 ', ' i7 ', ' i9 ']):
+        categoria = 'processador'
+        
+    # 3. Monitor e Periféricos
+    elif any(k in texto_lower for k in ['monitor', 'display', 'ips ', 'oled', 'hz ', 'curvo']):
+        categoria = 'monitor'
+    elif any(k in texto_lower for k in ['headset', 'headphone', 'fone', 'airpods', 'buds', 'tws']):
         categoria = 'headset'
     elif any(k in texto_lower for k in ['teclado']):
         categoria = 'teclado'
     elif any(k in texto_lower for k in ['mouse']):
         categoria = 'mouse'
+        
+    # 4. Componentes Internos
+    elif any(k in texto_lower for k in ['memória ram', 'memoria ram', 'ddr4', 'ddr5', ' dimm ']):
+        categoria = 'memoria_ram'
+    elif any(k in texto_lower for k in ['ssd', 'nvme', 'm.2', 'hd ', 'armazenamento', 'sata']):
+        categoria = 'ssd'
+        
+    # 5. Outros
     elif any(k in texto_lower for k in ['cadeira', 'gamer chair']):
         categoria = 'cadeira'
-    elif any(k in texto_lower for k in ['memória ram', 'memoria ram', 'ddr4', 'ddr5']):
-        categoria = 'memoria_ram'
     elif any(k in texto_lower for k in ['impressora']):
         categoria = 'impressora'
 

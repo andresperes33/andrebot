@@ -55,6 +55,7 @@ class Promo(models.Model):
     CATEGORIA_CHOICES = [
         ('ssd', 'SSD / HD'),
         ('placa_video', 'Placa de Vídeo'),
+        ('placa_mae', 'Placa-mãe'),
         ('processador', 'Processador'),
         ('memoria_ram', 'Memória RAM'),
         ('notebook', 'Notebook'),
