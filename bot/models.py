@@ -45,3 +45,44 @@ class BotConfig(models.Model):
     @classmethod
     def set(cls, key, value):
         cls.objects.update_or_create(key=key, defaults={'value': str(value)})
+
+
+class Promo(models.Model):
+    """
+    Armazena cada promoção detectada pelo bot monitor.
+    Alimenta a página pública de promos.
+    """
+    CATEGORIA_CHOICES = [
+        ('ssd', 'SSD / HD'),
+        ('placa_video', 'Placa de Vídeo'),
+        ('processador', 'Processador'),
+        ('memoria_ram', 'Memória RAM'),
+        ('notebook', 'Notebook'),
+        ('monitor', 'Monitor'),
+        ('celular', 'Celular / Smartphone'),
+        ('tv', 'TV'),
+        ('headset', 'Fone / Headset'),
+        ('teclado', 'Teclado'),
+        ('mouse', 'Mouse'),
+        ('cadeira', 'Cadeira Gamer'),
+        ('impressora', 'Impressora'),
+        ('outros', 'Outros'),
+    ]
+
+    titulo = models.CharField(max_length=500, blank=True)
+    preco = models.CharField(max_length=100, blank=True)
+    cupom = models.CharField(max_length=200, blank=True)
+    link_afiliado = models.URLField(max_length=2000)
+    imagem_url = models.URLField(max_length=2000, blank=True)
+    categoria = models.CharField(max_length=50, choices=CATEGORIA_CHOICES, default='outros')
+    fonte = models.CharField(max_length=100, default='zFinnY')
+    texto_original = models.TextField(blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-criado_em']
+        verbose_name = 'Promoção'
+        verbose_name_plural = 'Promoções'
+
+    def __str__(self):
+        return f"{self.titulo[:60]} — {self.preco} ({self.criado_em.strftime('%d/%m %H:%M')})"

@@ -56,6 +56,86 @@ async def save_last_id(msg_id: int):
         logger.error(f"❌ Erro ao persistir last_id={msg_id} no banco: {e}")
 
 
+def _save_promo_db(texto: str, photo_path: str = None):
+    """
+    Salva a promoção no banco de dados para exibição na página web.
+    Detecta categoria automaticamente pelo conteúdo do texto.
+    """
+    from django.db import close_old_connections
+    close_old_connections()
+    from bot.models import Promo
+
+    # Detecta categoria pelo texto
+    texto_lower = texto.lower()
+    categoria = 'outros'
+    if any(k in texto_lower for k in ['ssd', 'nvme', 'm.2', 'hd ', 'armazenamento']):
+        categoria = 'ssd'
+    elif any(k in texto_lower for k in ['placa de vídeo', 'placa de video', 'rtx', 'gtx', 'rx ', 'radeon', 'geforce']):
+        categoria = 'placa_video'
+    elif any(k in texto_lower for k in ['processador', 'ryzen', 'intel core', 'amd core']):
+        categoria = 'processador'
+    elif any(k in texto_lower for k in ['notebook', 'laptop']):
+        categoria = 'notebook'
+    elif any(k in texto_lower for k in ['monitor', 'display', 'ips ', 'oled']):
+        categoria = 'monitor'
+    elif any(k in texto_lower for k in ['smartphone', 'celular', 'iphone', 'galaxy', 'moto g', 'poco', 'redmi']):
+        categoria = 'celular'
+    elif any(k in texto_lower for k in ['televisão', 'televisao', 'tv ', 'smart tv']):
+        categoria = 'tv'
+    elif any(k in texto_lower for k in ['headset', 'headphone', 'fone', 'airpods', 'buds']):
+        categoria = 'headset'
+    elif any(k in texto_lower for k in ['teclado']):
+        categoria = 'teclado'
+    elif any(k in texto_lower for k in ['mouse']):
+        categoria = 'mouse'
+    elif any(k in texto_lower for k in ['cadeira', 'gamer chair']):
+        categoria = 'cadeira'
+    elif any(k in texto_lower for k in ['memória ram', 'memoria ram', 'ddr4', 'ddr5']):
+        categoria = 'memoria_ram'
+    elif any(k in texto_lower for k in ['impressora']):
+        categoria = 'impressora'
+
+    # Extrai link afiliado
+    import re
+    links = re.findall(r'(https?://\S+)', texto)
+    link_afiliado = ''
+    for lnk in links:
+        if any(d in lnk for d in ['amazon', 'shopee', 'mercadolivre', 'kabum', 'magaz', 'awin', 'tidd']):
+            link_afiliado = lnk.rstrip(')')
+            break
+    if not link_afiliado and links:
+        link_afiliado = links[0].rstrip(')')
+
+    if not link_afiliado:
+        return  # Sem link não salva
+
+    # Extrai título (primeira linha não vazia sem emojis/símbolos)
+    titulo = ''
+    for linha in texto.split('\n'):
+        limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
+        if len(limpa) > 10:
+            titulo = limpa[:250]
+            break
+
+    # Extrai preço
+    preco_match = re.search(r'R\$\s*[\d.,]+', texto)
+    preco = preco_match.group(0).strip() if preco_match else ''
+
+    # Extrai cupom
+    cupom_match = re.search(r'(?i)cupom[:\s]+([A-Z0-9]+)', texto)
+    cupom = cupom_match.group(1).strip() if cupom_match else ''
+
+    Promo.objects.create(
+        titulo=titulo,
+        preco=preco,
+        cupom=cupom,
+        link_afiliado=link_afiliado,
+        imagem_url='',  # foto local não é URL pública
+        categoria=categoria,
+        texto_original=texto[:2000],
+    )
+
+
 class Command(BaseCommand):
     help = 'Monitor zFinnY -> Telegram + WhatsApp (Autônomo, PC pode estar desligado)'
 
@@ -178,12 +258,17 @@ class Command(BaseCommand):
                 # ─── Dispara alertas para usuários do Bot ────────────────────
                 try:
                     from bot.alert_sender import send_alerts
-                    # asyncio.to_thread roda send_alerts em thread separada
-                    # evitando SynchronousOnlyOperation do Django ORM em contexto async
                     await asyncio.to_thread(send_alerts, modified_text, photo_path)
                     logger.info("🔔 Alertas de usuários verificados/enviados")
                 except Exception as alert_err:
                     logger.error(f"❌ Erro ao enviar alertas: {alert_err}")
+
+                # ─── Salva a promo no banco para a página web ─────────────────
+                try:
+                    await asyncio.to_thread(_save_promo_db, modified_text, photo_path)
+                    logger.info("💾 Promo salva no banco de dados")
+                except Exception as db_err:
+                    logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")
 
                 # ─── Limpa foto após 90s ─────────────────────────────────────
                 if photo_path:

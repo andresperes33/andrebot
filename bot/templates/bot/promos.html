@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promoções de Tech | André Indica</title>
+    <meta name="description" content="As melhores promoções de tecnologia encontradas pelo bot André Indica. SSD, placa de vídeo, notebooks e muito mais com cupons e links de afiliado.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #13131a;
+            --surface2: #1c1c28;
+            --border: #2a2a3d;
+            --accent: #ff6b00;
+            --accent2: #ff9500;
+            --text: #e8e8f0;
+            --muted: #8888a8;
+            --green: #00c878;
+            --radius: 14px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ─── Header ─── */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo span { color: var(--accent); }
+
+        /* ─── Search ─── */
+        .search-form {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            max-width: 400px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 10px 16px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+        .btn-search {
+            padding: 10px 18px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn-search:hover { background: var(--accent2); }
+
+        /* ─── Hero ─── */
+        .hero {
+            background: linear-gradient(135deg, #1a1a2e 0%, #0d0d1a 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 40px 24px 32px;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: clamp(24px, 5vw, 42px);
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .hero p { color: var(--muted); font-size: 15px; }
+
+        /* ─── Filters ─── */
+        .filters-bar {
+            max-width: 1200px;
+            margin: 24px auto 0;
+            padding: 0 24px;
+        }
+        .period-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 8px 18px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .tab:hover { border-color: var(--accent); color: var(--accent); }
+        .tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+        .cat-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .chip {
+            padding: 5px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted);
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .chip:hover { border-color: var(--accent); color: var(--text); }
+        .chip.active { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+
+        /* ─── Stats ─── */
+        .stats {
+            max-width: 1200px;
+            margin: 6px auto 0;
+            padding: 0 24px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* ─── Grid ─── */
+        .promos-grid {
+            max-width: 1200px;
+            margin: 24px auto 60px;
+            padding: 0 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        /* ─── Card ─── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            animation: fadeIn 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 8px 32px rgba(255, 107, 0, 0.15);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-thumb {
+            aspect-ratio: 16/9;
+            background: var(--surface2);
+            overflow: hidden;
+            position: relative;
+        }
+        .card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        .card:hover .card-thumb img { transform: scale(1.04); }
+        .card-thumb .no-img {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            opacity: 0.3;
+        }
+
+        .cat-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(6px);
+            color: var(--accent2);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .card-body {
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-price {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .card-cupom {
+            background: rgba(255, 107, 0, 0.1);
+            border: 1px dashed var(--accent);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .card-cupom:hover { background: rgba(255, 107, 0, 0.2); }
+        .card-cupom code {
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent2);
+            letter-spacing: 1px;
+        }
+        .copy-icon { font-size: 14px; opacity: 0.6; }
+
+        .card-footer {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-oferta {
+            display: block;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .btn-oferta:hover { opacity: 0.9; transform: scale(0.99); }
+
+        .card-date {
+            text-align: center;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        /* ─── Empty state ─── */
+        .empty {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 24px;
+            text-align: center;
+            color: var(--muted);
+        }
+        .empty .emoji { font-size: 56px; margin-bottom: 16px; }
+        .empty h2 { color: var(--text); margin-bottom: 8px; }
+
+        /* ─── Footer ─── */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--muted);
+            font-size: 13px;
+            border-top: 1px solid var(--border);
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+
+        /* ─── Toast ─── */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--green);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 13px;
+            z-index: 9999;
+            transition: transform 0.3s ease;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 600px) {
+            .header-inner { flex-direction: column; align-items: stretch; }
+            .search-form { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-inner">
+        <a href="/promos/" class="logo">🔥 <span>André</span>Indica</a>
+        <form class="search-form" method="get" action="/promos/">
+            {% if periodo != 'hoje' %}<input type="hidden" name="periodo" value="{{ periodo }}">{% endif %}
+            {% if categoria_ativa %}<input type="hidden" name="cat" value="{{ categoria_ativa }}">{% endif %}
+            <input class="search-input" type="text" name="q" placeholder="Buscar promoção..." value="{{ q }}">
+            <button class="btn-search" type="submit">🔍</button>
+        </form>
+    </div>
+</header>
+
+<div class="hero">
+    <h1>🔥 Promoções de Tech</h1>
+    <p>Bot monitorando 24h e jogando as melhores ofertas aqui, no Telegram e no WhatsApp</p>
+</div>
+
+<div class="filters-bar">
+    <!-- Filtros de período -->
+    <div class="period-tabs">
+        <a href="?periodo=hoje{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="tab {% if periodo == 'hoje' %}active{% endif %}">Hoje</a>
+        <a href="?periodo=semana{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="tab {% if periodo == 'semana' %}active{% endif %}">Esta Semana</a>
+        <a href="?periodo=mes{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="tab {% if periodo == 'mes' %}active{% endif %}">Este Mês</a>
+        <a href="?periodo=tudo{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="tab {% if periodo == 'tudo' %}active{% endif %}">Tudo</a>
+    </div>
+
+    <!-- Filtros de categoria -->
+    <div class="cat-chips">
+        <a href="?periodo={{ periodo }}{% if q %}&q={{ q }}{% endif %}" class="chip {% if not categoria_ativa %}active{% endif %}">🔖 Todas</a>
+        {% for slug, nome in categorias %}
+        <a href="?periodo={{ periodo }}&cat={{ slug }}{% if q %}&q={{ q }}{% endif %}" class="chip {% if categoria_ativa == slug %}active{% endif %}">{{ nome }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="stats">
+    <span>{{ total }} oferta{{ total|pluralize:"s" }} encontrada{{ total|pluralize:"s" }}</span>
+</div>
+
+{% if promos %}
+<div class="promos-grid" id="grid">
+    {% for promo in promos %}
+    <div class="card">
+        <div class="card-thumb">
+            {% if promo.imagem_url %}
+                <img src="{{ promo.imagem_url }}" alt="{{ promo.titulo }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <div class="no-img" style="display:none">🛒</div>
+            {% else %}
+                <div class="no-img">🛒</div>
+            {% endif %}
+            <span class="cat-badge">{{ promo.get_categoria_display }}</span>
+        </div>
+        <div class="card-body">
+            <div class="card-title">{{ promo.titulo|default:"Oferta imperdível" }}</div>
+            {% if promo.preco %}
+            <div class="card-price">{{ promo.preco }}</div>
+            {% endif %}
+            {% if promo.cupom %}
+            <div class="card-cupom" onclick="copyCupom('{{ promo.cupom }}', this)">
+                <span>🏷️ Cupom: <code>{{ promo.cupom }}</code></span>
+                <span class="copy-icon">📋</span>
+            </div>
+            {% endif %}
+            <div class="card-footer">
+                <a href="{{ promo.link_afiliado }}" target="_blank" rel="noopener" class="btn-oferta">Ver Oferta →</a>
+                <div class="card-date">{{ promo.criado_em|date:"d/m/Y \à\s H:i" }}</div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty">
+    <div class="emoji">😅</div>
+    <h2>Nenhuma oferta encontrada</h2>
+    <p>Tente mudar o período ou a categoria. O bot está monitorando e logo aparecerão novas ofertas!</p>
+</div>
+{% endif %}
+
+<footer>
+    Feito com 🔥 por <a href="https://www.andreindica.com.br" target="_blank">André Indica</a> · 
+    <a href="https://t.me/alertas_andre_bot" target="_blank">Ativar alertas no Telegram</a>
+</footer>
+
+<div class="toast" id="toast">✅ Cupom copiado!</div>
+
+<script>
+    function copyCupom(cupom, el) {
+        navigator.clipboard.writeText(cupom).then(() => {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        });
+    }
+
+    // Auto-refresh a cada 3 minutos quando estiver na aba "Hoje"
+    {% if periodo == 'hoje' %}
+    setTimeout(() => location.reload(), 3 * 60 * 1000);
+    {% endif %}
+</script>
+</body>
+</html>

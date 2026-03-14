@@ -20,7 +20,7 @@ SYNONYM_GROUPS = [
     {'televisao', 'tv', 'smart tv', 'televisão', 'monitor tv'},
     {'geladeira', 'refrigerador', 'frigorifico'},
     {'airfryer', 'air fryer', 'fritadeira eletrica', 'fritadeira elétrica'},
-    {'monitor', 'tela'},
+    {'monitor'},
     {'teclado mecanico', 'teclado mecânico', 'teclado'},
     {'fone de ouvido', 'headphone', 'headset', 'auricular', 'fone', 'airpods', 'buds'},
     {'ssd', 'solid state', 'hd ssd', 'nvme', 'm2 ssd'},
