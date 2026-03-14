@@ -125,12 +125,36 @@ def _save_promo_db(texto: str, photo_path: str = None):
     cupom_match = re.search(r'(?i)cupom[:\s]+([A-Z0-9]+)', texto)
     cupom = cupom_match.group(1).strip() if cupom_match else ''
 
+    # Processa imagem para a Web
+    imagem_url = ''
+    if photo_path and os.path.exists(photo_path):
+        try:
+            import shutil
+            from django.conf import settings
+            
+            # Garante que a pasta media/promos existe
+            media_promos_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
+            os.makedirs(media_promos_dir, exist_ok=True)
+            
+            # Gera nome do arquivo único baseado na data/hora
+            import time
+            filename = f"promo_{int(time.time())}_{os.path.basename(photo_path)}"
+            new_path = os.path.join(media_promos_dir, filename)
+            
+            # Copia o arquivo para a pasta pública
+            shutil.copy2(photo_path, new_path)
+            
+            # Salva a URL relativa
+            imagem_url = f"{settings.MEDIA_URL}promos/{filename}"
+        except Exception as img_err:
+            logger.error(f"❌ Erro ao processar imagem para DB: {img_err}")
+
     Promo.objects.create(
         titulo=titulo,
         preco=preco,
         cupom=cupom,
         link_afiliado=link_afiliado,
-        imagem_url='',  # foto local não é URL pública
+        imagem_url=imagem_url,
         categoria=categoria,
         texto_original=texto[:2000],
     )

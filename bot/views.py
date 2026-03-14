@@ -11,9 +11,9 @@ def promos_view(request):
     """
     promos = Promo.objects.all()
 
-    # Filtro de data
+    # Filtro de data — usa horário de Brasília (America/Sao_Paulo)
     periodo = request.GET.get('periodo', 'hoje')
-    agora = timezone.now()
+    agora = timezone.localtime(timezone.now())   # converte UTC → Brasília
     if periodo == 'hoje':
         promos = promos.filter(criado_em__date=agora.date())
     elif periodo == 'semana':
