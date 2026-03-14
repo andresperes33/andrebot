@@ -123,25 +123,33 @@
             padding: 16px;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 20px;
             text-align: left;
             transition: transform 0.2s;
             text-decoration: none;
             color: #333;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            position: relative;
         }
         .cta-card:hover { transform: scale(1.02); }
-        .cta-icon {
-            width: 60px;
-            height: 60px;
+        
+        .cta-qr {
+            width: 80px;
+            height: 80px;
             background: #f0f0f5;
-            border-radius: 12px;
+            border-radius: 8px;
+            padding: 4px;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
-            flex-shrink: 0;
         }
+        .cta-qr img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
         .cta-info { flex: 1; }
         .cta-info span { display: block; font-size: 12px; color: #666; }
         .cta-info strong { display: block; font-size: 16px; color: #111; font-weight: 700; }
@@ -438,7 +446,9 @@
         <!-- WhatsApp -->
         <div class="cta-card-wrapper">
             <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" class="cta-card">
-                <div class="cta-icon">📱</div>
+                <div class="cta-qr">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" alt="QR Code WhatsApp">
+                </div>
                 <div class="cta-info">
                     <span>Entre no</span>
                     <strong>Grupo de WhatsApp</strong>
@@ -451,7 +461,9 @@
         <!-- Telegram -->
         <div class="cta-card-wrapper">
             <a href="https://t.me/AlertaTechBrasil" target="_blank" class="cta-card">
-                <div class="cta-icon">✈️</div>
+                <div class="cta-qr">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://t.me/AlertaTechBrasil" alt="QR Code Telegram">
+                </div>
                 <div class="cta-info">
                     <span>Entre no</span>
                     <strong>Canal do Telegram</strong>
@@ -464,7 +476,9 @@
         <!-- Bot -->
         <div class="cta-card-wrapper">
             <a href="https://t.me/alertas_andre_bot" target="_blank" class="cta-card">
-                <div class="cta-icon">🤖</div>
+                <div class="cta-qr">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://t.me/alertas_andre_bot" alt="QR Code Bot">
+                </div>
                 <div class="cta-info">
                     <span>Ative o seu</span>
                     <strong>Bot de Alerta</strong>
