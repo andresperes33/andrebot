@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidade | André Indica</title>
+    <link rel="icon" type="image/png" href="{% static 'bot/favicon.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #13131a;
+            --surface2: #1c1c28;
+            --border: #2a2a3d;
+            --text: #e1e1e6;
+            --text-dim: #a8a8b3;
+            --accent: #ff6b00;
+            --accent-glow: rgba(255, 107, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        h2 {
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        p {
+            margin-bottom: 1.2rem;
+            color: var(--text-dim);
+        }
+
+        ul {
+            margin-bottom: 1.2rem;
+            padding-left: 1.5rem;
+            color: var(--text-dim);
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            transition: 0.3s;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+            transform: translateX(-5px);
+        }
+
+        footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'promos' %}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Voltar para as Ofertas
+        </a>
+
+        <h1>Política de Privacidade</h1>
+        
+        <p>A sua privacidade é importante para nós. É política do André Indica respeitar a sua privacidade em relação a qualquer informação sua que possamos coletar no site André Indica, e outros sites que possuímos e operamos.</p>
+
+        <h2>1. Coleta de Informações</h2>
+        <p>Solicitamos informações pessoais apenas quando realmente precisamos delas para lhe fornecer um serviço. Fazemo-lo por meios justos e legais, com o seu conhecimento e consentimento. Também informamos por que estamos coletando e como será usado.</p>
+
+        <h2>2. Uso de Cookies (Google Analytics e AdSense)</h2>
+        <p>Este site utiliza o Google Analytics para entender como nossos visitantes usam o site. Além disso, utilizamos o Google AdSense para exibir anúncios. Esses serviços utilizam cookies para:</p>
+        <ul>
+            <li>Rastrear métricas de navegação (páginas visitadas, tempo no site).</li>
+            <li>Exibir anúncios relevantes com base em suas visitas anteriores.</li>
+            <li>Melhorar a experiência geral do usuário.</li>
+        </ul>
+
+        <h2>3. Publicidade</h2>
+        <p>O Google, como fornecedor de terceiros, utiliza cookies para exibir anúncios neste site. Com o uso do cookie DART, o Google pode exibir anúncios para seus usuários com base nas visitas feitas a este e a outros sites na Internet. Os usuários podem desativar o cookie DART visitando a Política de Privacidade da rede de conteúdo e dos anúncios do Google.</p>
+
+        <h2>4. Retenção de Dados</h2>
+        <p>Apenas retemos as informações coletadas pelo tempo necessário para fornecer o serviço solicitado. Quando armazenamos dados, os protegemos dentro de meios comercialmente aceitáveis ​​para evitar perdas e roubos, bem como acesso, divulgação, cópia, uso ou modificação não autorizados.</p>
+
+        <h2>5. Links de Terceiros (Afiliados)</h2>
+        <p>Nosso site contém links para sites externos (como Amazon, Mercado Livre, Magalu, Shopee, etc.) que não são operados por nós. Esteja ciente de que não temos controle sobre o conteúdo e práticas desses sites e não podemos aceitar responsabilidade por suas respectivas políticas de privacidade.</p>
+
+        <h2>6. Consentimento</h2>
+        <p>O uso continuado de nosso site será considerado como aceitação de nossas práticas em torno de privacidade e informações pessoais. Se você tiver alguma dúvida sobre como lidamos com dados do usuário e informações pessoais, entre em contato conosco.</p>
+
+        <footer>
+            &copy; 2026 André Indica - Todos os direitos reservados.
+        </footer>
+    </div>
+</body>
+</html>

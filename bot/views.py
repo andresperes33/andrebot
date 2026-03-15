@@ -46,3 +46,21 @@ def promos_view(request):
         'q': q,
         'total': promos.count(),
     })
+
+
+def privacy_view(request):
+    """
+    Página de Política de Privacidade (Obrigatória para AdSense).
+    """
+    return render(request, 'bot/privacy.html')
+
+
+from django.http import HttpResponse
+
+def ads_txt_view(request):
+    """
+    Serve o arquivo ads.txt na raiz.
+    Substitua pelo seu ID de editor quando tiver.
+    """
+    content = "google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0"
+    return HttpResponse(content, content_type="text/plain")
