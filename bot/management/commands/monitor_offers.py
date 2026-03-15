@@ -146,31 +146,51 @@ def _save_promo_db(texto: str, photo_path: str = None):
             return False
         return True
 
-    # 1. Busca padrão "R$XX OFF ... - CODIGO"
-    matches_desc = re.finditer(r'(?i)(.*?OFF.*?)-\s*([A-Z0-9]{4,20})(?=\s|$)', texto)
+    # 1. Busca padrão "R$XX OFF ... - CODIGO" ou "% OFF ... - CODIGO"
+    matches_desc = re.finditer(r'(?i)(.*?(?:OFF|desconto).*?)-\s*([A-Z0-9]{4,20})(?=\s|$)', texto)
     for m in matches_desc:
         regra = m.group(1).strip()
         codigo = m.group(2).strip()
         if is_valid_coupon(codigo):
             cupons_encontrados.append({"regra": regra, "codigo": codigo})
             
-    # 2. Busca linhas com traço separando regra do cupom (se não pegou no anterior)
+    # 2. Varredura Inteligente Linha a Linha (com contexto anterior)
     linhas = [l.strip() for l in texto.split('\n') if l.strip()]
     for i, linha in enumerate(linhas):
-        if '-' in linha and 'http' not in linha:
-            parts = linha.rsplit('-', 1)
-            regra_potencial = parts[0].strip()
-            codigo_potencial = parts[1].strip()
-            if re.match(r'^[A-Z0-9]{4,20}$', codigo_potencial) and is_valid_coupon(codigo_potencial):
-                if not any(c['codigo'] == codigo_potencial for c in cupons_encontrados):
-                    cupons_encontrados.append({"regra": regra_potencial, "codigo": codigo_potencial})
-                    
-        # 3. Padrão "Cupom: CODIGO" e "Cupom CODIGO"
+        codigo_encontrado = None
+        regra_contexto = []
+        
+        # Tenta achar cupom no formato "Cupom: CODIGO" ou com "-"
         match_direto = re.search(r'(?i)cupom[:\s]+([A-Z0-9]{4,20})', linha)
         if match_direto:
-            codigo_dir = match_direto.group(1).strip()
-            if is_valid_coupon(codigo_dir) and not any(c['codigo'] == codigo_dir for c in cupons_encontrados):
-                cupons_encontrados.append({"regra": "Cupom de Desconto", "codigo": codigo_dir})
+            codigo_encontrado = match_direto.group(1).strip()
+        elif '-' in linha and 'http' not in linha:
+            parts = linha.rsplit('-', 1)
+            codigo_potencial = parts[1].strip()
+            if re.match(r'^[A-Z0-9]{4,20}$', codigo_potencial):
+                codigo_encontrado = codigo_potencial
+                if parts[0].strip():
+                    regra_contexto.append(parts[0].strip())
+
+        if codigo_encontrado and is_valid_coupon(codigo_encontrado):
+            if not any(c['codigo'] == codigo_encontrado for c in cupons_encontrados):
+                # Olha para as 2 linhas de cima buscando regras (OFF, limite, acima de)
+                for lookback in range(1, 3):
+                    if i - lookback >= 0:
+                        l_ant = linhas[i - lookback]
+                        if any(k in l_ant.lower() for k in ['off', 'limite', 'acima de', 'mínima', 'valor']):
+                            # Remove emojis do começo se quiser, mas vamos pegar a linha
+                            regra_limpa = re.sub(r'^[^\w\s]+', '', l_ant).strip()
+                            if regra_limpa and regra_limpa not in regra_contexto:
+                                regra_contexto.insert(0, regra_limpa)
+
+                # Monta a regra final
+                if regra_contexto:
+                    regra_final = " | ".join(regra_contexto)
+                else:
+                    regra_final = "Cupom de Desconto"
+
+                cupons_encontrados.append({"regra": regra_final, "codigo": codigo_encontrado})
 
     cupom_str = json.dumps(cupons_encontrados, ensure_ascii=False) if cupons_encontrados else ''
 
