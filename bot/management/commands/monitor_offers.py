@@ -133,9 +133,37 @@ def _save_promo_db(texto: str, photo_path: str = None):
     preco_match = re.search(r'R\$\s*[\d.,]+', texto)
     preco = preco_match.group(0).strip() if preco_match else ''
 
-    # Extrai cupom
-    cupom_match = re.search(r'(?i)cupom[:\s]+([A-Z0-9]+)', texto)
-    cupom = cupom_match.group(1).strip() if cupom_match else ''
+    # Extrai múltiplos cupons
+    import json
+    cupons_encontrados = []
+    
+    # 1. Busca padrão "R$XX OFF ... - CODIGO"
+    matches_desc = re.finditer(r'(?i)(.*?OFF.*?)-\s*([A-Z0-9]{4,20})(?=\s|$)', texto)
+    for m in matches_desc:
+        regra = m.group(1).strip()
+        codigo = m.group(2).strip()
+        if not codigo.isnumeric():
+            cupons_encontrados.append({"regra": regra, "codigo": codigo})
+            
+    # 2. Busca linhas com traço separando regra do cupom (se não pegou no anterior)
+    linhas = [l.strip() for l in texto.split('\n') if l.strip()]
+    for i, linha in enumerate(linhas):
+        if '-' in linha and 'http' not in linha:
+            parts = linha.rsplit('-', 1)
+            regra_potencial = parts[0].strip()
+            codigo_potencial = parts[1].strip()
+            if re.match(r'^[A-Z0-9]{4,20}$', codigo_potencial) and not codigo_potencial.isnumeric():
+                if not any(c['codigo'] == codigo_potencial for c in cupons_encontrados):
+                    cupons_encontrados.append({"regra": regra_potencial, "codigo": codigo_potencial})
+                    
+        # 3. Padrão "Cupom: CODIGO"
+        match_direto = re.search(r'(?i)cupom[:\s]+([A-Z0-9]{4,20})', linha)
+        if match_direto:
+            codigo_dir = match_direto.group(1).strip()
+            if not codigo_dir.isnumeric() and not any(c['codigo'] == codigo_dir for c in cupons_encontrados):
+                cupons_encontrados.append({"regra": "Cupom de Desconto", "codigo": codigo_dir})
+
+    cupom_str = json.dumps(cupons_encontrados, ensure_ascii=False) if cupons_encontrados else ''
 
     # Processa imagem para a Web
     imagem_url = ''

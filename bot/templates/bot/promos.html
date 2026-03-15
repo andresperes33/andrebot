@@ -538,10 +538,19 @@
             {% if promo.preco %}
             <div class="card-price">{{ promo.preco }}</div>
             {% endif %}
-            {% if promo.cupom %}
-            <div class="card-cupom" onclick="copyCupom('{{ promo.cupom }}', this)">
-                <span>🏷️ Cupom: <code>{{ promo.cupom }}</code></span>
-                <span class="copy-icon">📋</span>
+            {% if promo.cupons_lista %}
+            <div class="cupons-container" style="display: flex; flex-direction: column; gap: 6px;">
+                {% for c in promo.cupons_lista %}
+                <div class="card-cupom" onclick="copyCupom('{{ c.codigo }}', this)">
+                    <div style="display:flex; flex-direction:column; gap:2px; flex:1">
+                        {% if c.regra and c.regra != "Cupom de Desconto" and c.regra|lower != "cupom" and "compre na" not in c.regra|lower %}
+                        <span style="font-size: 11px; opacity: 0.8; line-height: 1.2;">{{ c.regra|truncatechars:60 }}</span>
+                        {% endif %}
+                        <span>🏷️ Cupom: <code>{{ c.codigo }}</code></span>
+                    </div>
+                    <span class="copy-icon" title="Copiar código">📋</span>
+                </div>
+                {% endfor %}
             </div>
             {% endif %}
             <div class="card-footer">

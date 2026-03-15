@@ -35,6 +35,20 @@ def promos_view(request):
 
     categorias = Promo.CATEGORIA_CHOICES
 
+    import json
+    for promo in promos:
+        promo.cupons_lista = []
+        if promo.cupom:
+            try:
+                cupons_parsed = json.loads(promo.cupom)
+                if isinstance(cupons_parsed, list):
+                    promo.cupons_lista = cupons_parsed
+                else:
+                    promo.cupons_lista.append({"regra": "Cupom de Desconto", "codigo": promo.cupom})
+            except (json.JSONDecodeError, TypeError):
+                # Compatibilidade com promoções antigas salvas como string simples
+                promo.cupons_lista.append({"regra": "Cupom de Desconto", "codigo": promo.cupom})
+
     return render(request, 'bot/promos.html', {
         'promos': promos,
         'periodo': periodo,
