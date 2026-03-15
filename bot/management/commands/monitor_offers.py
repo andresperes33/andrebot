@@ -137,12 +137,21 @@ def _save_promo_db(texto: str, photo_path: str = None):
     import json
     cupons_encontrados = []
     
+    ignore_words = {'MERCADO', 'LIVRE', 'SHOPEE', 'AMAZON', 'KABUM', 'MAGAZINE', 'ALIEXPRESS', 'DESCONTO', 'NOVO', 'PRIME', 'NINJA', 'OFERTA', 'PROMO', 'CUPOM'}
+    
+    def is_valid_coupon(code):
+        if not code or code.isnumeric() or len(code) < 4:
+            return False
+        if code.upper() in ignore_words:
+            return False
+        return True
+
     # 1. Busca padrão "R$XX OFF ... - CODIGO"
     matches_desc = re.finditer(r'(?i)(.*?OFF.*?)-\s*([A-Z0-9]{4,20})(?=\s|$)', texto)
     for m in matches_desc:
         regra = m.group(1).strip()
         codigo = m.group(2).strip()
-        if not codigo.isnumeric():
+        if is_valid_coupon(codigo):
             cupons_encontrados.append({"regra": regra, "codigo": codigo})
             
     # 2. Busca linhas com traço separando regra do cupom (se não pegou no anterior)
@@ -152,15 +161,15 @@ def _save_promo_db(texto: str, photo_path: str = None):
             parts = linha.rsplit('-', 1)
             regra_potencial = parts[0].strip()
             codigo_potencial = parts[1].strip()
-            if re.match(r'^[A-Z0-9]{4,20}$', codigo_potencial) and not codigo_potencial.isnumeric():
+            if re.match(r'^[A-Z0-9]{4,20}$', codigo_potencial) and is_valid_coupon(codigo_potencial):
                 if not any(c['codigo'] == codigo_potencial for c in cupons_encontrados):
                     cupons_encontrados.append({"regra": regra_potencial, "codigo": codigo_potencial})
                     
-        # 3. Padrão "Cupom: CODIGO"
+        # 3. Padrão "Cupom: CODIGO" e "Cupom CODIGO"
         match_direto = re.search(r'(?i)cupom[:\s]+([A-Z0-9]{4,20})', linha)
         if match_direto:
             codigo_dir = match_direto.group(1).strip()
-            if not codigo_dir.isnumeric() and not any(c['codigo'] == codigo_dir for c in cupons_encontrados):
+            if is_valid_coupon(codigo_dir) and not any(c['codigo'] == codigo_dir for c in cupons_encontrados):
                 cupons_encontrados.append({"regra": "Cupom de Desconto", "codigo": codigo_dir})
 
     cupom_str = json.dumps(cupons_encontrados, ensure_ascii=False) if cupons_encontrados else ''
