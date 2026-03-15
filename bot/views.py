@@ -35,31 +35,8 @@ def promos_view(request):
 
     categorias = Promo.CATEGORIA_CHOICES
 
-    import json
-    for promo in promos:
-        # 1. Parsing de múltiplos cupons
-        promo.cupons_lista = []
-        if promo.cupom:
-            try:
-                cupons_parsed = json.loads(promo.cupom)
-                if isinstance(cupons_parsed, list):
-                    promo.cupons_lista = cupons_parsed
-                else:
-                    promo.cupons_lista.append({"regra": "Cupom de Desconto", "codigo": promo.cupom})
-            except (json.JSONDecodeError, TypeError):
-                promo.cupons_lista.append({"regra": "Cupom de Desconto", "codigo": promo.cupom})
-
-        # 2. Parsing de múltiplos links
-        promo.links_lista = []
-        if promo.link_afiliado:
-            try:
-                links_parsed = json.loads(promo.link_afiliado)
-                if isinstance(links_parsed, list):
-                    promo.links_lista = links_parsed
-                else:
-                    promo.links_lista.append({"nome": "Ver Oferta", "url": promo.link_afiliado})
-            except (json.JSONDecodeError, TypeError):
-                promo.links_lista.append({"nome": "Ver Oferta", "url": promo.link_afiliado})
+    # Não é mais necessário processar cupons ou links complexos
+    pass
 
     return render(request, 'bot/promos.html', {
         'promos': promos,

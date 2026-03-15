@@ -59,238 +59,94 @@ async def save_last_id(msg_id: int):
 def _save_promo_db(texto: str, photo_path: str = None):
     """
     Salva a promoção no banco de dados para exibição na página web.
-    Detecta categoria automaticamente pelo conteúdo do texto.
+    Réplica fiel do texto enviado ao Telegram.
     """
     from django.db import close_old_connections
     close_old_connections()
     from bot.models import Promo
+    import re
 
-    # Detecta categoria pelo texto (Ordem de prioridade importa!)
+    # Detecta categoria pelo texto
     texto_lower = texto.lower()
     categoria = 'outros'
     
-    # 1. Produtos Completos
     if any(k in texto_lower for k in ['notebook', 'laptop', 'macbook']):
         categoria = 'notebook'
     elif any(k in texto_lower for k in ['smartphone', 'celular', 'iphone', 'galaxy', 'moto g', 'poco', 'redmi']):
         categoria = 'celular'
     elif any(k in texto_lower for k in ['televisão', 'televisao', 'tv ', 'smart tv', 'polegada']):
         categoria = 'tv'
-        
-    # 2. Peças Principais
     elif any(k in texto_lower for k in ['placa de vídeo', 'placa de video', 'rtx', 'gtx', 'rx ', 'radeon', 'geforce']):
         categoria = 'placa_video'
-    elif any(k in texto_lower for k in ['placa-mãe', 'placa mae', 'placa-mae', 'motherboard', ' b450 ', ' b550 ', ' a520 ', ' h610 ', ' b660 ', ' x670 ', ' am4 ', ' lga ']):
+    elif any(k in texto_lower for k in ['placa-mãe', 'placa mae', 'placa-mae', 'motherboard', ' b450 ', ' b550 ', ' a520 ', ' h610 ', ' b660 ', ' x670 ']):
         categoria = 'placa_mae'
-    elif any(k in texto_lower for k in ['processador', 'ryzen', 'intel core', 'amd core', ' i3 ', ' i5 ', ' i7 ', ' i9 ']):
+    elif any(k in texto_lower for k in ['processador', 'ryzen', 'intel core', 'amd core']):
         categoria = 'processador'
-        
-    # 3. Monitor e Periféricos
     elif any(k in texto_lower for k in ['monitor', 'display', 'ips ', 'oled', 'hz ', 'curvo']):
         categoria = 'monitor'
-    elif any(k in texto_lower for k in ['headset', 'headphone', 'fone', 'airpods', 'buds', 'tws']):
+    elif any(k in texto_lower for k in ['headset', 'headphone', 'fone']):
         categoria = 'headset'
     elif any(k in texto_lower for k in ['teclado']):
         categoria = 'teclado'
     elif any(k in texto_lower for k in ['mouse']):
         categoria = 'mouse'
-        
-    # 4. Componentes Internos
-    elif any(k in texto_lower for k in ['memória ram', 'memoria ram', 'ddr4', 'ddr5', ' dimm ']):
+    elif any(k in texto_lower for k in ['memória ram', 'memoria ram', 'ddr4', 'ddr5']):
         categoria = 'memoria_ram'
     elif any(k in texto_lower for k in ['ssd', 'nvme', 'm.2', 'hd ', 'armazenamento', 'sata']):
         categoria = 'ssd'
-        
-    # 5. Outros
     elif any(k in texto_lower for k in ['cadeira', 'gamer chair']):
         categoria = 'cadeira'
-    elif any(k in texto_lower for k in ['impressora']):
-        categoria = 'impressora'
 
-    import re
-    import json
-
-    # Extrai múltiplos links e seus respectivos contextos
-    links_encontrados = []
-    linhas = [l.strip() for l in texto.split('\n') if l.strip()]
-    
-    for linha in linhas:
-        # Encontra urls na linha
-        urls_na_linha = re.findall(r'(https?://\S+)', linha)
-        for url in urls_na_linha:
-            if any(d in url for d in ['amazon', 'shopee', 'mercadolivre', 'kabum', 'magaz', 'awin', 'tidd']):
-                url_limpa = url.rstrip(')')
-                # Tenta achar um contexto (nome) antes da URL na mesma linha
-                contexto = linha.replace(url, '').strip()
-                # Limpa setinhas e emojis básicos residuais no final da frase
-                contexto_limpo = re.sub(r'[:➡👉\-\s]+$', '', contexto).strip()
-                
-                # Se ainda tiver muito lixo de emoji no começo, também podemos limpar (ou deixar)
-                nome_botao = contexto_limpo if contexto_limpo else "Ver Oferta"
-                
-                # Previne duplicatas exatas
-                if not any(l['url'] == url_limpa for l in links_encontrados):
-                    links_encontrados.append({
-                        "nome": nome_botao,
-                        "url": url_limpa
-                    })
-
-    # Pega pelo menos o primeiro link (mesmo sem loja reconhecida) se tiver, caso passe vazio nas regras
-    if not links_encontrados:
-        todas_urls = re.findall(r'(https?://\S+)', texto)
-        if todas_urls:
-            links_encontrados.append({
-                "nome": "Ver Oferta",
-                "url": todas_urls[0].rstrip(')')
-            })
-
-    if not links_encontrados:
-        return  # Sem link não salva
-    
-    # Salva os links como um array JSON
-    link_afiliado = json.dumps(links_encontrados, ensure_ascii=False)
-
-    # Extrai título (primeira linha não vazia sem emojis/símbolos)
+    # Extrai título básico
     titulo = ''
     for linha in texto.split('\n'):
         limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
-        if len(limpa) > 10:
+        if len(limpa) > 5:
             titulo = limpa[:250]
             break
 
-    # Extrai preço - tenta encontrar preço do produto e ignora regras do tipo "R$ 180 OFF" ou "máximo de R$ 180"
+    # Brute force link extraction for field legacy
+    link_afiliado = ''
+    links = re.findall(r'(https?://\S+)', texto)
+    if links:
+        link_afiliado = links[0].rstrip(')')
+
+    # Preço básico para filtro
     preco = ''
-    # Primeiro tenta achar preço em linhas curtas ou após ícones/palavras chave
-    for linha in texto.split('\n'):
-        if re.search(r'(?i)(?:por|💰|💵|apenas|só)\s*(R\$\s*[\d.,]+)', linha) and 'off' not in linha.lower():
-            p_match = re.search(r'R\$\s*[\d.,]+', linha)
-            if p_match:
-                preco = p_match.group(0).strip()
-                break
-    
-    # Se não achou, pega qualquer valor que não esteja perto da palavra OFF
-    if not preco:
-        matches_preco = re.finditer(r'R\$\s*[\d.,]+', texto)
-        for m in matches_preco:
-            trecho = texto[max(0, m.start() - 10) : min(len(texto), m.end() + 10)].lower()
-            if 'off' not in trecho and 'máximo' not in trecho and 'limite' not in trecho:
-                preco = m.group(0).strip()
-                break
+    preco_match = re.search(r'R\$\s*[\d.,]+', texto)
+    if preco_match:
+        preco = preco_match.group(0).strip()
 
-    # Extrai múltiplos cupons
-    import json
-    cupons_encontrados = []
-    
-    ignore_words = {'MERCADO', 'LIVRE', 'SHOPEE', 'AMAZON', 'KABUM', 'MAGAZINE', 'ALIEXPRESS', 'DESCONTO', 'NOVO', 'PRIME', 'NINJA', 'OFERTA', 'PROMO', 'CUPOM', 'TECHAGORA', 'VALOR'} # adicionado 'VALOR' e outras words para evitar lixo se der erro
-    
-    def is_valid_coupon(code):
-        if not code or code.isnumeric() or len(code) < 4:
-            return False
-        if code.upper() in ignore_words:
-            return False
-        return True
-
-    # 1. Busca padrão "R$XX OFF ... - CODIGO" ou "% OFF ... - CODIGO" (multi-linha não funciona perfeitamente, movido parte pra linha a linha)
-    matches_desc = re.finditer(r'(?i)(.*?(?:OFF|desconto).*?)-\s*([A-Z0-9]{4,20})(?=\s|$)', texto)
-    for m in matches_desc:
-        regra = m.group(1).strip()
-        codigo = m.group(2).strip()
-        if is_valid_coupon(codigo):
-            cupons_encontrados.append({"regra": regra, "codigo": codigo})
-            
-    # 2. Varredura Inteligente Linha a Linha (com contexto anterior ou na mesma linha)
-    linhas = [l.strip() for l in texto.split('\n') if l.strip()]
-    for i, linha in enumerate(linhas):
-        codigo_encontrado = None
-        regra_contexto = []
-        
-        # Padrão: "10% OFF, máximo de R$ 180 OFF: TECHAGORA"
-        match_regra_mesma_linha = re.search(r'(?i)(.*?(?:OFF|limite|máximo).*?)[:\-]\s*([A-Z0-9]{4,20})$', linha)
-        
-        # Padrão: "Cupom: CODIGO"
-        match_direto = re.search(r'(?i)cupom[:\s]+([A-Z0-9]{4,20})', linha)
-        
-        if match_regra_mesma_linha:
-            regra_potencial = match_regra_mesma_linha.group(1).strip()
-            codigo_potencial = match_regra_mesma_linha.group(2).strip()
-            # Limpa lixo do inicio da regra
-            regra_potencial = re.sub(r'^[^\w\s]+', '', regra_potencial).strip()
-            
-            codigo_encontrado = codigo_potencial
-            if regra_potencial:
-                regra_contexto.append(regra_potencial)
-                
-        elif match_direto:
-            codigo_encontrado = match_direto.group(1).strip()
-        elif '-' in linha and 'http' not in linha:
-            parts = linha.rsplit('-', 1)
-            codigo_potencial = parts[1].strip()
-            if re.match(r'^[A-Z0-9]{4,20}$', codigo_potencial):
-                codigo_encontrado = codigo_potencial
-                if parts[0].strip():
-                    regra_contexto.append(parts[0].strip())
-
-        if codigo_encontrado and is_valid_coupon(codigo_encontrado):
-            if not any(c['codigo'] == codigo_encontrado for c in cupons_encontrados):
-                # Olha para as 2 linhas de cima buscando regras (OFF, limite, acima de)
-                for lookback in range(1, 3):
-                    if i - lookback >= 0:
-                        l_ant = linhas[i - lookback]
-                        if any(k in l_ant.lower() for k in ['off', 'limite', 'acima de', 'mínima', 'valor']):
-                            # Remove emojis do começo se quiser, mas vamos pegar a linha
-                            regra_limpa = re.sub(r'^[^\w\s]+', '', l_ant).strip()
-                            if regra_limpa and regra_limpa not in regra_contexto:
-                                regra_contexto.insert(0, regra_limpa)
-
-                # Monta a regra final
-                if regra_contexto:
-                    regra_final = " | ".join(regra_contexto)
-                else:
-                    regra_final = "Cupom de Desconto"
-
-                cupons_encontrados.append({"regra": regra_final, "codigo": codigo_encontrado})
-
-    cupom_str = json.dumps(cupons_encontrados, ensure_ascii=False) if cupons_encontrados else ''
-
-    # Processa imagem para a Web
+    # Processa imagem
     imagem_url = ''
     if photo_path and os.path.exists(photo_path):
         try:
             import shutil
             from django.conf import settings
-            
-            # Garante que a pasta media/promos existe
+            import os, time
             media_promos_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
             os.makedirs(media_promos_dir, exist_ok=True)
-            
-            # Gera nome do arquivo único baseado na data/hora
-            import time
             filename = f"promo_{int(time.time())}_{os.path.basename(photo_path)}"
             new_path = os.path.join(media_promos_dir, filename)
-            
-            # Copia o arquivo para a pasta pública
             shutil.copy2(photo_path, new_path)
-            
-            # Salva a URL relativa
             imagem_url = f"{settings.MEDIA_URL}promos/{filename}"
         except Exception as img_err:
-            logger.error(f"❌ Erro ao processar imagem para DB: {img_err}")
+            logger.error(f"❌ Erro imagem: {img_err}")
 
-    # ===== SALVA NO BANCO DE DADOS =====
+    # Salva
     try:
-        from bot.models import Promo
         Promo.objects.create(
-            titulo=titulo,
+            titulo=titulo or "Oferta imperdível",
             preco=preco,
-            cupom=cupom_str,  # <-- JSON string
+            cupom='',
             link_afiliado=link_afiliado,
             imagem_url=imagem_url,
             categoria=categoria,
-            texto_original=texto[:2000]
+            texto_original=texto
         )
-        logger.info(f"💾 Promoção salva no Banco de Dados (Web): {titulo[:30]}")
+        logger.info(f"💾 Promo salva: {titulo[:30]}")
     except Exception as db_err:
-        logger.error(f"❌ Erro ao salvar Promo no Banco de Dados: {db_err}")
+        logger.error(f"❌ Erro DB: {db_err}")
 
 
 class Command(BaseCommand):
