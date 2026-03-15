@@ -73,7 +73,7 @@ class Promo(models.Model):
     titulo = models.CharField(max_length=500, blank=True)
     preco = models.CharField(max_length=100, blank=True)
     cupom = models.CharField(max_length=1000, blank=True)
-    link_afiliado = models.URLField(max_length=2000)
+    link_afiliado = models.CharField(max_length=2000)
     imagem_url = models.URLField(max_length=2000, blank=True)
     categoria = models.CharField(max_length=50, choices=CATEGORIA_CHOICES, default='outros')
     fonte = models.CharField(max_length=100, default='zFinnY')

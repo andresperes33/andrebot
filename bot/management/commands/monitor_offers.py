@@ -107,19 +107,48 @@ def _save_promo_db(texto: str, photo_path: str = None):
     elif any(k in texto_lower for k in ['impressora']):
         categoria = 'impressora'
 
-    # Extrai link afiliado
     import re
-    links = re.findall(r'(https?://\S+)', texto)
-    link_afiliado = ''
-    for lnk in links:
-        if any(d in lnk for d in ['amazon', 'shopee', 'mercadolivre', 'kabum', 'magaz', 'awin', 'tidd']):
-            link_afiliado = lnk.rstrip(')')
-            break
-    if not link_afiliado and links:
-        link_afiliado = links[0].rstrip(')')
+    import json
 
-    if not link_afiliado:
+    # Extrai múltiplos links e seus respectivos contextos
+    links_encontrados = []
+    linhas = [l.strip() for l in texto.split('\n') if l.strip()]
+    
+    for linha in linhas:
+        # Encontra urls na linha
+        urls_na_linha = re.findall(r'(https?://\S+)', linha)
+        for url in urls_na_linha:
+            if any(d in url for d in ['amazon', 'shopee', 'mercadolivre', 'kabum', 'magaz', 'awin', 'tidd']):
+                url_limpa = url.rstrip(')')
+                # Tenta achar um contexto (nome) antes da URL na mesma linha
+                contexto = linha.replace(url, '').strip()
+                # Limpa setinhas e emojis básicos residuais no final da frase
+                contexto_limpo = re.sub(r'[:➡👉\-\s]+$', '', contexto).strip()
+                
+                # Se ainda tiver muito lixo de emoji no começo, também podemos limpar (ou deixar)
+                nome_botao = contexto_limpo if contexto_limpo else "Ver Oferta"
+                
+                # Previne duplicatas exatas
+                if not any(l['url'] == url_limpa for l in links_encontrados):
+                    links_encontrados.append({
+                        "nome": nome_botao,
+                        "url": url_limpa
+                    })
+
+    # Pega pelo menos o primeiro link (mesmo sem loja reconhecida) se tiver, caso passe vazio nas regras
+    if not links_encontrados:
+        todas_urls = re.findall(r'(https?://\S+)', texto)
+        if todas_urls:
+            links_encontrados.append({
+                "nome": "Ver Oferta",
+                "url": todas_urls[0].rstrip(')')
+            })
+
+    if not links_encontrados:
         return  # Sem link não salva
+    
+    # Salva os links como um array JSON
+    link_afiliado = json.dumps(links_encontrados, ensure_ascii=False)
 
     # Extrai título (primeira linha não vazia sem emojis/símbolos)
     titulo = ''

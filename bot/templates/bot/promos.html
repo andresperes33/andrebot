@@ -553,9 +553,17 @@
                 {% endfor %}
             </div>
             {% endif %}
-            <div class="card-footer">
-                <a href="{{ promo.link_afiliado }}" target="_blank" rel="noopener" class="btn-oferta">Ver Oferta →</a>
-                <div class="card-date">{{ promo.criado_em|date:"d/m/Y \à\s H:i" }}</div>
+            <div class="card-footer" style="flex-wrap: wrap; gap: 8px;">
+                {% if promo.links_lista %}
+                    <div style="display: flex; flex-direction: column; width: 100%; gap: 6px;">
+                    {% for lk in promo.links_lista %}
+                        <a href="{{ lk.url }}" target="_blank" rel="noopener" class="btn-oferta" title="{{ lk.nome }}">{{ lk.nome|truncatechars:35 }} →</a>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <a href="{{ promo.link_afiliado }}" target="_blank" rel="noopener" class="btn-oferta">Ver Oferta →</a>
+                {% endif %}
+                <div class="card-date" style="width: 100%; text-align: center; margin-top: 5px;">{{ promo.criado_em|date:"d/m/Y \à\s H:i" }}</div>
             </div>
         </div>
     </div>
