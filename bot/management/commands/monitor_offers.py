@@ -118,12 +118,13 @@ def _save_promo_db(texto: str, photo_path: str = None):
         preco = preco_match.group(0).strip()
 
     # Processa imagem
+    import os
     imagem_url = ''
     if photo_path and os.path.exists(photo_path):
         try:
             import shutil
             from django.conf import settings
-            import os, time
+            import time
             media_promos_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
             os.makedirs(media_promos_dir, exist_ok=True)
             filename = f"promo_{int(time.time())}_{os.path.basename(photo_path)}"
