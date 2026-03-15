@@ -190,6 +190,12 @@ class Command(BaseCommand):
 
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
+                # ─── Filtro de Palavras Proibidas (Blacklist) ────────────────
+                blacklist = ['livezinha', 'live', 'youtube']
+                if any(word in msg_text.lower() for word in blacklist):
+                    logger.info(f"🚫 Mensagem ignorada (palavra na blacklist encontrada)")
+                    return False
+
                 # ─── Converte links e processa texto ─────────────────────────
                 from bot.services import convert_to_affiliate_link, send_whatsapp_message
 
