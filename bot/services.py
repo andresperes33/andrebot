@@ -215,6 +215,24 @@ def convert_mercado_livre_link(url):
             # Pega o primeiro produto e limpa parâmetros extras
             produto_url = prod_urls[0].split('?')[0].split('#')[0]
             affiliate_url = f"{produto_url}?matt_tool={matt_tool}&matt_word={tag}"
+            
+            # --- Encurtamento meli.la via API Interna ---
+            if ml_cookie:
+                try:
+                    short_api_url = "https://www.mercadolivre.com.br/afiliados/api/v2/partners/social-links"
+                    short_hdrs = hdrs.copy()
+                    short_hdrs["Content-Type"] = "application/json"
+                    short_payload = {"source_url": affiliate_url}
+                    
+                    short_resp = requests.post(short_api_url, headers=short_hdrs, json=short_payload, timeout=8)
+                    if short_resp.status_code == 201 or short_resp.status_code == 200:
+                        short_url = short_resp.json().get('short_url')
+                        if short_url:
+                            print(f"ML Curto (meli.la): {short_url}")
+                            return short_url
+                except Exception as short_err:
+                    print(f"ML Shortener Erro: {short_err}")
+
             print(f"ML Afiliado (produto): {affiliate_url[:100]}...")
             return affiliate_url
 
