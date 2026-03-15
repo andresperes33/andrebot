@@ -158,15 +158,30 @@ def _save_promo_db(texto: str, photo_path: str = None):
             titulo = limpa[:250]
             break
 
-    # Extrai preço
-    preco_match = re.search(r'R\$\s*[\d.,]+', texto)
-    preco = preco_match.group(0).strip() if preco_match else ''
+    # Extrai preço - tenta encontrar preço do produto e ignora regras do tipo "R$ 180 OFF" ou "máximo de R$ 180"
+    preco = ''
+    # Primeiro tenta achar preço em linhas curtas ou após ícones/palavras chave
+    for linha in texto.split('\n'):
+        if re.search(r'(?i)(?:por|💰|💵|apenas|só)\s*(R\$\s*[\d.,]+)', linha) and 'off' not in linha.lower():
+            p_match = re.search(r'R\$\s*[\d.,]+', linha)
+            if p_match:
+                preco = p_match.group(0).strip()
+                break
+    
+    # Se não achou, pega qualquer valor que não esteja perto da palavra OFF
+    if not preco:
+        matches_preco = re.finditer(r'R\$\s*[\d.,]+', texto)
+        for m in matches_preco:
+            trecho = texto[max(0, m.start() - 10) : min(len(texto), m.end() + 10)].lower()
+            if 'off' not in trecho and 'máximo' not in trecho and 'limite' not in trecho:
+                preco = m.group(0).strip()
+                break
 
     # Extrai múltiplos cupons
     import json
     cupons_encontrados = []
     
-    ignore_words = {'MERCADO', 'LIVRE', 'SHOPEE', 'AMAZON', 'KABUM', 'MAGAZINE', 'ALIEXPRESS', 'DESCONTO', 'NOVO', 'PRIME', 'NINJA', 'OFERTA', 'PROMO', 'CUPOM'}
+    ignore_words = {'MERCADO', 'LIVRE', 'SHOPEE', 'AMAZON', 'KABUM', 'MAGAZINE', 'ALIEXPRESS', 'DESCONTO', 'NOVO', 'PRIME', 'NINJA', 'OFERTA', 'PROMO', 'CUPOM', 'TECHAGORA', 'VALOR'} # adicionado 'VALOR' e outras words para evitar lixo se der erro
     
     def is_valid_coupon(code):
         if not code or code.isnumeric() or len(code) < 4:
@@ -175,7 +190,7 @@ def _save_promo_db(texto: str, photo_path: str = None):
             return False
         return True
 
-    # 1. Busca padrão "R$XX OFF ... - CODIGO" ou "% OFF ... - CODIGO"
+    # 1. Busca padrão "R$XX OFF ... - CODIGO" ou "% OFF ... - CODIGO" (multi-linha não funciona perfeitamente, movido parte pra linha a linha)
     matches_desc = re.finditer(r'(?i)(.*?(?:OFF|desconto).*?)-\s*([A-Z0-9]{4,20})(?=\s|$)', texto)
     for m in matches_desc:
         regra = m.group(1).strip()
@@ -183,15 +198,29 @@ def _save_promo_db(texto: str, photo_path: str = None):
         if is_valid_coupon(codigo):
             cupons_encontrados.append({"regra": regra, "codigo": codigo})
             
-    # 2. Varredura Inteligente Linha a Linha (com contexto anterior)
+    # 2. Varredura Inteligente Linha a Linha (com contexto anterior ou na mesma linha)
     linhas = [l.strip() for l in texto.split('\n') if l.strip()]
     for i, linha in enumerate(linhas):
         codigo_encontrado = None
         regra_contexto = []
         
-        # Tenta achar cupom no formato "Cupom: CODIGO" ou com "-"
+        # Padrão: "10% OFF, máximo de R$ 180 OFF: TECHAGORA"
+        match_regra_mesma_linha = re.search(r'(?i)(.*?(?:OFF|limite|máximo).*?)[:\-]\s*([A-Z0-9]{4,20})$', linha)
+        
+        # Padrão: "Cupom: CODIGO"
         match_direto = re.search(r'(?i)cupom[:\s]+([A-Z0-9]{4,20})', linha)
-        if match_direto:
+        
+        if match_regra_mesma_linha:
+            regra_potencial = match_regra_mesma_linha.group(1).strip()
+            codigo_potencial = match_regra_mesma_linha.group(2).strip()
+            # Limpa lixo do inicio da regra
+            regra_potencial = re.sub(r'^[^\w\s]+', '', regra_potencial).strip()
+            
+            codigo_encontrado = codigo_potencial
+            if regra_potencial:
+                regra_contexto.append(regra_potencial)
+                
+        elif match_direto:
             codigo_encontrado = match_direto.group(1).strip()
         elif '-' in linha and 'http' not in linha:
             parts = linha.rsplit('-', 1)
