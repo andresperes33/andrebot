@@ -29,6 +29,13 @@ def get_product_info(url):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
             "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
         }
+        
+        # Injeta Cookies se for Mercado Livre
+        if 'mercadolivre.com' in url or 'mercadolibre.com' in url:
+            ml_cookie = getattr(settings, 'MERCADO_LIVRE_COOKIE', None)
+            if ml_cookie:
+                headers["Cookie"] = ml_cookie
+
         try:
             # Se for link curto da Amazon, aproveita para expandir aqui e pegar o nome/imagem real
             if 'amzn.to' in url:
@@ -183,7 +190,14 @@ def convert_mercado_livre_link(url):
     """
     tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'codepysystems')
     matt_tool = getattr(settings, 'MERCADO_LIVRE_MATT_TOOL', '13013217')
-    hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"}
+    ml_cookie = getattr(settings, 'MERCADO_LIVRE_COOKIE', None)
+    
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    if ml_cookie:
+        hdrs["Cookie"] = ml_cookie
 
     try:
         # 1. Expande o link (meli.la → social/sv...)
