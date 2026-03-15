@@ -189,15 +189,21 @@ def _save_promo_db(texto: str, photo_path: str = None):
         except Exception as img_err:
             logger.error(f"❌ Erro ao processar imagem para DB: {img_err}")
 
-    Promo.objects.create(
-        titulo=titulo,
-        preco=preco,
-        cupom=cupom,
-        link_afiliado=link_afiliado,
-        imagem_url=imagem_url,
-        categoria=categoria,
-        texto_original=texto[:2000],
-    )
+    # ===== SALVA NO BANCO DE DADOS =====
+    try:
+        from bot.models import Promo
+        Promo.objects.create(
+            titulo=titulo,
+            preco=preco,
+            cupom=cupom_str,  # <-- JSON string
+            link_afiliado=link_afiliado,
+            imagem_url=imagem_url,
+            categoria=categoria,
+            texto_original=texto[:2000]
+        )
+        logger.info(f"💾 Promoção salva no Banco de Dados (Web): {titulo[:30]}")
+    except Exception as db_err:
+        logger.error(f"❌ Erro ao salvar Promo no Banco de Dados: {db_err}")
 
 
 class Command(BaseCommand):
