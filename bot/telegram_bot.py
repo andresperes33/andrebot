@@ -43,8 +43,9 @@ def start_bot():
 
     application = ApplicationBuilder().token(token).build()
     
-    # Agora aceita texto E fotos (com legenda)
-    application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO, handle_message))
+    # Aceita texto E fotos (com legenda), mas APENAS em conversas PRIVADAS (DM)
+    # Isso evita que o bot processe mensagens postadas no grupo (loop infinito)
+    application.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & filters.ChatType.PRIVATE, handle_message))
     
     print("Bot iniciado... Aguardando mensagens.")
     application.run_polling()

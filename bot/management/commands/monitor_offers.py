@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 # A cada save, atualiza a memória E persiste no banco.
 _last_id: int = 0
 _last_id_loaded: bool = False
+_processing_ids: set = set()
 
 
 @sync_to_async
@@ -310,11 +311,17 @@ class Command(BaseCommand):
             async def handler(event):
                 msg = event.message
                 last_id = await load_last_id()
-                if msg.id <= last_id:
+                if msg.id <= last_id or msg.id in _processing_ids:
                     return
-                success = await process_message(msg)
-                if success:
-                    await save_last_id(msg.id)
+                
+                _processing_ids.add(msg.id)
+                try:
+                    success = await process_message(msg)
+                    if success:
+                        await save_last_id(msg.id)
+                finally:
+                    if msg.id in _processing_ids:
+                        _processing_ids.remove(msg.id)
 
             # ─── POLLING INTELIGENTE ──────────────────────────────────────────────
             async def smart_polling():
@@ -324,11 +331,16 @@ class Command(BaseCommand):
                         messages = await client.get_messages(target_id, limit=10, min_id=last_id)
                         if messages:
                             for msg in reversed(list(messages)):
-                                if msg.id > last_id:
-                                    success = await process_message(msg)
-                                    if success:
-                                        await save_last_id(msg.id)
-                                        last_id = msg.id
+                                if msg.id > last_id and msg.id not in _processing_ids:
+                                    _processing_ids.add(msg.id)
+                                    try:
+                                        success = await process_message(msg)
+                                        if success:
+                                            await save_last_id(msg.id)
+                                            last_id = msg.id
+                                    finally:
+                                        if msg.id in _processing_ids:
+                                            _processing_ids.remove(msg.id)
                         await client.get_me()
                         logger.info("💓 Check-up automático em 1 canais realizado")
                     except Exception as e:
