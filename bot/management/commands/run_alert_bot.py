@@ -3,7 +3,7 @@ from bot.alert_bot import run_alert_bot
 
 
 class Command(BaseCommand):
-    help = 'Inicia o Bot de Alertas de Promoções (@andreindica_bot)'
+    help = 'Inicia o Bot de Alertas de Promoções (@alertas_andre_bot)'
 
     def handle(self, *args, **options):
         self.stdout.write('🤖 Iniciando Bot de Alertas...')

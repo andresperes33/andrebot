@@ -1,5 +1,5 @@
 """
-Bot de Alertas de Promoções — @andreindica_bot
+Bot de Alertas de Promoções — @alertas_andre_bot
 """
 import logging
 import os
@@ -273,7 +273,7 @@ def run_alert_bot():
         message_handler
     ))
 
-    logger.info("🤖 Bot de Alertas iniciado! @andreindica_bot")
+    logger.info("🤖 Bot de Alertas iniciado! @alertas_andre_bot")
     app.run_polling(drop_pending_updates=True)
 
 

@@ -357,7 +357,7 @@ class Command(BaseCommand):
                 "✅ Você escolhe o que quer monitorar\n"
                 "✅ Receba no seu Telegram instantaneamente\n\n"
                 "👇 *Clique abaixo para ativar seus alertas:*\n"
-                "➡️ https://t.me/andreindica_bot"
+                "➡️ https://t.me/alertas_andre_bot"
             )
 
             async def send_invite_periodically():
