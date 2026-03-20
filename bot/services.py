@@ -577,7 +577,7 @@ async def process_offer_to_group(bot_app, text, photo=None):
             original_link = link
             replacement = converted
             if is_aliexpress:
-                replacement += "\n\nDisponível apenas pelo aplicativo.\nAcesse a aba “Moedas” e selecione a primeira opção."
+                replacement += "\n\nDisponível apenas pelo aplicativo.\nApós clicar no link, você será direcionado para a página de moedas. Clique no primeiro anúncio."
             
             modified_text = modified_text.replace(link, replacement)
             converted_any = True
