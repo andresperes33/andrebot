@@ -236,7 +236,11 @@ class Command(BaseCommand):
                     if any([is_amazon, is_shopee, is_ml, is_ali, is_kabum, is_magalu, is_awin]):
                         converted = convert_to_affiliate_link(link)
                         if converted:
-                            modified_text = modified_text.replace(link, converted)
+                            replacement = converted
+                            if is_ali:
+                                replacement += "\n\nDisponível apenas pelo aplicativo.\nAcesse a aba “Moedas” e selecione a primeira opção."
+                            
+                            modified_text = modified_text.replace(link, replacement)
                             converted_any = True
 
                 # Se não encontrar links convertíveis, ainda assim prosseguimos para garantir a réplica fiel.
