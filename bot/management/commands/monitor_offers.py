@@ -189,6 +189,11 @@ class Command(BaseCommand):
                 if not msg_text and not message.photo:
                     return False
 
+                # ─── Filtro: Ignora mensagens sem links (comentários/avisos) ───
+                if not re.search(r'https?://\S+', msg_text):
+                    logger.info(f"ℹ️ Mensagem ignorada (não contém links)")
+                    return False
+
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
                 # ─── Filtro de Palavras Proibidas (Blacklist) ────────────────
