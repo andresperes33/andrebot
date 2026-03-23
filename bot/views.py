@@ -60,9 +60,9 @@ from django.http import HttpResponse
 def ads_txt_view(request):
     """
     Serve o arquivo ads.txt na raiz.
-    Substitua pelo seu ID de editor quando tiver.
+    ID de Editor do usuário: ca-pub-1945676049008537
     """
-    content = "google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0"
+    content = "google.com, pub-1945676049008537, DIRECT, f08c47fec0942fa0"
     return HttpResponse(content, content_type="text/plain")
 
 
