@@ -243,7 +243,7 @@ class Command(BaseCommand):
                         if converted:
                             replacement = converted
                             if is_ali:
-                                replacement += "\n\nDisponível apenas pelo aplicativo.\nApós clicar no link, você será direcionado para a página de moedas. Clique no primeiro anúncio."
+                                replacement += "\n\nDisponível apenas pelo aplicativo.\nApós clicar no link, você será direcionado para a página de moedas. Clique no primeiro anúncio.\nSe o produto não aparecer, clique em 'DO BRASIL'."
                             
                             modified_text = modified_text.replace(link, replacement)
                             converted_any = True
