@@ -197,7 +197,7 @@ class Command(BaseCommand):
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
                 # ─── Filtro de Palavras Proibidas (Blacklist) ────────────────
-                blacklist = ['youtube', 'youtu.be']
+                blacklist = ['youtube', 'youtu.be', 'terabyte', 'terabyteshop']
                 if any(word in msg_text.lower() for word in blacklist):
                     logger.info(f"🚫 Mensagem ignorada (palavra na blacklist encontrada)")
                     return False

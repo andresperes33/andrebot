@@ -518,6 +518,11 @@ async def process_offer_to_group(bot_app, text, photo=None):
     if not text:
         return False
 
+    # Filtro: Ignora links da Terabyte
+    if 'terabyte' in text.lower() or 'terabyteshop' in text.lower():
+        print("ℹ️ Oferta da Terabyte ignorada.")
+        return False
+
     # Detecta se é o Application ou o Bot direto para saber qual objeto usar
     bot = getattr(bot_app, 'bot', bot_app)
 
