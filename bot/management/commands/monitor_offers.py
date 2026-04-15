@@ -170,10 +170,10 @@ class Command(BaseCommand):
             
             await client.start()
 
-            logger.info("🔍 Localizando ID do canal Iskandar Souza...")
+            logger.info("🔍 Localizando ID do canal Iskandar Souza - Promoções...")
             target_id = None
             async for dialog in client.iter_dialogs():
-                if "Iskandar" in dialog.name:
+                if "Iskandar Souza - Promoções" in dialog.name:
                     target_id = dialog.id
                     logger.info(f"✅ CANAL ENCONTRADO: {dialog.name} (ID: {target_id})")
                     break
