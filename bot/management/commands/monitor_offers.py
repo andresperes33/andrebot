@@ -170,10 +170,10 @@ class Command(BaseCommand):
             
             await client.start()
 
-            logger.info("🔍 Localizando ID do canal zFinnY...")
+            logger.info("🔍 Localizando ID do canal Iskandar Souza...")
             target_id = None
             async for dialog in client.iter_dialogs():
-                if "zFinnY" in dialog.name:
+                if "Iskandar" in dialog.name:
                     target_id = dialog.id
                     logger.info(f"✅ CANAL ENCONTRADO: {dialog.name} (ID: {target_id})")
                     break
@@ -210,7 +210,7 @@ class Command(BaseCommand):
                 modified_text = msg_text
                 
                 # 1. Substitui nomes de canais
-                modified_text = re.sub(r'(?i)zFinnY|CaCau|André Indica|Tecnan', channel_name, modified_text)
+                modified_text = re.sub(r'(?i)zFinnY|Iskandar|CaCau|André Indica|Tecnan', channel_name, modified_text)
 
                 # 2. Remove o rodapé antigo do grupo (Limpeza Pesada)
                 # Remove o emoji da sacola (várias versões) e qualquer linha residual
