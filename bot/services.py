@@ -297,10 +297,10 @@ def convert_awin_link(url, merchant_id='17729'):
         except Exception as e:
             print(f"Erro Awin API: {e}")
 
-    # 4. Fallback: Formato padrão Awin (sem platform=dl que causa tela em branco)
+    # 4. Fallback: Formato correto confirmado pela API da Awin (awclick.php)
     encoded_url = urllib.parse.quote(url, safe=':/')
-        
-    return f"https://www.awin1.com/cread.php?awinmid={merchant_id}&awinaffid={publisher_id}&ued={encoded_url}"
+    return f"https://www.awin1.com/awclick.php?mid={merchant_id}&id={publisher_id}&ued={encoded_url}"
+
 
 
 def convert_magalu_link(url):
