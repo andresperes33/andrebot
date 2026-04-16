@@ -565,17 +565,31 @@ async def process_offer_to_group(bot_app, text, photo=None):
             continue
 
         is_awin = 'awin1.com' in link or 'tidd.ly' in link
-        
-        if is_awin:
-            # Se já for link awin, consideramos como convertido para não bloquear a postagem
-            converted_any = True
-            original_link = link
-            continue
 
-        is_awin = 'awin1.com' in link or 'tidd.ly' in link
-        
         if is_awin:
-            # Se já for link awin, consideramos como válido para prosseguir para o Zap/Grupo
+            # Extrai a URL real do produto do parâmetro 'ued' e gera novo link com nosso ID
+            extracted_url = None
+            if 'ued=' in link:
+                try:
+                    ued_value = link.split('ued=')[1].split('&')[0]
+                    extracted_url = urllib.parse.unquote(ued_value)
+                except:
+                    pass
+            if not extracted_url and 'tidd.ly' in link:
+                try:
+                    resp = requests.get(link, allow_redirects=True, timeout=8, headers={"User-Agent": "Mozilla/5.0"})
+                    if 'kabum.com.br' in resp.url:
+                        extracted_url = resp.url
+                except:
+                    pass
+            if extracted_url:
+                new_awin = convert_awin_link(extracted_url)
+                if new_awin:
+                    modified_text = modified_text.replace(link, new_awin)
+                    original_link = extracted_url
+                    converted_any = True
+                    continue
+            # Fallback: considera como convertido para não bloquear
             converted_any = True
             original_link = link
             continue

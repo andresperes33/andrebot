@@ -239,7 +239,27 @@ class Command(BaseCommand):
                         modified_text = modified_text.replace(link, '') # Remove links de outros telegrams
                         continue
 
-                    if any([is_amazon, is_shopee, is_ml, is_ali, is_kabum, is_magalu, is_awin]):
+                    if is_awin:
+                        # Extrai a URL real do produto e gera novo link com nosso ID
+                        import urllib.parse as _urlparse
+                        from bot.services import convert_awin_link
+                        extracted_url = None
+                        if 'ued=' in link:
+                            try:
+                                ued_value = link.split('ued=')[1].split('&')[0]
+                                extracted_url = _urlparse.unquote(ued_value)
+                            except:
+                                pass
+                        if extracted_url:
+                            new_awin = convert_awin_link(extracted_url)
+                            if new_awin:
+                                modified_text = modified_text.replace(link, new_awin)
+                                converted_any = True
+                                continue
+                        converted_any = True
+                        continue
+
+                    if any([is_amazon, is_shopee, is_ml, is_ali, is_kabum, is_magalu]):
                         converted = convert_to_affiliate_link(link)
                         if converted:
                             if is_ali:
