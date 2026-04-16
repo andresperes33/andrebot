@@ -257,10 +257,10 @@ class Command(BaseCommand):
                             modified_text = modified_text.replace(link, replacement)
                             converted_any = True
 
-                # Se não encontrar links convertíveis, ainda assim prosseguimos para garantir a réplica fiel.
-                # Apenas registramos se houve conversão para saber se o texto foi modificado.
+                # Se não encontrar links de lojas (Amazon, AliExpress, etc.), ignoramos a mensagem.
                 if not converted_any:
-                    logger.info("ℹ️ Nenhum link foi convertido, mas prosseguindo com o texto original.")
+                    logger.info("🚫 Mensagem ignorada (nenhum link de loja detectado).")
+                    return False
 
                 # 4. Adiciona o novo rodapé do site
                 modified_text = modified_text.strip()
