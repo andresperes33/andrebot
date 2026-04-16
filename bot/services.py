@@ -552,6 +552,7 @@ async def process_offer_to_group(bot_app, text, photo=None):
     # Limpa nomes de outros canais
     modified_text = re.sub(r'(?i)zFinnY|Iskandar|CaCau|André Indica|Tecnan', channel_name, modified_text)
 
+    has_aliexpress = False
     for link in links:
         is_shopee = 'shopee.com.br' in link or 's.shopee' in link
         is_aliexpress = 'aliexpress.com' in link or 's.click.aliexpress' in link
@@ -591,24 +592,31 @@ async def process_offer_to_group(bot_app, text, photo=None):
         converted = convert_to_affiliate_link(link)
         if converted:
             original_link = link
-            replacement = converted
             if is_aliexpress:
-                # Gera link para PC resolvendo o redirecionamento para o produto real
-                link_app = converted # Link original (moedas)
+                has_aliexpress = True
+                link_app = converted
                 link_pc = convert_aliexpress_link(link, base_on_clean_url=True)
-                replacement = (
-                    f"🥇 Link com moedas (App):\n🔗 {link_app}\n\n"
-                    f"🖥 Link para PC:\n🔗 {link_pc}\n\n"
-                    f"💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
-                    f"Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
-                    f"Se o produto não aparecer, clique em 'DO BRASIL'."
-                )
+                # Na primeira ocorrência, substituímos pelo par de links. Nas próximas, apenas por um link simples.
+                if "Link para PC:" not in modified_text:
+                    replacement = f"🥇 Link com moedas (App):\n🔗 {link_app}\n\n🖥 Link para PC:\n🔗 {link_pc}"
+                else:
+                    replacement = link_app
+            else:
+                replacement = converted
             
             modified_text = modified_text.replace(link, replacement)
             converted_any = True
 
     if not converted_any:
         return False
+
+    # Adiciona as instruções do AliExpress apenas uma vez no final se houver links dele
+    if has_aliexpress:
+        modified_text += (
+            f"\n\n💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
+            f"Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
+            f"Se o produto não aparecer, clique em 'DO BRASIL'."
+        )
 
     group_id = settings.TELEGRAM_GROUP_ID
     if not group_id:

@@ -223,6 +223,7 @@ class Command(BaseCommand):
                 # 3. Converte links de produtos
                 links = re.findall(r'(https?://\S+)', modified_text)
                 converted_any = False
+                has_ali = False
                 for link in links:
                     is_telegram = 't.me/' in link
                     is_tecnan = 'tecnan.com.br' in link
@@ -241,18 +242,18 @@ class Command(BaseCommand):
                     if any([is_amazon, is_shopee, is_ml, is_ali, is_kabum, is_magalu, is_awin]):
                         converted = convert_to_affiliate_link(link)
                         if converted:
-                            replacement = converted
                             if is_ali:
                                 from bot.services import convert_aliexpress_link
-                                link_app = converted # Link original (moedas)
+                                has_ali = True
+                                link_app = converted
                                 link_pc = convert_aliexpress_link(link, base_on_clean_url=True)
-                                replacement = (
-                                    f"🥇 Link com moedas (App):\n🔗 {link_app}\n\n"
-                                    f"🖥 Link para PC:\n🔗 {link_pc}\n\n"
-                                    f"💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
-                                    f"Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
-                                    f"Se o produto não aparecer, clique em 'DO BRASIL'."
-                                )
+                                # Na primeira ocorrência, substituímos pelo par de links.
+                                if "Link para PC:" not in modified_text:
+                                    replacement = f"🥇 Link com moedas (App):\n🔗 {link_app}\n\n🖥 Link para PC:\n🔗 {link_pc}"
+                                else:
+                                    replacement = link_app
+                            else:
+                                replacement = converted
                             
                             modified_text = modified_text.replace(link, replacement)
                             converted_any = True
@@ -265,6 +266,12 @@ class Command(BaseCommand):
                 # 4. Adiciona o novo rodapé do site
                 modified_text = modified_text.strip()
                 if modified_text:
+                    if has_ali:
+                        modified_text += (
+                            f"\n\n💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
+                            f"Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
+                            f"Se o produto não aparecer, clique em 'DO BRASIL'."
+                        )
                     modified_text += "\n\n✨ Conheça mais sobre meu trabalho:\nwww.andreindica.com.br"
                     modified_text += "\n\n👇 *Clique abaixo para ativar seus alertas:*\n➡ https://t.me/alertas_andre_bot"
 
