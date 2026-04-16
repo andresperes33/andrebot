@@ -297,15 +297,10 @@ def convert_awin_link(url, merchant_id='17729'):
         except Exception as e:
             print(f"Erro Awin API: {e}")
 
-    # 4. Fallback: Deep Link (Formato hibrido para evitar home e tela preta)
-    # Mantemos o https:// visível e codificamos o restante do link
-    if url.startswith('https://'):
-        url_part = url.replace('https://', '', 1)
-        encoded_url = 'https://' + urllib.parse.quote(url_part, safe='')
-    else:
-        encoded_url = urllib.parse.quote(url, safe='')
+    # 4. Fallback: Formato padrão Awin (sem platform=dl que causa tela em branco)
+    encoded_url = urllib.parse.quote(url, safe=':/')
         
-    return f"https://www.awin1.com/cread.php?awinmid={merchant_id}&awinaffid={publisher_id}&platform=dl&ued={encoded_url}"
+    return f"https://www.awin1.com/cread.php?awinmid={merchant_id}&awinaffid={publisher_id}&ued={encoded_url}"
 
 
 def convert_magalu_link(url):
