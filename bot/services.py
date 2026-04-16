@@ -398,12 +398,23 @@ def convert_shopee_link(url):
         return None
 
 
-def convert_aliexpress_link(url):
+def convert_aliexpress_link(url, base_on_clean_url=False):
     """API AliExpress"""
     app_key = settings.ALIEXPRESS_APP_KEY
     app_secret = settings.ALIEXPRESS_APP_SECRET
     tracking_id = settings.ALIEXPRESS_TRACKING_ID
     if not app_key or not app_secret: return None
+
+    # Se solicitado (para o link de PC), tentamos pegar a URL real do produto para evitar o fluxo de Moedas do App
+    final_url = url
+    if base_on_clean_url and ('s.click.aliexpress' in url or 'a.aliexpress.com' in url or 'aliexpress.com/item' not in url):
+        try:
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"}
+            resp = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
+            # Pegamos apenas a base da URL antes das interrogações para ser o mais "limpa" possível
+            final_url = resp.url.split('?')[0] if '?' in resp.url else resp.url
+        except:
+            pass
 
     endpoint = "https://api-sg.aliexpress.com/sync"
     params = {
@@ -414,7 +425,7 @@ def convert_aliexpress_link(url):
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()),
         "v": "2.0",
         "promotion_link_type": "0",
-        "source_values": url,
+        "source_values": final_url,
         "tracking_id": tracking_id
     }
 
@@ -582,7 +593,16 @@ async def process_offer_to_group(bot_app, text, photo=None):
             original_link = link
             replacement = converted
             if is_aliexpress:
-                replacement += "\n\nDisponível apenas pelo aplicativo.\nApós clicar no link, você será direcionado para a página de moedas. Clique no primeiro anúncio.\nSe o produto não aparecer, clique em 'DO BRASIL'."
+                # Gera link para PC resolvendo o redirecionamento para o produto real
+                link_app = converted # Link original (moedas)
+                link_pc = convert_aliexpress_link(link, base_on_clean_url=True)
+                replacement = (
+                    f"🥇 Link com moedas (App):\n🔗 {link_app}\n\n"
+                    f"🖥 Link para PC:\n🔗 {link_pc}\n\n"
+                    f"💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
+                    f"Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
+                    f"Se o produto não aparecer, clique em 'DO BRASIL'."
+                )
             
             modified_text = modified_text.replace(link, replacement)
             converted_any = True

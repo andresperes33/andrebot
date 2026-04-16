@@ -243,7 +243,16 @@ class Command(BaseCommand):
                         if converted:
                             replacement = converted
                             if is_ali:
-                                replacement += "\n\nDisponível apenas pelo aplicativo.\nApós clicar no link, você será direcionado para a página de moedas. Clique no primeiro anúncio.\nSe o produto não aparecer, clique em 'DO BRASIL'."
+                                from bot.services import convert_aliexpress_link
+                                link_app = converted # Link original (moedas)
+                                link_pc = convert_aliexpress_link(link, base_on_clean_url=True)
+                                replacement = (
+                                    f"🥇 Link com moedas (App):\n🔗 {link_app}\n\n"
+                                    f"🖥 Link para PC:\n🔗 {link_pc}\n\n"
+                                    f"💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
+                                    f"Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
+                                    f"Se o produto não aparecer, clique em 'DO BRASIL'."
+                                )
                             
                             modified_text = modified_text.replace(link, replacement)
                             converted_any = True
