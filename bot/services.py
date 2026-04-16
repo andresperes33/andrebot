@@ -547,6 +547,9 @@ async def process_offer_to_group(bot_app, text, photo=None):
     # Limpa nomes de outros canais
     modified_text = re.sub(r'(?i)zFinnY|Iskandar|CaCau|André Indica|Tecnan', channel_name, modified_text)
 
+    # Substitui links do Linktree pelo link personalizado
+    modified_text = re.sub(r'https?://linktr\.ee/\S+', 'https://links.andreindica.com.br/', modified_text)
+
     has_aliexpress = False
     for link in links:
         is_shopee = 'shopee.com.br' in link or 's.shopee' in link

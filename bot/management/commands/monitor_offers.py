@@ -217,7 +217,9 @@ class Command(BaseCommand):
                 modified_text = modified_text.replace('🛍️', '').replace('🛍', '')
                 modified_text = re.sub(r'(?i)Grupo de promos.*?(?:\n|$)', '', modified_text)
                 modified_text = re.sub(r'https?://t\.me/\S+', '', modified_text)
-                # Remove linhas vazias excessivas que a sacola pode ter deixado
+                # Substitui links do Linktree pelo link personalizado
+                modified_text = re.sub(r'https?://linktr\.ee/\S+', 'https://links.andreindica.com.br/', modified_text)
+                # Remove linhas vazias excessivas
                 modified_text = re.sub(r'\n\s*\n', '\n\n', modified_text)
 
                 # 3. Converte links de produtos
