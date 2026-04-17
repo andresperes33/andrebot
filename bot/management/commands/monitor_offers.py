@@ -226,7 +226,25 @@ class Command(BaseCommand):
                 links = re.findall(r'(https?://\S+)', modified_text)
                 converted_any = False
                 has_ali = False
-                for link in links:
+
+                # Deduplicação: remove links repetidos mantendo a ordem
+                seen_links = []
+                unique_links = []
+                for lnk in links:
+                    # Normaliza para comparação (remove parâmetros de rastreio)
+                    lnk_norm = lnk.split('?')[0].rstrip('/')
+                    if lnk_norm not in seen_links:
+                        seen_links.append(lnk_norm)
+                        unique_links.append(lnk)
+                    else:
+                        # Remove duplicata do texto diretamente
+                        modified_text = modified_text.replace(lnk, '', 1)
+                # Remove linhas vazias geradas pela remoção das duplicatas
+                modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
+
+                ali_pair_added = False  # Garante que o par App+PC do AliExpress é adicionado só 1 vez
+
+                for link in unique_links:
                     is_telegram = 't.me/' in link
                     is_tecnan = 'tecnan.com.br' in link
                     is_awin = 'awin1.com' in link or 'tidd.ly' in link
@@ -267,17 +285,21 @@ class Command(BaseCommand):
                             if is_ali:
                                 from bot.services import convert_aliexpress_link
                                 has_ali = True
-                                link_app = converted
-                                link_pc = convert_aliexpress_link(link, base_on_clean_url=True)
-                                # Na primeira ocorrência, substituímos pelo par de links.
-                                if "Link para PC:" not in modified_text:
+                                if not ali_pair_added:
+                                    # Primeira ocorrência: substitui pelo par App + PC
+                                    link_app = converted
+                                    link_pc = convert_aliexpress_link(link, base_on_clean_url=True)
                                     replacement = f"🥇 Link com moedas (App):\n🔗 {link_app}\n\n🖥 Link para PC:\n🔗 {link_pc}"
+                                    ali_pair_added = True
                                 else:
-                                    replacement = link_app
+                                    # Demais ocorrências (link PELO PC, etc.): remove do texto
+                                    replacement = ''
                             else:
                                 replacement = converted
                             
                             modified_text = modified_text.replace(link, replacement)
+                            # Remove linhas vazias extras geradas pela remoção
+                            modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
                             converted_any = True
 
                 # Se não encontrar links de lojas (Amazon, AliExpress, etc.), ignoramos a mensagem.
@@ -286,13 +308,17 @@ class Command(BaseCommand):
                     return False
 
                 # 4. Adiciona o novo rodapé do site
+                # Remove seções PELO PC residuais e outras linhas de rodapé do canal fonte
+                modified_text = re.sub(r'(?i)\n?⬇️?\s*PELO PC\s*\n?', '', modified_text)
+                modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
                 modified_text = modified_text.strip()
+
                 if modified_text:
                     if has_ali:
                         modified_text += (
-                            f"\n\n💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
-                            f"Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
-                            f"Se o produto não aparecer, clique em 'DO BRASIL'."
+                            "\n\n💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
+                            "Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
+                            "Se o produto não aparecer, clique em 'DO BRASIL'."
                         )
                     modified_text += "\n\n✨ Conheça mais sobre meu trabalho:\nwww.andreindica.com.br"
                     modified_text += "\n\n👇 *Clique abaixo para ativar seus alertas:*\n➡ https://t.me/alertas_andre_bot"
