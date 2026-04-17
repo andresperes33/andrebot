@@ -242,8 +242,6 @@ class Command(BaseCommand):
                 # Remove linhas vazias geradas pela remoção das duplicatas
                 modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
 
-                ali_pair_added = False  # Garante que o par App+PC do AliExpress é adicionado só 1 vez
-
                 for link in unique_links:
                     is_telegram = 't.me/' in link
                     is_tecnan = 'tecnan.com.br' in link
@@ -283,22 +281,12 @@ class Command(BaseCommand):
                         converted = convert_to_affiliate_link(link)
                         if converted:
                             if is_ali:
-                                from bot.services import convert_aliexpress_link
+                                # O canal fonte já fornece links separados para App e PC com labels prontas.
+                                # Apenas converte cada URL para o link de afiliado e substitui no lugar.
                                 has_ali = True
-                                if not ali_pair_added:
-                                    # Primeira ocorrência: substitui pelo par App + PC
-                                    link_app = converted
-                                    link_pc = convert_aliexpress_link(link, base_on_clean_url=True)
-                                    replacement = f"🥇 Link com moedas (App):\n🔗 {link_app}\n\n🖥 Link para PC:\n🔗 {link_pc}"
-                                    ali_pair_added = True
-                                else:
-                                    # Demais ocorrências (link PELO PC, etc.): remove do texto
-                                    replacement = ''
-                            else:
-                                replacement = converted
                             
-                            modified_text = modified_text.replace(link, replacement)
-                            # Remove linhas vazias extras geradas pela remoção
+                            modified_text = modified_text.replace(link, converted)
+                            # Remove linhas vazias extras
                             modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
                             converted_any = True
 
