@@ -232,7 +232,12 @@ class Command(BaseCommand):
                 unique_links = []
                 for lnk in links:
                     # Normaliza para comparação (remove parâmetros de rastreio)
-                    lnk_norm = lnk.split('?')[0].rstrip('/')
+                    # Exceção: links Awin possuem o destino real nos parâmetros.
+                    if 'awin1.com' in lnk or 'tidd.ly' in lnk:
+                        lnk_norm = lnk
+                    else:
+                        lnk_norm = lnk.split('?')[0].rstrip('/')
+                        
                     if lnk_norm not in seen_links:
                         seen_links.append(lnk_norm)
                         unique_links.append(lnk)
