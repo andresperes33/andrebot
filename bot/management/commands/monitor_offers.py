@@ -170,17 +170,22 @@ class Command(BaseCommand):
             
             await client.start()
 
-            logger.info("🔍 Localizando ID do canal Iskandar Souza - Promoções...")
+            source_channel = getattr(settings, 'SOURCE_CHANNEL_USERNAME', 'zFinnY').strip()
+            source_channel_norm = source_channel.casefold()
+
+            logger.info(f"🔍 Localizando ID do canal {source_channel}...")
             target_id = None
             async for dialog in client.iter_dialogs():
-                if "Iskandar Souza - Promoções" in dialog.name:
+                dialog_name = (dialog.name or '').casefold()
+                dialog_username = (getattr(dialog, 'username', None) or '').casefold()
+                if source_channel_norm in dialog_name or source_channel_norm == dialog_username:
                     target_id = dialog.id
                     logger.info(f"✅ CANAL ENCONTRADO: {dialog.name} (ID: {target_id})")
                     break
 
             if not target_id:
-                target_id = -1002216599534
-                logger.warning(f"⚠️ Usando ID padrão: {target_id}")
+                logger.warning(f"⚠️ Canal não encontrado: {source_channel}. Verifique o nome/username configurado em SOURCE_CHANNEL_USERNAME.")
+                return
 
             async def process_message(message):
                 """Converte links e envia para Telegram + WhatsApp"""
