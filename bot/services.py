@@ -38,7 +38,7 @@ def get_product_info(url):
 
         try:
             # Se for link curto da Amazon, aproveita para expandir aqui e pegar o nome/imagem real
-            if 'amzn.to' in url:
+            if 'amzn.to' in url or 'link.amazon' in url:
                 resp_expand = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
                 url = resp_expand.url
 
@@ -87,7 +87,7 @@ def get_product_info(url):
                     price = f"R$ {price_val:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
 
             # Preço Amazon
-            elif 'amazon' in final_url:
+            elif 'amazon' in final_url or 'link.amazon' in final_url:
                 # Tenta várias classes comuns de preço na Amazon
                 price_match = re.search(r'class=["\']a-offscreen["\']>(.*?)</span>', html)
                 if price_match:
@@ -96,8 +96,6 @@ def get_product_info(url):
                     price_match = re.search(r'class=["\']a-price-whole["\']>(.*?)</span>', html)
                     if price_match:
                         price = f"R$ {price_match.group(1).strip()}"
-
-                    price = f"R$ {price_val}"
 
             # Preço Magalu
             elif 'magazineluiza.com.br' in final_url or 'magalu.com' in final_url:
@@ -137,7 +135,7 @@ def get_product_info(url):
                         image_url = image_url.replace('-O.jpg', '-F.jpg')
                     
                     # Limpeza para Amazon (Pegar imagem original sem redimensionamento)
-                    if 'amazon' in final_url and '._AC_' in image_url:
+                    if ('amazon' in final_url or 'link.amazon' in final_url) and '._AC_' in image_url:
                         image_url = re.sub(r'\._AC_.*?\.', '.', image_url)
                     
                     # Limpeza para Kabum (Geralmente já vem em boa resolução)
@@ -169,7 +167,7 @@ def convert_to_affiliate_link(url, final_url=None):
         return convert_shopee_link(url)
     elif 'aliexpress.com' in url or 's.click.aliexpress' in url:
         return convert_aliexpress_link(url)
-    elif 'amazon.com.br' in url or 'amzn.to' in url:
+    elif 'amazon.com.br' in url or 'amzn.to' in url or 'link.amazon' in url:
         return convert_amazon_link(url)
     elif 'mercadolivre.com' in url or 'meli.la' in url or 'mlstatic.com' in url or 'mercadolibre.com' in url:
         return convert_mercado_livre_link(url)
@@ -352,7 +350,7 @@ def convert_amazon_link(url):
     tag = getattr(settings, 'AMAZON_ASSOCIATE_TAG', 'andreindica00-20')
     
     # Se for link curto da Amazon, precisamos expandir para pegar o ID do produto
-    if 'amzn.to' in url:
+    if 'amzn.to' in url or 'link.amazon' in url:
         try:
             resp = requests.get(url, allow_redirects=True, timeout=5)
             url = resp.url
@@ -555,7 +553,7 @@ async def process_offer_to_group(bot_app, text, photo=None):
         is_shopee = 'shopee.com.br' in link or 's.shopee' in link
         is_aliexpress = 'aliexpress.com' in link or 's.click.aliexpress' in link
         is_ml = 'mercadolivre.com' in link or 'mlstatic.com' in link or 'mercadolivre.com.br' in link
-        is_amazon = 'amazon.com.br' in link or 'amzn.to' in link
+        is_amazon = 'amazon.com.br' in link or 'amzn.to' in link or 'link.amazon' in link
         is_kabum = 'kabum.com.br' in link or 'tidd.ly' in link
         is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link
         is_telegram = 't.me/' in link

@@ -256,7 +256,7 @@ class Command(BaseCommand):
                     is_telegram = 't.me/' in link
                     is_tecnan = 'tecnan.com.br' in link
                     is_awin = 'awin1.com' in link or 'tidd.ly' in link
-                    is_amazon = 'amazon.com.br' in link or 'amzn.to' in link
+                    is_amazon = 'amazon.com.br' in link or 'amzn.to' in link or 'link.amazon' in link
                     is_shopee = 'shopee.com.br' in link or 's.shopee' in link
                     is_ml = 'mercadolivre' in link or 'meli.la' in link or 'mlstatic' in link
                     is_ali = 'aliexpress.com' in link or 's.click.ali' in link
