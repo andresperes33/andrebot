@@ -514,6 +514,25 @@ def extract_links(text):
     return re.findall(r'(https?://\S+)', text)
 
 
+def strip_promo_footer(text):
+    """
+    Remove rodapés promocionais/copys que não devem ser reenviados pelo bot.
+    """
+    channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
+    escaped_channel_name = re.escape(channel_name)
+
+    cleaned_text = re.sub(
+        rf'(?im)^\s*{escaped_channel_name}(?:\s+promos?)?\s*$',
+        '',
+        text,
+    )
+    cleaned_text = re.sub(r'(?im)^\s*telegram\s*:\s*\S+\s*$', '', cleaned_text)
+    cleaned_text = re.sub(r'(?im)^\s*whatsapp\s*:\s*\S+\s*$', '', cleaned_text)
+    cleaned_text = re.sub(r'(?im)^\s*#an[uú]ncio\s*$', '', cleaned_text)
+    cleaned_text = re.sub(r'\n{3,}', '\n\n', cleaned_text)
+    return cleaned_text.strip()
+
+
 async def process_offer_to_group(bot_app, text, photo=None):
     """
     Processa uma oferta (texto + foto opcional), converte links e posta no grupo.
@@ -547,6 +566,7 @@ async def process_offer_to_group(bot_app, text, photo=None):
 
     # Substitui links do Linktree pelo link personalizado
     modified_text = re.sub(r'https?://linktr\.ee/\S+', 'https://links.andreindica.com.br/', modified_text)
+    modified_text = strip_promo_footer(modified_text)
 
     has_aliexpress = False
     for link in links:

@@ -208,7 +208,7 @@ class Command(BaseCommand):
                     return False
 
                 # ─── Converte links e processa texto ─────────────────────────
-                from bot.services import convert_to_affiliate_link, send_whatsapp_message
+                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer
 
                 channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
 
@@ -224,6 +224,7 @@ class Command(BaseCommand):
                 modified_text = re.sub(r'https?://t\.me/\S+', '', modified_text)
                 # Substitui links do Linktree pelo link personalizado
                 modified_text = re.sub(r'https?://linktr\.ee/\S+', 'https://links.andreindica.com.br/', modified_text)
+                modified_text = strip_promo_footer(modified_text)
                 # Remove linhas vazias excessivas
                 modified_text = re.sub(r'\n\s*\n', '\n\n', modified_text)
 
