@@ -347,7 +347,7 @@ def convert_amazon_link(url):
     """
     Gera link de afiliado Amazon injetando a TAG.
     """
-    tag = getattr(settings, 'AMAZON_ASSOCIATE_TAG', 'andreindica00-20')
+    tag = getattr(settings, 'AMAZON_ASSOCIATE_TAG', 'andre0cda-20')
     
     # Se for link curto da Amazon, precisamos expandir para pegar o ID do produto
     if 'amzn.to' in url or 'link.amazon' in url:
