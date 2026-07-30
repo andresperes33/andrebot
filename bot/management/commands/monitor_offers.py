@@ -320,7 +320,7 @@ class Command(BaseCommand):
                             "Se o produto não aparecer, clique em 'DO BRASIL'."
                         )
                     modified_text += "\n\n✨ Conheça mais sobre meu trabalho:\nwww.andreindica.com.br"
-                    modified_text += "\n\n👇 *Clique abaixo para ativar seus alertas:*\n➡ https://t.me/alertas_andre_bot"
+
 
                 # ─── Baixa foto ──────────────────────────────────────────────
                 photo_path = None
@@ -419,36 +419,10 @@ class Command(BaseCommand):
                         logger.error(f"Erro no polling: {e}")
                     await asyncio.sleep(30)
 
-            # ─── CONVITE PERIÓDICO PARA O BOT DE ALERTAS ────────────────────
-            INVITE_MSG = (
-                "🔔 *Quer receber alertas personalizados de promoções?*\n\n"
-                "Cadastre suas palavras-chave no nosso bot de alertas e seja "
-                "notificado *no privado* sempre que uma promoção compatível "
-                "aparecer aqui no grupo!\n\n"
-                "✅ Totalmente *gratuito*\n"
-                "✅ Você escolhe o que quer monitorar\n"
-                "✅ Receba no seu Telegram instantaneamente\n\n"
-                "👇 *Clique abaixo para ativar seus alertas:*\n"
-                "➡️ https://t.me/alertas_andre_bot"
-            )
-
-            async def send_invite_periodically():
-                # Aguarda 30s para o bot estabilizar antes do primeiro envio
-                await asyncio.sleep(30)
-                while True:
-                    try:
-                        await client.send_message(group_id, INVITE_MSG, parse_mode='md')
-                        logger.info("📢 Mensagem de convite enviada ao grupo!")
-                    except Exception as e:
-                        logger.error(f"Erro ao enviar convite: {e}")
-                    # Envia a cada 6 horas
-                    await asyncio.sleep(6 * 60 * 60)
-
             logger.info("🚀 MONITOR AUTÔNOMO INICIADO! (Bot de Alertas Ativo)")
             await asyncio.gather(
                 client.run_until_disconnected(),
-                smart_polling(),
-                send_invite_periodically()
+                smart_polling()
             )
 
         try:
