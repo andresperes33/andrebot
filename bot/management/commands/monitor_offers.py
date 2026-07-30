@@ -319,7 +319,6 @@ class Command(BaseCommand):
                             "Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
                             "Se o produto não aparecer, clique em 'DO BRASIL'."
                         )
-                    modified_text += "\n\n✨ Conheça mais sobre meu trabalho:\nwww.andreindica.com.br"
 
 
                 # ─── Baixa foto ──────────────────────────────────────────────
