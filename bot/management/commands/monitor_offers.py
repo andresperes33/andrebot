@@ -93,7 +93,7 @@ class Command(BaseCommand):
                     break
 
             if not target_id:
-                logger.warning(f"⚠️ Canal não encontrado: {source_channel}. Verifique o nome/username configurado em SOURCE_CHANNEL_USERNAME.")
+                logger.warning(f"⚠️ Canal não encontrado: {source_channel}. Verifique o valor de SOURCE_CHANNEL_USERNAME (pode ser o @username OU o nome exato do canal).")
                 return
 
             # ─── COLD START: banco vazio, pular histórico ─────────────────────
