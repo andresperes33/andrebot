@@ -88,6 +88,9 @@ DATABASES = {
     )
 }
 
+_db_cfg = DATABASES['default']
+print(f"[startup] Banco de dados -> engine={_db_cfg['ENGINE']} name={_db_cfg['NAME']} host={_db_cfg['HOST']} port={_db_cfg['PORT']}")
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
