@@ -21,5 +21,5 @@ echo "🤖 Iniciando Bot de Alertas (@alertas_andre_bot)..."
 python manage.py run_alert_bot &
 
 # 5. Iniciar o Monitor de Ofertas (Processo Principal)
-echo "🔍 Iniciando Monitor do zFinnY..."
+echo "🎯 Iniciando Monitor do canal de promoções..."
 python manage.py monitor_offers

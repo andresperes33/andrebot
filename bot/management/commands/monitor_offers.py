@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import logging
 import os
 import re
@@ -61,7 +61,7 @@ async def save_last_id(msg_id: int):
 
 
 class Command(BaseCommand):
-    help = 'Monitor zFinnY -> Telegram + WhatsApp (Autônomo, PC pode estar desligado)'
+    help = 'Monitor do canal de promoções -> Telegram + WhatsApp (Autônomo, PC pode estar desligado)'
 
     def handle(self, *args, **options):
         api_id = getattr(settings, 'TELEGRAM_API_ID', None)
@@ -301,7 +301,7 @@ class Command(BaseCommand):
                     from bot.services import save_promo_to_db, _normalizar_url, _primeiro_link_produto
                     # Chave estável baseada no link BRUTO (msg_text), não no convertido.
                     chave_estavel = _normalizar_url(_primeiro_link_produto(msg_text))
-                    await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, 'zFinnY', chave_estavel)
+                    await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, source_channel, chave_estavel)
                     logger.info("💾 Promo salva no banco de dados")
                 except Exception as db_err:
                     logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")
@@ -357,7 +357,7 @@ class Command(BaseCommand):
                                             await save_last_id(msg.id)
                                             last_id = msg.id
                         await client.get_me()
-                        logger.info("💓 Check-up automático em 1 canais realizado")
+                        logger.info("💓 Check-up automático realizado")
                     except Exception as e:
                         logger.error(f"Erro no polling: {e}")
                     await asyncio.sleep(30)
