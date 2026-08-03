@@ -11,16 +11,16 @@
     {% block og_meta %}
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://promos.andreindica.com.br/">
+    <meta property="og:url" content="{{ SITE_URL }}/">
     <meta property="og:title" content="André Indica — Promoções de Tech">
     <meta property="og:description" content="As melhores ofertas de hardware e tecnologia monitoradas 24h por dia.">
-    <meta property="og:image" content="https://promos.andreindica.com.br{% static 'bot/favicon.png' %}">
+    <meta property="og:image" content="{{ SITE_URL }}{% static 'bot/favicon.png' %}">
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://promos.andreindica.com.br/">
+    <meta property="twitter:url" content="{{ SITE_URL }}/">
     <meta property="twitter:title" content="André Indica — Promoções de Tech">
     <meta property="twitter:description" content="As melhores ofertas de hardware e tecnologia monitoradas 24h por dia.">
-    <meta property="twitter:image" content="https://promos.andreindica.com.br{% static 'bot/favicon.png' %}">
+    <meta property="twitter:image" content="{{ SITE_URL }}{% static 'bot/favicon.png' %}">
     {% endblock %}
 
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -9,13 +9,13 @@
 {% block og_meta %}
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://promos.andreindica.com.br{% url 'promo_detail' promo.pk %}">
+<meta property="og:url" content="{{ SITE_URL }}{% url 'promo_detail' promo.pk %}">
 <meta property="og:title" content="{{ promo.titulo }}">
 <meta property="og:description" content="{{ promo.preco }} — Promoção de {{ promo.get_categoria_display }} capturada automaticamente do Telegram.">
 {% if promo.imagem_url %}<meta property="og:image" content="{{ promo.imagem_url }}">{% endif %}
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:url" content="https://promos.andreindica.com.br{% url 'promo_detail' promo.pk %}">
+<meta property="twitter:url" content="{{ SITE_URL }}{% url 'promo_detail' promo.pk %}">
 <meta property="twitter:title" content="{{ promo.titulo }}">
 <meta property="twitter:description" content="{{ promo.preco }} — Promoção de {{ promo.get_categoria_display }}.">
 {% if promo.imagem_url %}<meta property="twitter:image" content="{{ promo.imagem_url }}">{% endif %}

@@ -83,12 +83,13 @@ def robots_txt_view(request):
     """
     Gera o robots.txt dinamicamente.
     """
+    base_url = request.build_absolute_uri('/').rstrip('/')
     lines = [
         "User-agent: *",
         "Allow: /",
         "Disallow: /admin/",
         "",
-        "Sitemap: https://promos.andreindica.com.br/sitemap.xml"
+        f"Sitemap: {base_url}/sitemap.xml"
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
@@ -97,7 +98,7 @@ def sitemap_xml_view(request):
     """
     Gera o sitemap.xml com as rotas principais e todas as páginas individuais de promo.
     """
-    base_url = "https://promos.andreindica.com.br"
+    base_url = request.build_absolute_uri('/').rstrip('/')
     pages = [
         {"loc": f"{base_url}/promos/", "changefreq": "always", "priority": "1.0"},
         {"loc": f"{base_url}/politica-de-privacidade/", "changefreq": "monthly", "priority": "0.3"},
