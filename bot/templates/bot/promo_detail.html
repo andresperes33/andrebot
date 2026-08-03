@@ -1,0 +1,161 @@
+{% extends 'bot/base.html' %}
+{% load static %}
+
+{% block title %}{{ promo.titulo }} | André Indica{% endblock %}
+{% block description %}{{ promo.titulo }} — {{ promo.preco }}. Promoção de {{ promo.get_categoria_display }} capturada automaticamente do Telegram.{% endblock %}
+
+{% block nav_promos %}active{% endblock %}
+
+{% block og_meta %}
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://promos.andreindica.com.br{% url 'promo_detail' promo.pk %}">
+<meta property="og:title" content="{{ promo.titulo }}">
+<meta property="og:description" content="{{ promo.preco }} — Promoção de {{ promo.get_categoria_display }} capturada automaticamente do Telegram.">
+{% if promo.imagem_url %}<meta property="og:image" content="{{ promo.imagem_url }}">{% endif %}
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://promos.andreindica.com.br{% url 'promo_detail' promo.pk %}">
+<meta property="twitter:title" content="{{ promo.titulo }}">
+<meta property="twitter:description" content="{{ promo.preco }} — Promoção de {{ promo.get_categoria_display }}.">
+{% if promo.imagem_url %}<meta property="twitter:image" content="{{ promo.imagem_url }}">{% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
+    <div class="breadcrumb-inner">
+        <a href="/promos/">Início</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <a href="/promos/">Promoções</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <span class="breadcrumb-current">{{ promo.get_categoria_display }}</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-hero">
+    <span class="corner-square"></span>
+    <div class="detail-hero-inner">
+        <div class="detail-eyebrow">
+            <span class="badge-tag" style="background:var(--primary);color:var(--on-primary);">{{ promo.get_categoria_display }}</span>
+        </div>
+        <h1 class="detail-title">{{ promo.titulo }}</h1>
+        <div class="detail-actions">
+            {% if promo.link_afiliado %}
+            <a href="{{ promo.link_afiliado }}" target="_blank" rel="nofollow sponsored" class="btn btn-primary btn-lg">Ver oferta <i class="fas fa-arrow-right"></i></a>
+            {% endif %}
+            <a href="https://t.me/AlertaTechBrasil" target="_blank" class="btn btn-outline-on-dark"><i class="fab fa-telegram-plane"></i> Acompanhar no Telegram</a>
+        </div>
+    </div>
+</div>
+
+<div class="detail-layout">
+    <div class="detail-media">
+        <span class="corner-square"></span>
+        <div class="detail-media-img">
+            {% if promo.imagem_url %}
+                <img src="{{ promo.imagem_url }}" alt="{{ promo.titulo }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <div class="no-img" style="display:none"><i class="fas fa-tag"></i></div>
+            {% else %}
+                <div class="no-img"><i class="fas fa-tag"></i></div>
+            {% endif %}
+        </div>
+        <p class="detail-caption">Imagem da postagem original capturada no Telegram</p>
+    </div>
+
+    <div class="detail-info">
+        <div class="card">
+            {% if promo.preco %}
+            <div>
+                <span class="detail-label">Preço</span>
+                <div class="detail-price">{{ promo.preco }}</div>
+            </div>
+            {% endif %}
+
+            {% if promo.cupom %}
+            <div>
+                <span class="detail-label">Cupom de desconto</span>
+                <div class="detail-cupom-row">
+                    <code>{{ promo.cupom }}</code>
+                    <button class="copy-btn" onclick="copiarCupom(this, '{{ promo.cupom|escapejs }}')" aria-label="Copiar cupom"><i class="fas fa-copy"></i></button>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if promo.link_afiliado %}
+            <a href="{{ promo.link_afiliado }}" target="_blank" rel="nofollow sponsored" class="btn btn-primary btn-lg btn-block">Comprar com desconto <i class="fas fa-arrow-right"></i></a>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <span class="detail-label">Postagem original</span>
+            <div class="detail-text">{{ promo.texto_original|urlize|linebreaksbr }}</div>
+        </div>
+
+        <div class="detail-meta">
+            <span><i class="fas fa-bolt" style="color:var(--primary);"></i> Publicado automaticamente pelo bot</span>
+            <span>{{ promo.criado_em|date:"d/m/Y \à\s H:i" }}</span>
+        </div>
+    </div>
+</div>
+
+{% if recentes %}
+<div class="section" style="padding-top:0;">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-eyebrow">Continue explorando</div>
+                <h2 class="section-title xl">Outras ofertas</h2>
+            </div>
+            <a href="/promos/" class="btn-ghost">Ver todas <i class="fas fa-arrow-right arrow"></i></a>
+        </div>
+        <div class="promos-grid">
+            {% for promo in recentes %}
+            <a href="{% url 'promo_detail' promo.pk %}" class="card" style="color:inherit;">
+                <span class="corner-square"></span>
+                <div class="card-thumb">
+                    {% if promo.imagem_url %}
+                        <img src="{{ promo.imagem_url }}" alt="{{ promo.titulo }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                        <div class="no-img" style="display:none"><i class="fas fa-tag"></i></div>
+                    {% else %}
+                        <div class="no-img"><i class="fas fa-tag"></i></div>
+                    {% endif %}
+                    <span class="badge-tag card-badge">{{ promo.get_categoria_display }}</span>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">{{ promo.titulo }}</h3>
+                    {% if promo.preco %}<div class="card-price"><small>por</small> {{ promo.preco }}</div>{% endif %}
+                    <div class="card-footer">
+                        <span class="card-meta">Ver oferta <i class="fas fa-arrow-right" style="color:var(--primary);"></i></span>
+                        <span class="card-date">{{ promo.criado_em|date:"d/m" }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copiarCupom(el, cupom) {
+        navigator.clipboard.writeText(cupom).then(() => {
+            el.classList.remove('fa-copy');
+            el.classList.add('fa-check');
+            const toast = document.getElementById('toast');
+            toast.textContent = 'Cupom copiado: ' + cupom;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+                el.classList.add('fa-copy');
+                el.classList.remove('fa-check');
+            }, 2000);
+        });
+    }
+</script>
+{% endblock %}

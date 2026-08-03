@@ -57,98 +57,7 @@ async def save_last_id(msg_id: int):
         logger.error(f"❌ Erro ao persistir last_id={msg_id} no banco: {e}")
 
 
-def _save_promo_db(texto: str, photo_path: str = None):
-    """
-    Salva a promoção no banco de dados para exibição na página web.
-    Réplica fiel do texto enviado ao Telegram.
-    """
-    from django.db import close_old_connections
-    close_old_connections()
-    from bot.models import Promo
-    import re
 
-    # Detecta categoria pelo texto
-    texto_lower = texto.lower()
-    categoria = 'outros'
-    
-    if any(k in texto_lower for k in ['notebook', 'laptop', 'macbook']):
-        categoria = 'notebook'
-    elif any(k in texto_lower for k in ['smartphone', 'celular', 'iphone', 'galaxy', 'moto g', 'poco', 'redmi']):
-        categoria = 'celular'
-    elif any(k in texto_lower for k in ['televisão', 'televisao', 'tv ', 'smart tv', 'polegada']):
-        categoria = 'tv'
-    elif any(k in texto_lower for k in ['placa de vídeo', 'placa de video', 'rtx', 'gtx', 'rx ', 'radeon', 'geforce']):
-        categoria = 'placa_video'
-    elif any(k in texto_lower for k in ['placa-mãe', 'placa mae', 'placa-mae', 'motherboard', ' b450 ', ' b550 ', ' a520 ', ' h610 ', ' b660 ', ' x670 ']):
-        categoria = 'placa_mae'
-    elif any(k in texto_lower for k in ['processador', 'ryzen', 'intel core', 'amd core']):
-        categoria = 'processador'
-    elif any(k in texto_lower for k in ['monitor', 'display', 'ips ', 'oled', 'hz ', 'curvo']):
-        categoria = 'monitor'
-    elif any(k in texto_lower for k in ['headset', 'headphone', 'fone']):
-        categoria = 'headset'
-    elif any(k in texto_lower for k in ['teclado']):
-        categoria = 'teclado'
-    elif any(k in texto_lower for k in ['mouse']):
-        categoria = 'mouse'
-    elif any(k in texto_lower for k in ['memória ram', 'memoria ram', 'ddr4', 'ddr5']):
-        categoria = 'memoria_ram'
-    elif any(k in texto_lower for k in ['ssd', 'nvme', 'm.2', 'hd ', 'armazenamento', 'sata']):
-        categoria = 'ssd'
-    elif any(k in texto_lower for k in ['cadeira', 'gamer chair']):
-        categoria = 'cadeira'
-
-    # Extrai título básico
-    titulo = ''
-    for linha in texto.split('\n'):
-        limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
-        if len(limpa) > 5:
-            titulo = limpa[:250]
-            break
-
-    # Brute force link extraction for field legacy
-    link_afiliado = ''
-    links = re.findall(r'(https?://\S+)', texto)
-    if links:
-        link_afiliado = links[0].rstrip(')')
-
-    # Preço básico para filtro
-    preco = ''
-    preco_match = re.search(r'R\$\s*[\d.,]+', texto)
-    if preco_match:
-        preco = preco_match.group(0).strip()
-
-    # Processa imagem
-    import os
-    imagem_url = ''
-    if photo_path and os.path.exists(photo_path):
-        try:
-            import shutil
-            from django.conf import settings
-            import time
-            media_promos_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
-            os.makedirs(media_promos_dir, exist_ok=True)
-            filename = f"promo_{int(time.time())}_{os.path.basename(photo_path)}"
-            new_path = os.path.join(media_promos_dir, filename)
-            shutil.copy2(photo_path, new_path)
-            imagem_url = f"{settings.MEDIA_URL}promos/{filename}"
-        except Exception as img_err:
-            logger.error(f"❌ Erro imagem: {img_err}")
-
-    # Salva
-    try:
-        Promo.objects.create(
-            titulo=titulo or "Oferta imperdível",
-            preco=preco,
-            cupom='',
-            link_afiliado=link_afiliado,
-            imagem_url=imagem_url,
-            categoria=categoria,
-            texto_original=texto
-        )
-        logger.info(f"💾 Promo salva: {titulo[:30]}")
-    except Exception as db_err:
-        logger.error(f"❌ Erro DB: {db_err}")
 
 
 class Command(BaseCommand):
@@ -359,7 +268,8 @@ class Command(BaseCommand):
 
                 # ─── Salva a promo no banco para a página web ─────────────────
                 try:
-                    await asyncio.to_thread(_save_promo_db, modified_text, photo_path)
+                    from bot.services import save_promo_to_db
+                    await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, 'zFinnY')
                     logger.info("💾 Promo salva no banco de dados")
                 except Exception as db_err:
                     logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")

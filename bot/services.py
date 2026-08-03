@@ -1,10 +1,107 @@
 import re
 import time
+import os
 import hashlib
 import json
 import urllib.parse
 import requests
 from django.conf import settings
+
+
+def save_promo_to_db(texto, photo_path=None, fonte='zFinnY'):
+    """
+    Salva a promoção no banco de dados para exibição na página web.
+    Réplica fiel do texto enviado ao Telegram.
+    photo_path pode ser um caminho local ou uma URL de imagem.
+    """
+    from django.db import close_old_connections
+    close_old_connections()
+    from bot.models import Promo
+
+    # Detecta categoria pelo texto
+    texto_lower = texto.lower()
+    categoria = 'outros'
+
+    if any(k in texto_lower for k in ['notebook', 'laptop', 'macbook']):
+        categoria = 'notebook'
+    elif any(k in texto_lower for k in ['smartphone', 'celular', 'iphone', 'galaxy', 'moto g', 'poco', 'redmi']):
+        categoria = 'celular'
+    elif any(k in texto_lower for k in ['televisão', 'televisao', 'tv ', 'smart tv', 'polegada']):
+        categoria = 'tv'
+    elif any(k in texto_lower for k in ['placa de vídeo', 'placa de video', 'rtx', 'gtx', 'rx ', 'radeon', 'geforce']):
+        categoria = 'placa_video'
+    elif any(k in texto_lower for k in ['placa-mãe', 'placa mae', 'placa-mae', 'motherboard', ' b450 ', ' b550 ', ' a520 ', ' h610 ', ' b660 ', ' x670 ']):
+        categoria = 'placa_mae'
+    elif any(k in texto_lower for k in ['processador', 'ryzen', 'intel core', 'amd core']):
+        categoria = 'processador'
+    elif any(k in texto_lower for k in ['monitor', 'display', 'ips ', 'oled', 'hz ', 'curvo']):
+        categoria = 'monitor'
+    elif any(k in texto_lower for k in ['headset', 'headphone', 'fone']):
+        categoria = 'headset'
+    elif any(k in texto_lower for k in ['teclado']):
+        categoria = 'teclado'
+    elif any(k in texto_lower for k in ['mouse']):
+        categoria = 'mouse'
+    elif any(k in texto_lower for k in ['memória ram', 'memoria ram', 'ddr4', 'ddr5']):
+        categoria = 'memoria_ram'
+    elif any(k in texto_lower for k in ['ssd', 'nvme', 'm.2', 'hd ', 'armazenamento', 'sata']):
+        categoria = 'ssd'
+    elif any(k in texto_lower for k in ['cadeira', 'gamer chair']):
+        categoria = 'cadeira'
+
+    # Extrai título básico
+    titulo = ''
+    for linha in texto.split('\n'):
+        limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
+        if len(limpa) > 5:
+            titulo = limpa[:250]
+            break
+
+    # Brute force link extraction for field legacy
+    link_afiliado = ''
+    links = re.findall(r'(https?://\S+)', texto)
+    if links:
+        link_afiliado = links[0].rstrip(')')
+
+    # Preço básico para filtro
+    preco = ''
+    preco_match = re.search(r'R\$\s*[\d.,]+', texto)
+    if preco_match:
+        preco = preco_match.group(0).strip()
+
+    # Processa imagem
+    imagem_url = ''
+    if photo_path and isinstance(photo_path, str) and photo_path.startswith('http'):
+        imagem_url = photo_path
+    elif photo_path and os.path.exists(photo_path):
+        try:
+            import shutil
+            media_promos_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
+            os.makedirs(media_promos_dir, exist_ok=True)
+            filename = f"promo_{int(time.time())}_{os.path.basename(photo_path)}"
+            new_path = os.path.join(media_promos_dir, filename)
+            shutil.copy2(photo_path, new_path)
+            imagem_url = f"{settings.MEDIA_URL}promos/{filename}"
+        except Exception as img_err:
+            print(f"Erro imagem: {img_err}")
+
+    # Salva
+    try:
+        Promo.objects.create(
+            titulo=titulo or "Oferta imperdível",
+            preco=preco,
+            cupom='',
+            link_afiliado=link_afiliado,
+            imagem_url=imagem_url,
+            categoria=categoria,
+            fonte=fonte,
+            texto_original=texto
+        )
+        print(f"Promo salva: {titulo[:30]}")
+        return True
+    except Exception as db_err:
+        print(f"Erro DB: {db_err}")
+        return False
 
 
 def get_product_info(url):
@@ -655,6 +752,8 @@ async def process_offer_to_group(bot_app, text, photo=None):
 
     try:
         final_image_to_send = None
+        promo_image = None  # Imagem final (path local ou URL) para salvar no site
+
         if photo:
             # Se 'photo' for um caminho de arquivo (baixado pelo monitor_offers.py)
             # O bot do Telegram envia o arquivo local
@@ -663,11 +762,25 @@ async def process_offer_to_group(bot_app, text, photo=None):
                 photo=photo,
                 caption=modified_text[:1024]
             )
-            final_image_to_send = photo # Guarda o caminho do arquivo para o WhatsApp
+            final_image_to_send = photo  # Guarda o caminho do arquivo para o WhatsApp
+
+            # Se for um file_id do Telegram (não é path e não é URL), baixa para o disco
+            if isinstance(photo, str) and not photo.startswith('http') and not os.path.exists(photo):
+                try:
+                    tg_file = await bot.get_file(photo)
+                    temp_dir = os.path.join(os.getcwd(), 'tmp_photos')
+                    os.makedirs(temp_dir, exist_ok=True)
+                    promo_image = await tg_file.download_to_drive(custom_path=os.path.join(temp_dir, f"promo_{int(time.time())}.jpg"))
+                except Exception as dl_err:
+                    print(f"Erro ao baixar foto para o site: {dl_err}")
+                    promo_image = None
+            else:
+                promo_image = final_image_to_send
         else:
             # Tenta buscar info do produto se não tiver foto direto do Telegram
             _, image_url, _ = get_product_info(original_link)
             final_image_to_send = image_url
+            promo_image = image_url
             if image_url:
                 await bot.send_photo(
                     chat_id=group_id,
@@ -683,6 +796,9 @@ async def process_offer_to_group(bot_app, text, photo=None):
         
         # Envia também para o WhatsApp (Passando o arquivo local ou a URL)
         send_whatsapp_message(modified_text, final_image_to_send)
+
+        # Salva a promoção no banco para a página web
+        save_promo_to_db(modified_text, promo_image)
         
         return True
     except Exception as e:

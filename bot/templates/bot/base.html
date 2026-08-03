@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}André Indica — Promoções de Tech{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'bot/favicon.png' %}">
+    <meta name="description" content="{% block description %}As melhores promoções de tecnologia encontradas pelo bot André Indica. SSD, placa de vídeo, notebooks e muito mais com cupons e links de afiliado.{% endblock %}">
+    
+    {% block og_meta %}
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://promos.andreindica.com.br/">
+    <meta property="og:title" content="André Indica — Promoções de Tech">
+    <meta property="og:description" content="As melhores ofertas de hardware e tecnologia monitoradas 24h por dia.">
+    <meta property="og:image" content="https://promos.andreindica.com.br{% static 'bot/favicon.png' %}">
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://promos.andreindica.com.br/">
+    <meta property="twitter:title" content="André Indica — Promoções de Tech">
+    <meta property="twitter:description" content="As melhores ofertas de hardware e tecnologia monitoradas 24h por dia.">
+    <meta property="twitter:image" content="https://promos.andreindica.com.br{% static 'bot/favicon.png' %}">
+    {% endblock %}
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'bot/nvidia.css' %}">
+    {% block extra_head %}{% endblock %}
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-9XBRS5LBNZ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-9XBRS5LBNZ');
+    </script>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1945676049008537"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+
+<header>
+    <div class="utility-bar">
+        <div class="utility-bar-inner">
+            <div class="utility-left">
+                <span><i class="fas fa-bolt"></i> OFERTAS 24H</span>
+            </div>
+            <div class="utility-right">
+                <a href="https://t.me/AlertaTechBrasil" target="_blank" class="utility-link"><i class="fab fa-telegram-plane"></i> Canal Telegram</a>
+                <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" class="utility-link"><i class="fab fa-whatsapp"></i> Grupo WhatsApp</a>
+            </div>
+        </div>
+    </div>
+
+    <nav class="primary-nav">
+        <div class="nav-inner">
+            <a href="/promos/" class="brand">
+                <span class="brand-mark"></span>
+                <span class="brand-name">André<strong>Indica</strong></span>
+            </a>
+            <div class="nav-links">
+                <a href="/promos/" class="nav-link {% block nav_promos %}active{% endblock %}">Promoções</a>
+                <a href="https://t.me/AlertaTechBrasil" target="_blank" class="nav-link">Telegram</a>
+                <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" class="nav-link">WhatsApp</a>
+                <a href="{% url 'privacy' %}" class="nav-link">Privacidade</a>
+            </div>
+            <a href="https://t.me/alertas_andre_bot" target="_blank" class="btn btn-primary btn-sm">Ativar Bot <i class="fas fa-arrow-right"></i></a>
+        </div>
+    </nav>
+</header>
+
+{% block breadcrumb %}{% endblock %}
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<section class="cta-strip-dark">
+    <div class="cta-strip-inner">
+        <div class="cta-strip-title">Não perca nenhuma oferta!</div>
+        <div class="hero-actions">
+            <a href="https://t.me/AlertaTechBrasil" target="_blank" class="btn btn-primary"><i class="fab fa-telegram-plane"></i> Entrar no Canal</a>
+            <a href="https://t.me/alertas_andre_bot" target="_blank" class="btn btn-outline-on-dark">Ativar Alertas do Bot</a>
+        </div>
+    </div>
+</section>
+
+<footer class="footer-section">
+    <div class="footer-inner">
+        <div>
+            <div class="footer-brand">André<strong>Indica</strong></div>
+            <p class="footer-desc">Bot de afiliados monitorando promoções de tecnologia 24h e publicando em tempo real no Telegram, WhatsApp e aqui no site.</p>
+        </div>
+        <div>
+            <div class="footer-heading">Ofertas</div>
+            <a href="/promos/?periodo=hoje" class="footer-link">De hoje</a>
+            <a href="/promos/?periodo=semana" class="footer-link">Da semana</a>
+            <a href="/promos/?periodo=mes" class="footer-link">Do mês</a>
+        </div>
+        <div>
+            <div class="footer-heading">Comunidade</div>
+            <a href="https://t.me/AlertaTechBrasil" target="_blank" class="footer-link">Canal do Telegram</a>
+            <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" class="footer-link">Grupo do WhatsApp</a>
+            <a href="https://t.me/alertas_andre_bot" target="_blank" class="footer-link">Bot de Alertas</a>
+        </div>
+        <div>
+            <div class="footer-heading">Institucional</div>
+            <a href="{% url 'privacy' %}" class="footer-link">Política de Privacidade</a>
+            <a href="/sitemap.xml" class="footer-link">Sitemap</a>
+        </div>
+    </div>
+    <div class="footer-legal">
+        <span>© {% now "Y" %} André Indica</span>
+        <span><a href="/robots.txt">robots.txt</a> · <a href="/ads.txt">ads.txt</a> · Feito com <i class="fas fa-heart"></i> e NVIDIA Design</span>
+    </div>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

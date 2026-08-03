@@ -1,7 +1,20 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from datetime import timedelta
 from .models import Promo
+
+
+def promo_detail_view(request, pk):
+    """
+    Página individual de uma promoção.
+    Mostra foto, preço, cupom, texto original com links e meta tags de compartilhamento.
+    """
+    promo = get_object_or_404(Promo, pk=pk)
+    recentes = Promo.objects.exclude(pk=pk)[:3]
+    return render(request, 'bot/promo_detail.html', {
+        'promo': promo,
+        'recentes': recentes,
+    })
 
 
 def promos_view(request):
@@ -82,17 +95,22 @@ def robots_txt_view(request):
 
 def sitemap_xml_view(request):
     """
-    Gera o sitemap.xml com as rotas principais.
+    Gera o sitemap.xml com as rotas principais e todas as páginas individuais de promo.
     """
-    # Em um cenário real com páginas individuais para cada promo, 
-    # listaríamos todas aqui. Como o site é uma single page de promos,
-    # listaremos as rotas fixas.
     base_url = "https://promos.andreindica.com.br"
     pages = [
         {"loc": f"{base_url}/promos/", "changefreq": "always", "priority": "1.0"},
         {"loc": f"{base_url}/politica-de-privacidade/", "changefreq": "monthly", "priority": "0.3"},
     ]
-    
+
+    # Cada promo vira uma página individual indexável
+    for promo in Promo.objects.all()[:500]:
+        pages.append({
+            "loc": f"{base_url}/promos/{promo.pk}/",
+            "changefreq": "weekly",
+            "priority": "0.8",
+        })
+
     xml = ['<?xml version="1.0" encoding="UTF-8"?>']
     xml.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
     for p in pages:
