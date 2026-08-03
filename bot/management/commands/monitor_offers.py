@@ -96,6 +96,24 @@ class Command(BaseCommand):
                 logger.warning(f"⚠️ Canal não encontrado: {source_channel}. Verifique o nome/username configurado em SOURCE_CHANNEL_USERNAME.")
                 return
 
+            # ─── COLD START: banco vazio, pular histórico ─────────────────────
+            # Quando o banco está recém-criado/vazio, last_id parte de 0 e o
+            # polling reprocessaria os últimos posts do canal (disparos duplicados).
+            # Detectamos isso e avançamos o last_id até o post mais recente,
+            # processando apenas ofertas NOVAS daqui em diante.
+            current_last = await load_last_id()
+            if current_last == 0:
+                try:
+                    latest_msgs = await client.get_messages(target_id, limit=1)
+                    if latest_msgs:
+                        newest = latest_msgs[0].id
+                        await save_last_id(newest)
+                        logger.info(f"🧊 Cold start detectado (banco vazio). Pulando histórico, last_id inicializado em {newest}. Só novas ofertas serão processadas.")
+                    else:
+                        logger.info("🧊 Cold start: canal sem mensagens, last_id permanece 0.")
+                except Exception as cold_err:
+                    logger.error(f"❌ Erro no cold start: {cold_err}")
+
             async def process_message(message):
                 """Converte links e envia para Telegram + WhatsApp"""
                 msg_text = message.message or ""
