@@ -7,6 +7,13 @@
     <title>{% block title %}André Indica — Promoções de Tech{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{% static 'bot/favicon.svg' %}">
     <link rel="icon" type="image/png" href="{% static 'bot/favicon.png' %}">
+    <link rel="manifest" href="{% static 'bot/manifest.json' %}">
+    <meta name="theme-color" content="#76b900">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="André Indica">
+    <link rel="apple-touch-icon" href="{% static 'bot/icon-192.png' %}">
     <meta name="description" content="{% block description %}As melhores promoções de tecnologia encontradas pelo bot André Indica. SSD, placa de vídeo, notebooks e muito mais com cupons e links de afiliado.{% endblock %}">
     
     {% block og_meta %}
@@ -125,5 +132,14 @@
 <div id="toast" class="toast"></div>
 
 {% block scripts %}{% endblock %}
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('{% static 'bot/sw.js' %}').catch(function (err) {
+            console.warn('Service Worker falhou:', err);
+        });
+    });
+}
+</script>
 </body>
 </html>
