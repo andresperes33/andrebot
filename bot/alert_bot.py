@@ -274,7 +274,32 @@ def run_alert_bot():
     ))
 
     logger.info("🤖 Bot de Alertas iniciado! @alertas_andre_bot")
-    app.run_polling(drop_pending_updates=True)
+
+    # Retry com backoff: durante o deploy do Easypanel o container antigo ainda
+    # está de pé enquanto o novo sobe. O Telegram só aceita um getUpdates por
+    # token — o Conflict derruba o polling. Em vez de morrer, espera e tenta de novo.
+    import time
+    from telegram.error import Conflict, TelegramError
+
+    tentativa = 0
+    while True:
+        try:
+            app.run_polling(drop_pending_updates=True)
+            break
+        except Conflict:
+            tentativa += 1
+            delay = min(30, 5 * tentativa)
+            logger.warning(f"⚠️ Conflict (outra instância do bot ativa). Nova tentativa em {delay}s... (tentativa {tentativa})")
+            time.sleep(delay)
+        except TelegramError as e:
+            logger.error(f"❌ Erro do Telegram no polling: {e}")
+            time.sleep(10)
+        except KeyboardInterrupt:
+            logger.info("Bot de Alertas parado.")
+            break
+        except Exception as e:
+            logger.error(f"❌ Erro inesperado no polling: {e}")
+            time.sleep(10)
 
 
 if __name__ == '__main__':
