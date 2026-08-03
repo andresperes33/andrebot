@@ -8,15 +8,68 @@ import requests
 from django.conf import settings
 
 
-def save_promo_to_db(texto, photo_path=None, fonte='zFinnY'):
+def _normalizar_url(url):
+    """Normaliza uma URL de produto em uma chave estável para deduplicação."""
+    url = (url or '').strip().rstrip('.,;|)')
+    url = re.split(r'[?#]', url)[0]
+    url = re.sub(r'^https?://', '', url, flags=re.I)
+    url = re.sub(r'^www\.', '', url, flags=re.I)
+    url = url.rstrip('/')
+    return url.lower()
+
+
+def _primeiro_link_produto(texto):
+    """Extrai o primeiro link de produto do texto (ignora links de rede social)."""
+    for lnk in re.findall(r'(https?://\S+)', texto or ''):
+        lnk = lnk.rstrip('.,;|)')
+        if any(d in lnk for d in ['t.me/', 'linktr.ee', 'youtube', 'youtu.be', 'tecnan.com.br', 'links.andreindica']):
+            continue
+        return lnk
+    return ''
+
+
+def promo_ja_postada(texto):
     """
-    Salva a promoção no banco de dados para exibição na página web.
-    Réplica fiel do texto enviado ao Telegram.
-    photo_path pode ser um caminho local ou uma URL de imagem.
+    Verifica se uma promoção já foi postada/salva antes.
+    Usa uma chave normalizada do PRIMEIRO LINK BRUTO da mensagem,
+    que é estável entre restarts (diferente do link convertido/short).
+    Retorna True se já existe (deve pular o envio).
     """
     from django.db import close_old_connections
     close_old_connections()
     from bot.models import Promo
+
+    chave = _normalizar_url(_primeiro_link_produto(texto))
+    if not chave:
+        return False
+
+    try:
+        return Promo.objects.filter(url_chave=chave).exists()
+    except Exception as db_err:
+        print(f"Erro ao verificar promo existente: {db_err}")
+        return False
+
+
+def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
+    """
+    Salva a promoção no banco de dados para exibição na página web.
+    Réplica fiel do texto enviado ao Telegram.
+    photo_path pode ser um caminho local ou uma URL de imagem.
+    url_chave: chave normalizada do link bruto original (para deduplicação estável).
+    """
+    from django.db import close_old_connections
+    close_old_connections()
+    from bot.models import Promo
+
+    if not url_chave:
+        url_chave = _normalizar_url(_primeiro_link_produto(texto))
+
+    # Deduplicação: se a mesma promo (mesma chave) já foi salva antes, ignora.
+    if url_chave:
+        ja_existe = Promo.objects.filter(url_chave=url_chave).exists()
+        if ja_existe:
+            print(f"Promo já existente, ignorada: {url_chave}")
+            return False
 
     # Detecta categoria pelo texto
     texto_lower = texto.lower()
@@ -85,6 +138,14 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY'):
         except Exception as img_err:
             print(f"Erro imagem: {img_err}")
 
+    # Deduplicação: se a mesma promo (mesmo link) já foi salva antes, ignora.
+    # Evita promoções duplicadas na página após redeploys/restarts do bot.
+    if link_afiliado:
+        ja_existe = Promo.objects.filter(link_afiliado=link_afiliado).exists()
+        if ja_existe:
+            print(f"Promo já existente, ignorada: {link_afiliado[:80]}")
+            return False
+
     # Salva
     try:
         Promo.objects.create(
@@ -92,6 +153,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY'):
             preco=preco,
             cupom='',
             link_afiliado=link_afiliado,
+            url_chave=url_chave,
             imagem_url=imagem_url,
             categoria=categoria,
             fonte=fonte,

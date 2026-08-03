@@ -110,6 +110,18 @@ class Command(BaseCommand):
 
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
+                # ─── Deduplicação: já foi postada antes? ─────────────────────
+                # Evita disparos repetidos quando o bot reinicia/redeploy e
+                # reprocessa mensagens antigas do canal.
+                from bot.services import promo_ja_postada
+                try:
+                    ja_postada = await asyncio.to_thread(promo_ja_postada, msg_text)
+                    if ja_postada:
+                        logger.info("⏭️ Oferta já postada anteriormente, ignorada.")
+                        return True
+                except Exception as dup_err:
+                    logger.error(f"❌ Erro deduplicação: {dup_err}")
+
                 # ─── Filtro de Palavras Proibidas (Blacklist) ────────────────
                 blacklist = ['youtube', 'youtu.be', 'terabyte', 'terabyteshop']
                 if any(word in msg_text.lower() for word in blacklist):
@@ -268,8 +280,10 @@ class Command(BaseCommand):
 
                 # ─── Salva a promo no banco para a página web ─────────────────
                 try:
-                    from bot.services import save_promo_to_db
-                    await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, 'zFinnY')
+                    from bot.services import save_promo_to_db, _normalizar_url, _primeiro_link_produto
+                    # Chave estável baseada no link BRUTO (msg_text), não no convertido.
+                    chave_estavel = _normalizar_url(_primeiro_link_produto(msg_text))
+                    await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, 'zFinnY', chave_estavel)
                     logger.info("💾 Promo salva no banco de dados")
                 except Exception as db_err:
                     logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")
@@ -297,9 +311,10 @@ class Command(BaseCommand):
                 
                 _processing_ids.add(msg.id)
                 try:
-                    success = await process_message(msg)
-                    if success:
-                        await save_last_id(msg.id)
+                    await process_message(msg)
+                    # Avança o last_id SEMPRE (mesmo ignorada) para não
+                    # reprocessar mensagens antigas após restart/redeploy.
+                    await save_last_id(msg.id)
                 finally:
                     if msg.id in _processing_ids:
                         _processing_ids.remove(msg.id)
@@ -315,13 +330,14 @@ class Command(BaseCommand):
                                 if msg.id > last_id and msg.id not in _processing_ids:
                                     _processing_ids.add(msg.id)
                                     try:
-                                        success = await process_message(msg)
-                                        if success:
-                                            await save_last_id(msg.id)
-                                            last_id = msg.id
+                                        await process_message(msg)
                                     finally:
                                         if msg.id in _processing_ids:
                                             _processing_ids.remove(msg.id)
+                                        # Avança o last_id mesmo se ignorada/duplicada
+                                        if msg.id > last_id:
+                                            await save_last_id(msg.id)
+                                            last_id = msg.id
                         await client.get_me()
                         logger.info("💓 Check-up automático em 1 canais realizado")
                     except Exception as e:
