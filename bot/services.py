@@ -72,35 +72,8 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
             return False
 
     # Detecta categoria pelo texto
-    texto_lower = texto.lower()
-    categoria = 'outros'
-
-    if any(k in texto_lower for k in ['notebook', 'laptop', 'macbook']):
-        categoria = 'notebook'
-    elif any(k in texto_lower for k in ['smartphone', 'celular', 'iphone', 'galaxy', 'moto g', 'poco', 'redmi']):
-        categoria = 'celular'
-    elif any(k in texto_lower for k in ['televisão', 'televisao', 'tv ', 'smart tv', 'polegada']):
-        categoria = 'tv'
-    elif any(k in texto_lower for k in ['placa de vídeo', 'placa de video', 'rtx', 'gtx', 'rx ', 'radeon', 'geforce']):
-        categoria = 'placa_video'
-    elif any(k in texto_lower for k in ['placa-mãe', 'placa mae', 'placa-mae', 'motherboard', ' b450 ', ' b550 ', ' a520 ', ' h610 ', ' b660 ', ' x670 ']):
-        categoria = 'placa_mae'
-    elif any(k in texto_lower for k in ['processador', 'ryzen', 'intel core', 'amd core']):
-        categoria = 'processador'
-    elif any(k in texto_lower for k in ['monitor', 'display', 'ips ', 'oled', 'hz ', 'curvo']):
-        categoria = 'monitor'
-    elif any(k in texto_lower for k in ['headset', 'headphone', 'fone']):
-        categoria = 'headset'
-    elif any(k in texto_lower for k in ['teclado']):
-        categoria = 'teclado'
-    elif any(k in texto_lower for k in ['mouse']):
-        categoria = 'mouse'
-    elif any(k in texto_lower for k in ['memória ram', 'memoria ram', 'ddr4', 'ddr5']):
-        categoria = 'memoria_ram'
-    elif any(k in texto_lower for k in ['ssd', 'nvme', 'm.2', 'hd ', 'armazenamento', 'sata']):
-        categoria = 'ssd'
-    elif any(k in texto_lower for k in ['cadeira', 'gamer chair']):
-        categoria = 'cadeira'
+    from bot.classifier import detectar_categoria
+    categoria = detectar_categoria(texto)
 
     # Extrai título básico
     titulo = ''

@@ -67,6 +67,12 @@ class Promo(models.Model):
         ('mouse', 'Mouse'),
         ('cadeira', 'Cadeira Gamer'),
         ('impressora', 'Impressora'),
+        ('fonte', 'Fonte'),
+        ('gabinete', 'Gabinete'),
+        ('cooler', 'Cooler / Water Cooler'),
+        ('controle', 'Controle / Gamepad'),
+        ('webcam', 'Webcam'),
+        ('roteador', 'Roteador'),
         ('outros', 'Outros'),
     ]
 
