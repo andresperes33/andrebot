@@ -3,8 +3,6 @@
 
 {% block title %}Promoções de Tech | André Indica{% endblock %}
 
-{% block content %}
-
 {% block breadcrumb %}
 <div class="breadcrumb-bar">
     <div class="breadcrumb-inner">
@@ -14,6 +12,8 @@
     </div>
 </div>
 {% endblock %}
+
+{% block content %}
 
 <div class="hero-dark">
     <span class="corner-square"></span>
@@ -29,14 +29,14 @@
     </div>
 </div>
 
-<div class="filters-wrap">
+<div class="filters-wrap" id="filters">
     <div class="filters-inner">
         <div class="filter-group">
             <span class="filter-label">Período</span>
-            <a href="?periodo=hoje{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="pill-tab {% if periodo == 'hoje' %}active{% endif %}">Hoje</a>
-            <a href="?periodo=semana{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="pill-tab {% if periodo == 'semana' %}active{% endif %}">Esta Semana</a>
-            <a href="?periodo=mes{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="pill-tab {% if periodo == 'mes' %}active{% endif %}">Este Mês</a>
-            <a href="?periodo=tudo{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="pill-tab {% if periodo == 'tudo' %}active{% endif %}">Tudo</a>
+            <a href="?periodo=hoje{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if periodo == 'hoje' %}active{% endif %}">Hoje</a>
+            <a href="?periodo=semana{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if periodo == 'semana' %}active{% endif %}">Esta Semana</a>
+            <a href="?periodo=mes{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if periodo == 'mes' %}active{% endif %}">Este Mês</a>
+            <a href="?periodo=tudo{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if periodo == 'tudo' %}active{% endif %}">Tudo</a>
         </div>
         <form class="search-form" method="get" action="/promos/">
             {% if periodo != 'hoje' %}<input type="hidden" name="periodo" value="{{ periodo }}">{% endif %}
@@ -48,14 +48,15 @@
     <div class="filters-inner" style="padding-top:0;">
         <div class="filter-group">
             <span class="filter-label">Categoria</span>
-            <a href="?periodo={{ periodo }}{% if q %}&q={{ q }}{% endif %}" class="pill-tab {% if not categoria_ativa %}active{% endif %}">Todas</a>
+            <a href="?periodo={{ periodo }}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if not categoria_ativa %}active{% endif %}">Todas</a>
             {% for slug, nome in categorias %}
-            <a href="?periodo={{ periodo }}&cat={{ slug }}{% if q %}&q={{ q }}{% endif %}" class="pill-tab {% if categoria_ativa == slug %}active{% endif %}">{{ nome }}</a>
+            <a href="?periodo={{ periodo }}&cat={{ slug }}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if categoria_ativa == slug %}active{% endif %}">{{ nome }}</a>
             {% endfor %}
         </div>
     </div>
 </div>
 
+<div id="resultado">
 <div class="stats">
     <span class="stats-count">{{ total }} oferta{{ total|pluralize:"s" }} encontrada{{ total|pluralize:"s" }}</span>
     <span class="stats-caption">Publicado automaticamente a partir do grupo do Telegram</span>
@@ -110,6 +111,7 @@
     <a href="/promos/" class="btn btn-primary">Ver todas as ofertas</a>
 </div>
 {% endif %}
+</div>
 
 {% endblock %}
 
@@ -129,6 +131,47 @@
             }, 2000);
         });
     }
+
+    // ─── Filtros AJAX: troca o conteúdo sem recarregar a página ───
+    (function () {
+        const wrapper = document.getElementById('resultado');
+        if (!wrapper) return;
+
+        async function carregar(url) {
+            try {
+                const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (!res.ok) return;
+                const html = await res.text();
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const novoResultado = doc.getElementById('resultado');
+                const novosFiltros = doc.getElementById('filters');
+                if (novoResultado) {
+                    wrapper.innerHTML = novoResultado.innerHTML;
+                    document.getElementById('filters').innerHTML = novosFiltros.innerHTML;
+                    history.replaceState(null, '', url.split('#')[0]);
+                    // mantém o scroll onde o usuário está
+                    const top = document.getElementById('filters').getBoundingClientRect().top + window.scrollY;
+                    window.scrollTo({ top: top - 70, behavior: 'smooth' });
+                }
+            } catch (e) { /* mantém comportamento normal */ }
+        }
+
+        document.addEventListener('click', function (e) {
+            const link = e.target.closest('a[data-filtro]');
+            if (!link) return;
+            e.preventDefault();
+            carregar(link.getAttribute('href'));
+        });
+
+        const form = document.querySelector('.search-form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const dados = new URLSearchParams(new FormData(form)).toString();
+                carregar('/promos/?' + dados + '#grid');
+            });
+        }
+    })();
 
     // Auto-refresh a cada 1 minuto quando estiver na aba "Hoje"
     {% if periodo == 'hoje' %}
