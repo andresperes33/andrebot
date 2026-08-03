@@ -128,9 +128,9 @@
                     <h3 class="card-title">{{ promo.titulo }}</h3>
                     {% if promo.preco %}<div class="card-price"><small>por</small> {{ promo.preco }}</div>{% endif %}
                     <div class="card-footer">
-                        <span class="card-meta">Ver oferta <i class="fas fa-arrow-right" style="color:var(--primary);"></i></span>
                         <span class="card-date">{{ promo.criado_em|date:"d/m" }}</span>
                     </div>
+                    <span class="card-cta">Ver oferta <i class="fas fa-arrow-right"></i></span>
                 </div>
             </a>
             {% endfor %}
