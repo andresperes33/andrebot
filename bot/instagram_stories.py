@@ -1,4 +1,5 @@
 import re
+import os
 import logging
 import requests
 from django.conf import settings
@@ -69,6 +70,17 @@ def post_instagram_story(texto, photo_path=None):
         return False
 
     titulo, preco, link = _titulo_preco_link(texto)
+
+    # Se houver foto local, compõe o Story a partir do template (com título e valor)
+    if photo_path and not (isinstance(photo_path, str) and photo_path.startswith('http')):
+        try:
+            from bot.story_composer import compor_story
+            story_path = compor_story(photo_path, titulo, preco)
+            if story_path and os.path.exists(story_path):
+                photo_path = story_path
+        except Exception as e:
+            logger.error(f"⚠️ Instagram: erro ao compor Story: {e}")
+
     imagem_url = _url_publica_imagem(photo_path)
 
     if not imagem_url:
@@ -105,7 +117,23 @@ def post_instagram_story(texto, photo_path=None):
 
     creation_id = data['id']
 
-    # 2. Publica o container
+    # 2. Aguarda a mídia ficar pronta (o Instagram precisa processar a imagem)
+    import time as _time
+    for _tentativa in range(6):
+        _time.sleep(5)
+        try:
+            status = requests.get(
+                f"{GRAPH_URL}/{creation_id}",
+                params={"fields": "status_code", "access_token": token},
+                timeout=30,
+            )
+            sc = status.json()
+        except Exception:
+            continue
+        if sc.get('status_code') in ('FINISHED', 'PUBLISHED'):
+            break
+
+    # 3. Publica o container
     try:
         pub = requests.post(
             f"{GRAPH_URL}/{ig_user_id}/media_publish",
