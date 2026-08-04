@@ -28,6 +28,28 @@ def _primeiro_link_produto(texto):
     return ''
 
 
+def _preco_do_texto(texto):
+    """Extrai o primeiro preço (R$ ...) do texto, normalizado."""
+    preco = ''
+    preco_match = re.search(r'R\$\s*[\d.,]+', texto or '')
+    if preco_match:
+        preco = preco_match.group(0).strip()
+    return preco
+
+
+def _chave_dedup(texto):
+    """
+    Chave de deduplicação estável: link do produto + preço.
+    Assim, a MESMA página de produto com preço/cupom diferente
+    é tratada como uma NOVA oferta (não é ignorada).
+    """
+    link = _normalizar_url(_primeiro_link_produto(texto))
+    preco = _preco_do_texto(texto)
+    if link:
+        return f"{link}|{preco}"
+    return link
+
+
 def promo_ja_postada(texto):
     """
     Verifica se uma promoção já foi postada/salva antes.
@@ -39,7 +61,7 @@ def promo_ja_postada(texto):
     close_old_connections()
     from bot.models import Promo
 
-    chave = _normalizar_url(_primeiro_link_produto(texto))
+    chave = _chave_dedup(texto)
     if not chave:
         return False
 
@@ -62,7 +84,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     from bot.models import Promo
 
     if not url_chave:
-        url_chave = _normalizar_url(_primeiro_link_produto(texto))
+        url_chave = _chave_dedup(texto)
 
     # Deduplicação: se a mesma promo (mesma chave) já foi salva antes, ignora.
     if url_chave:

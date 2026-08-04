@@ -299,9 +299,10 @@ class Command(BaseCommand):
                 # ─── Salva a promo no banco para a página web ─────────────────
                 promo_id = None
                 try:
-                    from bot.services import save_promo_to_db, _normalizar_url, _primeiro_link_produto
-                    # Chave estável baseada no link BRUTO (msg_text), não no convertido.
-                    chave_estavel = _normalizar_url(_primeiro_link_produto(msg_text))
+                    from bot.services import save_promo_to_db, _chave_dedup
+                    # Chave estável baseada no link BRUTO + preço (msg_text),
+                    # para não ignorar ofertas novas do mesmo produto com preço/cupom diferente.
+                    chave_estavel = _chave_dedup(msg_text)
                     promo_id = await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, source_channel, chave_estavel)
                     logger.info("💾 Promo salva no banco de dados")
                 except Exception as db_err:
