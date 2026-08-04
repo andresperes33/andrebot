@@ -187,3 +187,9 @@ EVOLUTION_API_URL = os.getenv('EVOLUTION_API_URL')
 EVOLUTION_API_INSTANCE = os.getenv('EVOLUTION_API_INSTANCE')
 EVOLUTION_API_TOKEN = os.getenv('EVOLUTION_API_TOKEN')
 WHATSAPP_GROUP_JID = os.getenv('WHATSAPP_GROUP_JID')
+
+# Instagram Stories Settings
+IG_ACCESS_TOKEN = os.getenv('IG_ACCESS_TOKEN')
+IG_USER_ID = os.getenv('IG_USER_ID')
+# URL pública da aplicação (usada para montar links absolutos fora do contexto HTTP)
+SITE_URL = os.getenv('SITE_URL', '')

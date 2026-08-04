@@ -306,6 +306,13 @@ class Command(BaseCommand):
                 except Exception as db_err:
                     logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")
 
+                # ─── Publica Story no Instagram ─────────────────────────────
+                try:
+                    from bot.instagram_stories import post_instagram_story
+                    await asyncio.to_thread(post_instagram_story, modified_text, photo_path)
+                except Exception as ig_err:
+                    logger.error(f"❌ Erro Instagram: {ig_err}")
+
                 # ─── Limpa foto após 90s ─────────────────────────────────────
                 if photo_path:
                     async def cleanup(path):
