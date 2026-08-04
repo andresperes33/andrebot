@@ -133,13 +133,20 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
         except Exception as img_err:
             print(f"Erro imagem: {img_err}")
 
-    # Deduplicação: se a mesma promo (mesmo link) já foi salva antes, ignora.
+    # Deduplicação: se a mesma promo (mesmo link E mesmo preço) já foi salva antes, ignora.
     # Evita promoções duplicadas na página após redeploys/restarts do bot.
     if link_afiliado:
         ja_existe = Promo.objects.filter(link_afiliado=link_afiliado).exists()
         if ja_existe:
-            print(f"Promo já existente, ignorada: {link_afiliado[:80]}")
-            return False
+            ja_existe_mesmo_preco = Promo.objects.filter(
+                link_afiliado=link_afiliado,
+                preco=preco,
+            ).exists()
+            if not ja_existe_mesmo_preco:
+                print(f"Promo já salva antes, mas com preço diferente ({preco}): tratando como nova oferta.")
+            else:
+                print(f"Promo já existente, ignorada: {link_afiliado[:80]}")
+                return False
 
     # Salva
     try:
