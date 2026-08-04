@@ -57,10 +57,11 @@ def _url_publica_imagem(photo_path):
     return f"{base_url}{settings.MEDIA_URL}promos/{filename}"
 
 
-def post_instagram_story(texto, photo_path=None):
+def post_instagram_story(texto, photo_path=None, pagina_url=''):
     """
     Publica um Story no Instagram com a imagem, título, preço e link da oferta.
     Usa a Instagram Graph API (media + media_publish).
+    pagina_url: URL da página do produto no site (adiciona sticker de link clicável).
     """
     token = getattr(settings, 'IG_ACCESS_TOKEN', None)
     ig_user_id = getattr(settings, 'IG_USER_ID', None)
@@ -95,15 +96,19 @@ def post_instagram_story(texto, photo_path=None):
         caption += f"\n\n{link}"
 
     # 1. Cria o container de mídia (STORIES)
+    payload = {
+        "image_url": imagem_url,
+        "media_type": "STORIES",
+        "caption": caption,
+        "access_token": token,
+    }
+    if pagina_url:
+        payload["link_url"] = pagina_url
+
     try:
         resp = requests.post(
             f"{GRAPH_URL}/{ig_user_id}/media",
-            data={
-                "image_url": imagem_url,
-                "media_type": "STORIES",
-                "caption": caption,
-                "access_token": token,
-            },
+            data=payload,
             timeout=30,
         )
         data = resp.json()

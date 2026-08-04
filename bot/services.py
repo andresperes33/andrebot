@@ -121,7 +121,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
 
     # Salva
     try:
-        Promo.objects.create(
+        promo = Promo.objects.create(
             titulo=titulo or "Oferta imperdível",
             preco=preco,
             cupom='',
@@ -132,8 +132,8 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
             fonte=fonte,
             texto_original=texto
         )
-        print(f"Promo salva: {titulo[:30]}")
-        return True
+        print(f"Promo salva: {titulo[:30]} (id={promo.id})")
+        return promo.id
     except Exception as db_err:
         print(f"Erro DB: {db_err}")
         return False

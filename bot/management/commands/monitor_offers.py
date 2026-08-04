@@ -297,11 +297,12 @@ class Command(BaseCommand):
                     logger.error(f"❌ Erro ao enviar alertas: {alert_err}")
 
                 # ─── Salva a promo no banco para a página web ─────────────────
+                promo_id = None
                 try:
                     from bot.services import save_promo_to_db, _normalizar_url, _primeiro_link_produto
                     # Chave estável baseada no link BRUTO (msg_text), não no convertido.
                     chave_estavel = _normalizar_url(_primeiro_link_produto(msg_text))
-                    await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, source_channel, chave_estavel)
+                    promo_id = await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, source_channel, chave_estavel)
                     logger.info("💾 Promo salva no banco de dados")
                 except Exception as db_err:
                     logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")
@@ -309,7 +310,13 @@ class Command(BaseCommand):
                 # ─── Publica Story no Instagram ─────────────────────────────
                 try:
                     from bot.instagram_stories import post_instagram_story
-                    await asyncio.to_thread(post_instagram_story, modified_text, photo_path)
+                    # Link da página do produto no site (sticker clicável no Story)
+                    pagina_url = ''
+                    if promo_id:
+                        base_site = (getattr(settings, 'SITE_URL', '') or '').rstrip('/')
+                        if base_site:
+                            pagina_url = f"{base_site}/promos/{promo_id}/"
+                    await asyncio.to_thread(post_instagram_story, modified_text, photo_path, pagina_url)
                 except Exception as ig_err:
                     logger.error(f"❌ Erro Instagram: {ig_err}")
 
