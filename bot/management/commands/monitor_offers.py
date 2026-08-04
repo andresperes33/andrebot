@@ -318,13 +318,13 @@ class Command(BaseCommand):
                         if base_site:
                             pagina_url = f"{base_site}/promos/{promo_id}/"
 
-                    permitido, motivo = pode_publicar_story()
+                    permitido, motivo = await asyncio.to_thread(pode_publicar_story)
                     if not permitido:
                         logger.info(f"⏸️ Story adiado ({motivo}). Promo segue salva no banco e no Telegram.")
                     else:
                         publicou = await asyncio.to_thread(post_instagram_story, modified_text, photo_path, pagina_url)
                         if publicou:
-                            registrar_publicacao()
+                            await asyncio.to_thread(registrar_publicacao)
                             logger.info("📸 Story publicado no Instagram (dentro da janela/cooldown).")
                 except Exception as ig_err:
                     logger.error(f"❌ Erro Instagram: {ig_err}")
