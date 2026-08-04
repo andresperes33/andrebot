@@ -73,7 +73,11 @@ def compor_story(foto_path, titulo, valor, output_path=None):
     - Valor na área marrom
     Retorna o caminho da imagem gerada.
     """
-    template = os.path.join(settings.MEDIA_ROOT, 'stories', 'Cópia de Modelo_Stories_Padrao.png')
+    template = os.path.join(
+        os.path.dirname(__file__), 'static', 'bot', 'stories', 'Cópia de Modelo_Stories_Padrao.png'
+    )
+    if not os.path.exists(template):
+        template = os.path.join(settings.MEDIA_ROOT, 'stories', 'Cópia de Modelo_Stories_Padrao.png')
     if not os.path.exists(template):
         logger.warning(f"Template de Story não encontrado: {template}")
         return None
