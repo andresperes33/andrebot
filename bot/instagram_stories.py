@@ -5,7 +5,7 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-GRAPH_URL = "https://graph.facebook.com/v19.0"
+GRAPH_URL = "https://graph.instagram.com/v19.0"
 
 
 def _titulo_preco_link(texto):
