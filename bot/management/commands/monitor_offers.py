@@ -136,16 +136,16 @@ class Command(BaseCommand):
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
                 # ─── Deduplicação: já foi postada antes? ─────────────────────
-                # Evita disparos repetidos quando o bot reinicia/redeploy e
-                # reprocessa mensagens antigas do canal.
-                from bot.services import promo_ja_postada
-                try:
-                    ja_postada = await asyncio.to_thread(promo_ja_postada, msg_text)
-                    if ja_postada:
-                        logger.info("⏭️ Oferta já postada anteriormente, ignorada.")
-                        return True
-                except Exception as dup_err:
-                    logger.error(f"❌ Erro deduplicação: {dup_err}")
+                # DESATIVADO a pedido do usuário: nenhuma oferta é ignorada
+                # como "já postada". Todas passam pelos filtros abaixo.
+                # from bot.services import promo_ja_postada
+                # try:
+                #     ja_postada = await asyncio.to_thread(promo_ja_postada, msg_text)
+                #     if ja_postada:
+                #         logger.info("⏭️ Oferta já postada anteriormente, ignorada.")
+                #         return True
+                # except Exception as dup_err:
+                #     logger.error(f"❌ Erro deduplicação: {dup_err}")
 
                 # ─── Filtro de Palavras Proibidas (Blacklist) ────────────────
                 blacklist = ['youtube', 'youtu.be', 'terabyte', 'terabyteshop']

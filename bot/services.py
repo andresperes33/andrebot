@@ -123,12 +123,13 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     if not url_chave:
         url_chave = _chave_dedup(texto)
 
-    # Deduplicação: se a mesma promo (mesma chave) já foi salva antes, ignora.
-    if url_chave:
-        ja_existe = Promo.objects.filter(url_chave=url_chave).exists()
-        if ja_existe:
-            print(f"Promo já existente, ignorada: {url_chave}")
-            return False
+    # Deduplicação por url_chave: DESATIVADO a pedido do usuário.
+    # Todas as promoções são salvas, sem ignorar por "já postada".
+    # if url_chave:
+    #     ja_existe = Promo.objects.filter(url_chave=url_chave).exists()
+    #     if ja_existe:
+    #         print(f"Promo já existente, ignorada: {url_chave}")
+    #         return False
 
     # Detecta categoria pelo texto
     from bot.classifier import detectar_categoria
@@ -165,20 +166,20 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
         except Exception as img_err:
             print(f"Erro imagem: {img_err}")
 
-    # Deduplicação: se a mesma promo (mesmo link E mesmo preço) já foi salva antes, ignora.
-    # Evita promoções duplicadas na página após redeploys/restarts do bot.
-    if link_afiliado:
-        ja_existe = Promo.objects.filter(link_afiliado=link_afiliado).exists()
-        if ja_existe:
-            ja_existe_mesmo_preco = Promo.objects.filter(
-                link_afiliado=link_afiliado,
-                preco=preco,
-            ).exists()
-            if not ja_existe_mesmo_preco:
-                print(f"Promo já salva antes, mas com preço diferente ({preco}): tratando como nova oferta.")
-            else:
-                print(f"Promo já existente, ignorada: {link_afiliado[:80]}")
-                return False
+    # Deduplicação por link_afiliado: DESATIVADO a pedido do usuário.
+    # Todas as promoções são salvas, sem ignorar por "já postada".
+    # if link_afiliado:
+    #     ja_existe = Promo.objects.filter(link_afiliado=link_afiliado).exists()
+    #     if ja_existe:
+    #         ja_existe_mesmo_preco = Promo.objects.filter(
+    #             link_afiliado=link_afiliado,
+    #             preco=preco,
+    #         ).exists()
+    #         if not ja_existe_mesmo_preco:
+    #             print(f"Promo já salva antes, mas com preço diferente ({preco}): tratando como nova oferta.")
+    #         else:
+    #             print(f"Promo já existente, ignorada: {link_afiliado[:80]}")
+    #             return False
 
     # Salva
     try:
