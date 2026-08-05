@@ -100,6 +100,7 @@ def compor_story(foto_path, titulo, valor, output_path=None):
     # 2. Título na área cinza
     fonte_titulo = _carregar_fonte(62, bold=True)
     if fonte_titulo and titulo:
+        titulo = (titulo[:47] + '...') if len(titulo) > 50 else titulo
         _ajustar_texto(draw, titulo, AREA_TITULO, fonte_titulo, (40, 40, 40))
 
     # 3. Valor na área marrom
