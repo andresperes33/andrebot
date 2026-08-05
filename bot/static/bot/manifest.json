@@ -1,7 +1,7 @@
 {
-  "name": "André Indica — Promoções de Tech",
-  "short_name": "André Indica",
-  "description": "As melhores promoções de tecnologia encontradas pelo bot André Indica. SSD, placa de vídeo, notebooks e muito mais.",
+  "name": "Nitro Tech — Promoções de Tech",
+  "short_name": "Nitro Tech",
+  "description": "As melhores promoções de tecnologia encontradas pelo bot Nitro Tech. SSD, placa de vídeo, notebooks e muito mais.",
   "start_url": "/promos/",
   "scope": "/",
   "display": "standalone",

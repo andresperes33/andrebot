@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}André Indica — Promoções de Tech{% endblock %}</title>
+    <title>{% block title %}Nitro Tech — Promoções de Tech{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{% static 'bot/favicon.svg' %}">
     <link rel="icon" type="image/png" href="{% static 'bot/favicon.png' %}">
     <link rel="manifest" href="{% static 'bot/manifest.json' %}">
@@ -12,21 +12,21 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="André Indica">
+    <meta name="apple-mobile-web-app-title" content="Nitro Tech">
     <link rel="apple-touch-icon" href="{% static 'bot/icon-192.png' %}">
-    <meta name="description" content="{% block description %}As melhores promoções de tecnologia encontradas pelo bot André Indica. SSD, placa de vídeo, notebooks e muito mais com cupons e links de afiliado.{% endblock %}">
+    <meta name="description" content="{% block description %}As melhores promoções de tecnologia encontradas pelo bot Nitro Tech. SSD, placa de vídeo, notebooks e muito mais com cupons e links de afiliado.{% endblock %}">
     
     {% block og_meta %}
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ SITE_URL }}/">
-    <meta property="og:title" content="André Indica — Promoções de Tech">
+    <meta property="og:title" content="Nitro Tech — Promoções de Tech">
     <meta property="og:description" content="As melhores ofertas de hardware e tecnologia monitoradas 24h por dia.">
     <meta property="og:image" content="{{ SITE_URL }}{% static 'bot/favicon-og.png' %}">
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="{{ SITE_URL }}/">
-    <meta property="twitter:title" content="André Indica — Promoções de Tech">
+    <meta property="twitter:title" content="Nitro Tech — Promoções de Tech">
     <meta property="twitter:description" content="As melhores ofertas de hardware e tecnologia monitoradas 24h por dia.">
     <meta property="twitter:image" content="{{ SITE_URL }}{% static 'bot/favicon-og.png' %}">
     {% endblock %}
@@ -70,7 +70,7 @@
         <div class="nav-inner">
             <a href="/promos/" class="brand">
                 <span class="brand-mark"></span>
-                <span class="brand-name">André<strong>Indica</strong></span>
+                <span class="brand-name">Nitro<strong>Tech</strong></span>
             </a>
             <div class="nav-links">
                 <a href="/promos/" class="nav-link {% block nav_promos %}active{% endblock %}">Promoções</a>
@@ -102,7 +102,7 @@
 <footer class="footer-section">
     <div class="footer-inner">
         <div>
-            <div class="footer-brand">André<strong>Indica</strong></div>
+            <div class="footer-brand">Nitro<strong>Tech</strong></div>
             <p class="footer-desc">Bot de afiliados monitorando promoções de tecnologia 24h e publicando em tempo real no Telegram, WhatsApp e aqui no site.</p>
         </div>
         <div>
@@ -123,7 +123,7 @@
         </div>
     </div>
     <div class="footer-legal">
-        <span>© {% now "Y" %} André Indica</span>
+        <span>© {% now "Y" %} Nitro Tech</span>
     </div>
 </footer>
 
