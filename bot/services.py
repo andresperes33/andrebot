@@ -37,50 +37,6 @@ def _preco_do_texto(texto):
     return preco
 
 
-def _cupom_do_texto(texto):
-    """
-    Extrai o(s) cupom(s) de desconto do texto.
-    Reconhece formatos como:
-      'Cupom: ABC123'
-      'Cupom: ABC ou DEF ou GHI'
-      '📝 Cupom: IFPZKUPM ou BRAE1 ou IFPRW9YO'
-      'use o cupom XYZ'
-      'CUPOM - SC1BARATO'
-    Retorna uma string única de cupons separados por ' ou '.
-    """
-    if not texto:
-        return ''
-    # Pega desde a palavra 'cupom' até o fim da linha (ou ' link')
-    m = re.search(r'(?i)cupom\b[^\n:]{0,5}[:=\-]?\s*(.{2,180}?)(?:\n|$)', texto)
-    if not m:
-        return ''
-    resto = m.group(1)
-    # Corta em 'link' ou '+ n moedas' ou final
-    resto = re.split(r'\s+link\b|\+\s*\d|📝|💰', resto, maxsplit=1)[0].strip()
-    # tokens candidatos: sequencias alfanumericas com 3+ chars (ignora 'ou', 'e', 'no', 'com', etc)
-    ignorar = {'ou', 'e', 'no', 'na', 'com', 'para', 'de', 'da', 'do', 'app',
-               'usar', 'use', 'cupom', 'digite', 'aplicar', 'valido', 'válido'}
-    tokens = re.findall(r"[A-Za-z0-9]{2,}", resto)
-    cupons = []
-    for tk in tokens:
-        tl = tk.casefold()
-        if tl in ignorar or len(tk) < 3:
-            continue
-        # descarta se parecer palavra comum (com vogais em excesso)? manter simples
-        cupons.append(tk)
-    # Se muito grande/caótico, descarta
-    if len(cupons) > 6:
-        return ''
-    if not cupons:
-        return ''
-    # junta unicos preservando ordem
-    vistos = []
-    for c in cupons:
-        if c not in vistos:
-            vistos.append(c)
-    return ' ou '.join(vistos[:4])
-
-
 # Linhas que devem ser ignoradas ao montar o título do produto
 _TERMOS_CABECALHO = [
     'postagem original', 'postagem', 'original',
@@ -233,7 +189,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
         promo = Promo.objects.create(
             titulo=titulo or "Oferta imperdível",
             preco=preco,
-            cupom=_cupom_do_texto(texto),
+            cupom='',
             link_afiliado=link_afiliado,
             url_chave=url_chave,
             imagem_url=imagem_url,

@@ -83,7 +83,8 @@
                     {% if promo.preco %}<div class="card-price"><small>por</small> {{ promo.preco }}</div>{% endif %}
                     {% if promo.cupom %}
                     <div class="card-cupom">
-                        <code class="cupom-copy" title="Clique para copiar" onclick="event.preventDefault();copiarCupom(this, '{{ promo.cupom|escapejs }}')">{{ promo.cupom }}</code>
+                        <code>{{ promo.cupom }}</code>
+                        <button class="copy-btn" onclick="event.preventDefault();copiarCupom(this, '{{ promo.cupom|escapejs }}')" aria-label="Copiar cupom"><i class="fas fa-copy"></i></button>
                     </div>
                     {% endif %}
                     <div class="card-footer">

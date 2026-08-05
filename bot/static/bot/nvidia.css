@@ -531,16 +531,6 @@ button, input { font-family: inherit; }
     transition: color 0.15s;
 }
 .card-cupom .copy-btn:hover { color: var(--primary); }
-/* Cupom clicável: o próprio texto copia ao clicar */
-.cupom-copy {
-    cursor: pointer;
-    border-bottom: 1px dashed var(--primary);
-    transition: background 0.15s, color 0.15s;
-}
-.cupom-copy:hover {
-    background: rgba(118, 185, 0, 0.12);
-    color: var(--primary);
-}
 .card-footer {
     margin-top: auto;
     padding-top: 16px;

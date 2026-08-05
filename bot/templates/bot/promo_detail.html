@@ -78,7 +78,8 @@
             <div>
                 <span class="detail-label">Cupom de desconto</span>
                 <div class="detail-cupom-row">
-                    <code class="cupom-copy" title="Clique para copiar" onclick="copiarCupom(this, '{{ promo.cupom|escapejs }}')">{{ promo.cupom }}</code>
+                    <code>{{ promo.cupom }}</code>
+                    <button class="copy-btn" onclick="copiarCupom(this, '{{ promo.cupom|escapejs }}')" aria-label="Copiar cupom"><i class="fas fa-copy"></i></button>
                 </div>
             </div>
             {% endif %}
