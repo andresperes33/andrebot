@@ -101,16 +101,23 @@ class Command(BaseCommand):
             # polling reprocessaria os últimos posts do canal (disparos duplicados).
             # Detectamos isso e avançamos o last_id até o post mais recente,
             # processando apenas ofertas NOVAS daqui em diante.
+            #
+            # Também resetamos o last_id quando trocamos de canal monitorado:
+            # o último_id salvo pode vir do canal ANTERIOR e ser maior que os IDs
+            # do canal atual, fazendo o polling pular todas as ofertas novas.
+            latest = await client.get_messages(target_id, limit=1)
+            current_last = await load_last_id()
+            if latest and current_last > latest[0].id:
+                logger.info(f"🔄 last_id ({current_last}) é maior que o último post do canal ({latest[0].id}). Trocou de canal? Resetando para 0.")
+                await save_last_id(0)
+                await load_last_id()
             current_last = await load_last_id()
             if current_last == 0:
                 try:
-                    latest_msgs = await client.get_messages(target_id, limit=1)
-                    if latest_msgs:
-                        newest = latest_msgs[0].id
+                    if latest and latest[0].id:
+                        newest = latest[0].id
                         await save_last_id(newest)
                         logger.info(f"🧊 Cold start detectado (banco vazio). Pulando histórico, last_id inicializado em {newest}. Só novas ofertas serão processadas.")
-                    else:
-                        logger.info("🧊 Cold start: canal sem mensagens, last_id permanece 0.")
                 except Exception as cold_err:
                     logger.error(f"❌ Erro no cold start: {cold_err}")
 
