@@ -37,6 +37,43 @@ def _preco_do_texto(texto):
     return preco
 
 
+# Linhas que devem ser ignoradas ao montar o título do produto
+_TERMOS_CABECALHO = [
+    'postagem original', 'postagem', 'original',
+    'canal oficial', 'repostagem', 'repost', 'promo do dia',
+    'oferta do dia', 'compra garantida', 'nota fiscal',
+    'enviamos para todo brasil', 'produto no brasil', 'produto original',
+    'disponivel', 'disponível', 'estoque limitado', 'ultimas unidades',
+]
+_LOJAS = [
+    'aliexpress', 'mercadolivre', 'mercado livre', 'amazon', 'shopee',
+    'magalu', 'magazine luiza', 'kabum', 'pichau', 'terabyte', 'americanas',
+    'casas bahia', 'extra', 'wish', 'walmart', 'fast shop', 'pontofrio',
+    'cnc', 'saraiva', 'submarino', 'lojas rener', 'renner', 'nike', 'adidas',
+    'amaro', 'petlove', 'meli', 'farma', 'daki',
+]
+
+
+def _linha_titulo(texto):
+    """
+    Pega a primeira linha que parece título de produto,
+    ignorando cabeçalhos ('Postagem original') e nomes de loja
+    que costumam vir ANTES do título real.
+    """
+    for linha in (texto or '').split('\n'):
+        limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
+        baixa = limpa.casefold()
+        if len(limpa) <= 5:
+            continue
+        if any(prefixo in baixa for prefixo in _TERMOS_CABECALHO):
+            continue
+        # Se a linha é só o nome de uma loja (curta e sem pontuacao de produto)
+        if any(loja in baixa for loja in _LOJAS) and len(limpa) < 30:
+            continue
+        return limpa
+    return ''
+
+
 def _chave_dedup(texto):
     """
     Chave de deduplicação estável: link do produto + preço.
@@ -98,12 +135,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     categoria = detectar_categoria(texto)
 
     # Extrai título básico
-    titulo = ''
-    for linha in texto.split('\n'):
-        limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
-        if len(limpa) > 5:
-            titulo = limpa[:250]
-            break
+    titulo = _linha_titulo(texto)[:250]
 
     # Brute force link extraction for field legacy
     link_afiliado = ''
