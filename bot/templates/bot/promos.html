@@ -79,7 +79,7 @@
                     <span class="badge-tag card-badge">{{ promo.get_categoria_display }}</span>
                 </div>
                 <div class="card-body">
-                    <h3 class="card-title">{{ promo.titulo }}</h3>
+                    <h3 class="card-title">{{ promo.titulo|truncatechars:50 }}</h3>
                     {% if promo.preco %}<div class="card-price"><small>por</small> {{ promo.preco }}</div>{% endif %}
                     {% if promo.cupom %}
                     <div class="card-cupom">
