@@ -44,6 +44,9 @@ _TERMOS_CABECALHO = [
     'oferta do dia', 'compra garantida', 'nota fiscal',
     'enviamos para todo brasil', 'produto no brasil', 'produto original',
     'disponivel', 'disponível', 'estoque limitado', 'ultimas unidades',
+    'alerta para', 'alerta pra', 'precinho', 'precinho d+', 'aproveite',
+    'super precinho', 'imperdivel', 'imperdível', 'olha que', 'olha só',
+    'pega essa', 'pega esse', 'pipoca do caos', 'anon esbarrou',
 ]
 _LOJAS = [
     'aliexpress', 'mercadolivre', 'mercado livre', 'amazon', 'shopee',
