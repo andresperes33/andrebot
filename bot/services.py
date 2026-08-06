@@ -221,12 +221,12 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     #         print(f"Promo já existente, ignorada: {url_chave}")
     #         return False
 
-    # Detecta categoria pelo texto
-    from bot.classifier import detectar_categoria
-    categoria = detectar_categoria(texto)
-
-    # Extrai título básico
+    # Extrai título (linha do produto) e o usa como pista da categoria
     titulo = _linha_titulo(texto)[:250]
+
+    # Detecta categoria pelo texto/título
+    from bot.classifier import detectar_categoria
+    categoria = detectar_categoria(texto, titulo=titulo)
 
     # Brute force link extraction for field legacy
     link_afiliado = ''

@@ -87,11 +87,24 @@ _REGEX_CATEGORIA = [
 ]
 
 
-def detectar_categoria(texto):
-    """Classifica um texto de promoção em uma das categorias do site."""
+def detectar_categoria(texto, titulo=None):
+    """Classifica um texto de promoção em uma das categorias do site.
+    Se 'titulo' (linha do produto) for informado, usa-o com prioridade,
+    pois o assunto principal é o que nomeia o produto (ex.: 'Processador
+    ... Radeon ...' é processador, não placa de vídeo)."""
     haystack = _norm(texto)
     if not haystack:
         return 'outros'
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        primeira_linha = _norm(alvo.split('\n')[0])
+        if not primeira_linha:
+            continue
+        for categoria, padroes in _REGEX_CATEGORIA:
+            for p in padroes:
+                if re.match(p, primeira_linha):
+                    return categoria
     for categoria, padroes in _REGEX_CATEGORIA:
         for p in padroes:
             if re.search(p, haystack):
