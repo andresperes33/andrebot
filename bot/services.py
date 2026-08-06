@@ -175,6 +175,12 @@ def _eh_linha_nota(baixa):
     for frase in _TERMOS_TEASER:
         if re.search(r'^(?:\w+\s+)*' + re.escape(frase) + r'(?!\w)', baixa):
             return True
+    # Perguntas de engajamento do canal (ex.: 'VEGETTO ou GOGETA CHAT?',
+    # 'quem e melhor?') — terminam com 'chat?' ou são interrogações do canal.
+    if baixa.rstrip(' ').endswith('chat?'):
+        return True
+    if re.search(r'\b(diga|fala|responde|comenta|cade|cadê)\b.*\?$', baixa):
+        return True
     return False
 
 
