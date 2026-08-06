@@ -128,14 +128,23 @@ def compor_story_card(foto_path, mensagem, output_path=None):
     # texto completo da promo
     fonte_texto = _carregar_fonte(46)
     if fonte_texto and mensagem:
-        _desenhar_texto_multilinha(draw, mensagem, (60, 890, W - 60, 1650), fonte_texto, (40, 40, 40))
+        _desenhar_texto_multilinha(draw, mensagem, (60, 890, W - 60, 1600), fonte_texto, (40, 40, 40))
 
-    # faixa LINK NA BIO no rodapé
-    draw.rectangle([(0, 1720), (W, H)], fill=(20, 24, 38))
-    fonte_bio = _carregar_fonte(64, bold=True)
+    # "LINK NA BIO" no rodapé da área branca (final do card), sem barra externa
+    fonte_bio = _carregar_fonte(58, bold=True)
     if fonte_bio:
         marcador = '🔗  LINK NA BIO'
-        draw.text(((W - draw.textlength(marcador, font=fonte_bio)) / 2, 1780), marcador, font=fonte_bio, fill=(255, 255, 0))
+        larg = draw.textlength(marcador, font=fonte_bio)
+        x = (W - larg) / 2
+        # selo discreto: fundo escuro arredondado só em volta do texto
+        from PIL import ImageDraw as _ID
+        pad_x, pad_y = 30, 18
+        y = 1660
+        draw.rounded_rectangle(
+            [(x - pad_x, y - pad_y), (x + larg + pad_x, y + fonte_bio.size + pad_y)],
+            radius=20, fill=(20, 24, 38)
+        )
+        draw.text((x, y), marcador, font=fonte_bio, fill=(255, 255, 0))
 
     if not output_path:
         output_path = os.path.join(settings.MEDIA_ROOT, 'promos', f'story_{int(__import__("time").time())}.jpg')
