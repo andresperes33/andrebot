@@ -18,6 +18,31 @@ def _normalizar_url(url):
     return url.lower()
 
 
+def cortar_rodape_imagem(caminho, rodape_px=10):
+    """
+    Corta `rodape_px` pixels da base da imagem (rodapé/crédito da postagem).
+    Edita o arquivo in-place. Se algo falhar, mantém a imagem original.
+    """
+    try:
+        from PIL import Image
+        if not caminho or not os.path.exists(caminho):
+            return caminho
+        img = Image.open(caminho)
+        largura, altura = img.size
+        if rodape_px <= 0 or rodape_px >= altura:
+            img.close()
+            return caminho
+        area = (0, 0, largura, altura - rodape_px)
+        rend = img.convert('RGB')
+        rend.crop(area).save(caminho, 'JPEG', quality=92)
+        img.close()
+        print(f"🖼️ Rodapé cortado ({rodape_px}px) em {caminho}")
+        return caminho
+    except Exception as err:
+        print(f"Erro ao cortar rodapé da imagem: {err}")
+        return caminho
+
+
 def _primeiro_link_produto(texto):
     """Extrai o primeiro link de produto do texto (ignora links de rede social)."""
     for lnk in re.findall(r'(https?://\S+)', texto or ''):

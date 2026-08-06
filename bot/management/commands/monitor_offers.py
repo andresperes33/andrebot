@@ -304,6 +304,16 @@ class Command(BaseCommand):
                         photo_path = os.path.abspath(photo_path)
                         logger.info(f"📸 Foto baixada: {photo_path}")
 
+                # ─── Corta o rodapé da imagem (crédito da postagem) ──────────
+                if photo_path and os.path.exists(photo_path):
+                    try:
+                        from bot.services import cortar_rodape_imagem
+                        photo_path = await asyncio.to_thread(
+                            cortar_rodape_imagem, photo_path, 10
+                        )
+                    except Exception as crop_err:
+                        logger.warning(f"⚠️ Erro ao cortar rodapé: {crop_err}")
+
                 # ─── Envia para o Telegram ───────────────────────────────────
                 try:
                     if photo_path and os.path.exists(photo_path):
