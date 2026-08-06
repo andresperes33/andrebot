@@ -101,7 +101,7 @@ def _preco_do_texto(texto):
 
 # Linhas que devem ser ignoradas ao montar o título do produto
 _TERMOS_CABECALHO = [
-    'postagem original', 'postagem', 'original',
+    'postagem original', 'postagem',
     'canal oficial', 'repostagem', 'repost', 'promo do dia',
     'oferta do dia', 'compra garantida', 'nota fiscal',
     'enviamos para todo brasil', 'produto no brasil', 'produto original',
