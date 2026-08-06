@@ -65,6 +65,85 @@ def _ajustar_texto(draw, texto, area, fonte, cor, alinhar_centro=False):
         y_atual += altura_linha
 
 
+def _desenhar_texto_multilinha(draw, texto, area, fonte, cor, altura_linha=None):
+    """Desenha texto respeitando as quebras de linha ('\n') do texto original,
+    com quebra por largura quando uma linha é longa demais."""
+    from PIL import ImageFont
+    x0, y0, x1, y1 = area
+    largura_max = x1 - x0
+    altura_max = y1 - y0
+    if altura_linha is None:
+        altura_linha = int(fonte.size * 1.3)
+
+    linhas_finais = []
+    for bloco in (texto or '').replace('\r', '').split('\n'):
+        palavras = bloco.split(' ')
+        linhas = ['']
+        for palavra in palavras:
+            teste = linhas[-1] + (' ' if linhas[-1] else '') + palavra
+            if draw.textlength(teste, font=fonte) <= largura_max:
+                linhas[-1] = teste
+            else:
+                linhas.append(palavra)
+        linhas_finais.extend(linhas or [''])
+
+    y = y0
+    for linha in linhas_finais:
+        if y + altura_linha > y1:
+            break
+        draw.text((x0, y), linha, font=fonte, fill=cor)
+        y += altura_linha
+
+
+def compor_story_card(foto_path, mensagem, output_path=None):
+    """
+    Compõe o Story no estilo 'card do site' (1080x1920):
+      - Foto do produto no topo (crop para preencher)
+      - Texto completo da promoção logo abaixo (como no card)
+      - Faixa 'LINK NA BIO' no rodapé
+    Retorna o caminho da imagem gerada.
+    """
+    W, H = 1080, 1920
+    base = Image.new('RGB', (W, H), (255, 255, 255))
+    draw = ImageDraw.Draw(base)
+
+    # faixa superior de marca/loja
+    draw.rectangle([(0, 0), (W, 110)], fill=(20, 24, 38))
+    fonte_marca = _carregar_fonte(48, bold=True)
+    if fonte_marca:
+        draw.text((40, 28), 'NITRO TECH', font=fonte_marca, fill=(255, 255, 0))
+
+    # foto do produto
+    AREA_FOTO = (40, 140, W - 40, 860)
+    if foto_path and os.path.exists(foto_path):
+        try:
+            foto = Image.open(foto_path).convert('RGB')
+            box_larg = AREA_FOTO[2] - AREA_FOTO[0]
+            box_alt = AREA_FOTO[3] - AREA_FOTO[1]
+            foto = ImageOps.fit(foto, (box_larg, box_alt), method=Image.LANCZOS)
+            base.paste(foto, (AREA_FOTO[0], AREA_FOTO[1]))
+        except Exception as e:
+            logger.warning(f"Foto não colada: {e}")
+
+    # texto completo da promo
+    fonte_texto = _carregar_fonte(46)
+    if fonte_texto and mensagem:
+        _desenhar_texto_multilinha(draw, mensagem, (60, 890, W - 60, 1650), fonte_texto, (40, 40, 40))
+
+    # faixa LINK NA BIO no rodapé
+    draw.rectangle([(0, 1720), (W, H)], fill=(20, 24, 38))
+    fonte_bio = _carregar_fonte(64, bold=True)
+    if fonte_bio:
+        marcador = '🔗  LINK NA BIO'
+        draw.text(((W - draw.textlength(marcador, font=fonte_bio)) / 2, 1780), marcador, font=fonte_bio, fill=(255, 255, 0))
+
+    if not output_path:
+        output_path = os.path.join(settings.MEDIA_ROOT, 'promos', f'story_{int(__import__("time").time())}.jpg')
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    base.save(output_path, 'JPEG', quality=92)
+    return output_path
+
+
 def compor_story(foto_path, titulo, valor, output_path=None):
     """
     Compõe a imagem do Story a partir do template do usuário.
