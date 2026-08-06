@@ -105,6 +105,13 @@ def _eh_linha_cupom_instrucao(baixa):
     return False
 
 
+def _eh_linha_nota(baixa):
+    """True se a linha é uma nota do canal (ex.: 'dica do brendo3d'),
+    não um título de produto/cupom."""
+    return bool(re.search(r'(?<!\w)dica(?!\w)', baixa)) or \
+        any(nota in baixa for nota in ('obs:', 'nota:', 'atencao:', 'atenção:'))
+
+
 def _eh_anuncio_cupom(limpa):
     """True se a linha é um anúncio curto de cupom (ex.: 'Novo Cupom AMAZON'),
     distinto de uma instrução de cupom (ex.: 'use o cupom X')."""
@@ -143,6 +150,8 @@ def _linha_titulo(texto):
             continue  # código de cupom sem espaços (ex: S3M4N488)
         if limpa.lstrip().startswith('-'):
             continue  # nota/bullet (ex.: '-Direto do Brasil')
+        if _eh_linha_nota(baixa):
+            continue  # nota do canal (ex.: 'dica do brendo3d')
         if any(prefixo in baixa for prefixo in _TERMOS_CABECALHO):
             continue
         if tem_cupom and _eh_anuncio_cupom(limpa):
