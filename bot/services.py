@@ -105,59 +105,48 @@ def _eh_linha_cupom_instrucao(baixa):
     return False
 
 
+def _eh_anuncio_cupom(limpa):
+    """True se a linha é um anúncio curto de cupom (ex.: 'Novo Cupom AMAZON'),
+    distinto de uma instrução de cupom (ex.: 'use o cupom X')."""
+    baixa = limpa.casefold()
+    if not re.search(r'(?<!\w)cupom(?!\w)', baixa):
+        return False
+    if len(limpa) > 30:
+        return False
+    for termo in ('use ', 'siga', 'resgate', 'clique', 'pega', 'atraves',
+                  'desconto', 'no app', 'válido', 'valido', 'ativar'):
+        if re.search(r'(?<!\w)' + re.escape(termo) + r'(?!\w)', baixa):
+            return False
+    return True
+
+
 def _linha_titulo(texto):
     """
-    Pega a primeira linha que parece título de produto,
-    ignorando cabeçalhos ('Postagem original') e nomes de loja
-    que costumam vir ANTES do título real.
+    Pega a primeira linha que parece título (de produto ou de cupom),
+    ignorando cabeçalhos ('Postagem original'), nomes de loja e
+    instruções que costumam vir ANTES do título real.
 
-    Se a mensagem é um CUPOM, usa a linha que menciona o cupom
-    (ex.: 'NOVO CUPOM SHOPEE') APENAS quando não existe um título
-    de produto real (ex.: o cupom vem como extra de uma oferta).
+    Percorre as linhas em ORDEM e aceita como título:
+      - uma linha curta de anúncio de cupom (ex.: 'Novo Cupom AMAZON');
+      - ou uma linha que pareça nome de produto;
+    exceto quando é header/loja/código/instrução.
     """
     texto = texto or ''
-
     tem_cupom = 'cupom' in texto.casefold()
-
-    # 1) Se tem cupom, procura PRIMEIRO um título de produto real:
-    #    linha que não seja instrução/cupom nem código de cupom (sem espaços)
-    if tem_cupom:
-        for linha in texto.split('\n'):
-            limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
-            baixa = limpa.casefold()
-            if not limpa or len(limpa) <= 5:
-                continue
-            if not re.search(r'\s', limpa):
-                continue  # parece código de cupom (sem espaços, ex: S3M4N488)
-            if _eh_linha_cupom_instrucao(baixa):
-                continue
-            if any(prefixo in baixa for prefixo in _TERMOS_CABECALHO):
-                continue
-            if any(loja in baixa for loja in _LOJAS) and len(limpa) < 30:
-                continue
-            return limpa
-
-    # 2) Cupom: se não achou produto, usa a primeira linha que fala de cupom
-    if tem_cupom:
-        for linha in texto.split('\n'):
-            baixa = linha.casefold()
-            if 'cupom' not in baixa:
-                continue
-            limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
-            if not limpa or len(limpa) <= 5:
-                continue
-            if any(prefixo in limpa.casefold() for prefixo in _TERMOS_CABECALHO):
-                continue
-            return limpa
 
     for linha in texto.split('\n'):
         limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
         baixa = limpa.casefold()
-        if len(limpa) <= 5:
+        if not limpa or len(limpa) <= 5:
             continue
+        if not re.search(r'\s', limpa):
+            continue  # código de cupom sem espaços (ex: S3M4N488)
         if any(prefixo in baixa for prefixo in _TERMOS_CABECALHO):
             continue
-        # Se a linha é só o nome de uma loja (curta e sem pontuacao de produto)
+        if tem_cupom and _eh_anuncio_cupom(limpa):
+            return limpa
+        if tem_cupom and _eh_linha_cupom_instrucao(baixa):
+            continue
         if any(loja in baixa for loja in _LOJAS) and len(limpa) < 30:
             continue
         return limpa
