@@ -178,10 +178,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
         link_afiliado = links[0].rstrip(')')
 
     # Preço básico para filtro
-    preco = ''
-    preco_match = re.search(r'R\$\s*[\d.,]+', texto)
-    if preco_match:
-        preco = preco_match.group(0).strip()
+    preco = _preco_do_texto(texto)
 
     # Processa imagem
     imagem_url = ''

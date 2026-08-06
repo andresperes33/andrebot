@@ -12,8 +12,9 @@ GRAPH_URL = "https://graph.instagram.com/v19.0"
 def _titulo_preco_link(texto):
     """Extrai título, preço e primeiro link de um texto de promoção."""
     try:
-        from bot.services import _linha_titulo
+        from bot.services import _linha_titulo, _preco_do_texto
         titulo = _linha_titulo(texto)[:120]
+        preco = _preco_do_texto(texto)
     except Exception:
         titulo = ''
         for linha in (texto or '').split('\n'):
@@ -21,11 +22,10 @@ def _titulo_preco_link(texto):
             if len(limpa) > 5:
                 titulo = limpa[:120]
                 break
-
-    preco = ''
-    preco_match = re.search(r'R\$\s*[\d.,]+', texto or '')
-    if preco_match:
-        preco = preco_match.group(0).strip()
+        preco = ''
+        preco_match = re.search(r'R\$\s*[\d.,]+', texto or '')
+        if preco_match:
+            preco = preco_match.group(0).strip()
 
     link = ''
     links = re.findall(r'(https?://\S+)', texto or '')
