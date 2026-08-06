@@ -34,6 +34,20 @@ def _db_set_last_id(msg_id):
     from bot.models import BotConfig
     BotConfig.set('last_processed_id', msg_id)
 
+@sync_to_async
+def _db_get_channel():
+    from django.db import close_old_connections
+    close_old_connections()
+    from bot.models import BotConfig
+    return BotConfig.get('monitored_channel', '')
+
+@sync_to_async
+def _db_set_channel(channel):
+    from django.db import close_old_connections
+    close_old_connections()
+    from bot.models import BotConfig
+    BotConfig.set('monitored_channel', channel)
+
 async def load_last_id() -> int:
     global _last_id, _last_id_loaded
     if _last_id_loaded:
@@ -105,6 +119,13 @@ class Command(BaseCommand):
             # Também resetamos o last_id quando trocamos de canal monitorado:
             # o último_id salvo pode vir do canal ANTERIOR e ser maior que os IDs
             # do canal atual, fazendo o polling pular todas as ofertas novas.
+            saved_channel = (await _db_get_channel() or '').strip().casefold()
+            if saved_channel and saved_channel != source_channel_norm:
+                logger.info(f"🔄 Canal mudou ('{saved_channel}' -> '{source_channel_norm}'). Resetando last_id.")
+                await save_last_id(0)
+                await load_last_id()
+                await _db_set_channel(source_channel)
+
             latest = await client.get_messages(target_id, limit=1)
             current_last = await load_last_id()
             if latest and current_last > latest[0].id:
@@ -120,6 +141,12 @@ class Command(BaseCommand):
                         logger.info(f"🧊 Cold start detectado (banco vazio). Pulando histórico, last_id inicializado em {newest}. Só novas ofertas serão processadas.")
                 except Exception as cold_err:
                     logger.error(f"❌ Erro no cold start: {cold_err}")
+
+            # Persiste o canal monitorado para detectar trocas futuras
+            try:
+                await _db_set_channel(source_channel)
+            except Exception as ch_err:
+                logger.error(f"❌ Erro ao salvar canal monitorado: {ch_err}")
 
             async def process_message(message):
                 """Converte links e envia para Telegram + WhatsApp"""
