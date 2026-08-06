@@ -575,21 +575,6 @@ button, input { font-family: inherit; }
 .card-cta:hover { background: var(--primary-dark); }
 .card-cta i { transition: transform 0.15s; }
 .card-cta:hover i { transform: translateX(4px); }
-.ad-placeholder {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--surface-soft);
-    border: 1px dashed var(--hairline);
-    min-height: 150px;
-    color: var(--ash);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 16px;
-}
-.ad-placeholder i { font-size: 24px; }
 
 /* ─── Botão "Ver mais promoções" ─────────────────────────────── */
 .load-more-wrap {

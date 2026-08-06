@@ -103,14 +103,6 @@ def privacy_view(request):
 
 from django.http import HttpResponse
 
-def ads_txt_view(request):
-    """
-    Serve o arquivo ads.txt na raiz.
-    ID de Editor do usuário: ca-pub-1945676049008537
-    """
-    content = "google.com, pub-1945676049008537, DIRECT, f08c47fec0942fa0"
-    return HttpResponse(content, content_type="text/plain")
-
 
 def robots_txt_view(request):
     """
