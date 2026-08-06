@@ -39,10 +39,18 @@ def promos_view(request):
     if categoria:
         promos = promos.filter(categoria=categoria)
 
+    # Filtro por loja
+    loja = request.GET.get('loja', '')
+    if loja:
+        promos = promos.filter(loja=loja)
+
     # Busca por texto
     q = request.GET.get('q', '')
     if q:
         promos = promos.filter(titulo__icontains=q) | Promo.objects.filter(texto_original__icontains=q)
+
+    # Loja da semana/mês atual (para os filtros exibidos)
+    lojas = list(promos.exclude(loja='').order_by('loja').values_list('loja', flat=True).distinct())
 
     promos = promos.order_by('-criado_em')[:100]
 
@@ -56,6 +64,8 @@ def promos_view(request):
         'periodo': periodo,
         'categoria_ativa': categoria,
         'categorias': categorias,
+        'lojas': lojas,
+        'loja_ativa': loja,
         'q': q,
         'total': promos.count(),
     })

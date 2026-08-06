@@ -84,6 +84,7 @@ class Promo(models.Model):
     url_chave = models.CharField(max_length=1000, blank=True, db_index=True)
     imagem_url = models.URLField(max_length=2000, blank=True)
     categoria = models.CharField(max_length=50, choices=CATEGORIA_CHOICES, default='outros')
+    loja = models.CharField(max_length=50, blank=True, default='')
     fonte = models.CharField(max_length=100, default='zFinnY')
     texto_original = models.TextField(blank=True)
     criado_em = models.DateTimeField(auto_now_add=True)
@@ -95,9 +96,3 @@ class Promo(models.Model):
 
     def __str__(self):
         return f"{self.titulo[:60]} — {self.preco} ({self.criado_em.strftime('%d/%m %H:%M')})"
-
-    @property
-    def loja(self):
-        """Loja de onde sai a oferta, detectada pelo domínio do link de compra."""
-        from bot.classifier import detectar_loja
-        return detectar_loja(self.link_afiliado)

@@ -234,6 +234,10 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     if links:
         link_afiliado = links[0].rstrip(')')
 
+    # Loja detectada pelo domínio do link de compra
+    from bot.classifier import detectar_loja
+    loja = detectar_loja(link_afiliado)
+
     # Preço básico para filtro
     preco = _preco_do_texto(texto)
 
@@ -278,6 +282,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
             url_chave=url_chave,
             imagem_url=imagem_url,
             categoria=categoria,
+            loja=loja,
             fonte=fonte,
             texto_original=texto
         )

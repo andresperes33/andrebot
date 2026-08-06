@@ -54,6 +54,17 @@
             {% endfor %}
         </div>
     </div>
+    {% if lojas %}
+    <div class="filters-inner" style="padding-top:0;">
+        <div class="filter-group">
+            <span class="filter-label">Loja</span>
+            <a href="?periodo={{ periodo }}{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if not loja_ativa %}active{% endif %}">Todas</a>
+            {% for lojanome in lojas %}
+            <a href="?periodo={{ periodo }}{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}&loja={{ lojanome|urlencode }}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if loja_ativa == lojanome %}active{% endif %}">{{ lojanome }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <div id="resultado">
