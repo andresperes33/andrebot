@@ -77,42 +77,15 @@
 <div class="section">
     <div class="container">
         <div class="promos-grid" id="grid">
-            {% for promo in promos %}
-            <a href="{% url 'promo_detail' promo.pk %}" class="card" style="color:inherit;">
-                <span class="corner-square"></span>
-                <div class="card-thumb">
-                    {% if promo.imagem_url %}
-                        <img src="{{ promo.imagem_url }}" alt="{{ promo.titulo }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                        <div class="no-img" style="display:none"><i class="fas fa-tag"></i></div>
-                    {% else %}
-                        <div class="no-img"><i class="fas fa-tag"></i></div>
-                    {% endif %}
-                    <span class="badge-tag card-badge">{{ promo.get_categoria_display }}</span>
-                </div>
-                <div class="card-body">
-                    <h3 class="card-title">{{ promo.titulo|truncatechars:50 }}</h3>
-                    {% if promo.preco %}<div class="card-price"><small>por</small> {{ promo.preco }}</div>{% endif %}
-                    {% if promo.cupom %}
-                    <div class="card-cupom">
-                        <code>{{ promo.cupom }}</code>
-                        <button class="copy-btn" onclick="event.preventDefault();copiarCupom(this, '{{ promo.cupom|escapejs }}')" aria-label="Copiar cupom"><i class="fas fa-copy"></i></button>
-                    </div>
-                    {% endif %}
-                    <div class="card-footer">
-                        {% if promo.loja %}<span class="card-loja"><i class="fas fa-store"></i> {{ promo.loja }}</span>{% endif %}
-                        <span class="card-date">{{ promo.criado_em|date:"d/m \à\s H:i" }}</span>
-                    </div>
-                    <span class="card-cta">Ver oferta <i class="fas fa-arrow-right"></i></span>
-                </div>
-            </a>
-            {% if forloop.counter|divisibleby:6 %}
-            <div class="ad-placeholder">
-                <i class="fas fa-rectangle-ad"></i>
-                <span>Espaço para anúncio (Google AdSense)</span>
-            </div>
-            {% endif %}
-            {% endfor %}
+            {% include 'bot/_promo_grid.html' %}
         </div>
+        {% if tem_mais %}
+        <div class="load-more-wrap">
+            <button id="btn-ver-mais" class="btn btn-primary" data-offset="{{ offset }}" data-limite="{{ LIMITE }}">
+                Ver mais promoções <i class="fas fa-arrow-down"></i>
+            </button>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% else %}
@@ -149,6 +122,10 @@
         const wrapper = document.getElementById('resultado');
         if (!wrapper) return;
 
+        function urlAtual() {
+            return window.location.pathname + window.location.search;
+        }
+
         async function carregar(url) {
             try {
                 const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
@@ -173,6 +150,38 @@
             if (!link) return;
             e.preventDefault();
             carregar(link.getAttribute('href'));
+        });
+
+        // ─── "Ver mais promoções": carrega os próximos cards via AJAX ───
+        document.addEventListener('click', async function (e) {
+            const btn = e.target.closest('#btn-ver-mais');
+            if (!btn) return;
+            btn.disabled = true;
+            const original = btn.innerHTML;
+            btn.innerHTML = 'Carregando...';
+            const params = new URLSearchParams(window.location.search);
+            const offset = parseInt(btn.dataset.offset, 10) + parseInt(btn.dataset.limite, 10);
+            params.set('offset', String(offset));
+            try {
+                const res = await fetch(window.location.pathname + '?' + params.toString(), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!res.ok) throw new Error('erro');
+                const html = await res.text();
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const novosCards = doc.getElementById('grid');
+                if (novosCards) {
+                    document.getElementById('grid').insertAdjacentHTML('beforeend', novosCards.innerHTML);
+                    btn.dataset.offset = String(offset);
+                    const aindaHaMais = doc.getElementById('grid').getAttribute('data-tem-mais') === '1';
+                    if (!aindaHaMais) {
+                        btn.remove();
+                        return;
+                    }
+                }
+            } catch (err) { /* mantém o botão ativo */ }
+            btn.innerHTML = original;
+            btn.disabled = false;
         });
 
         const form = document.querySelector('.search-form');

@@ -21,7 +21,10 @@ def promos_view(request):
     """
     Página pública de promoções.
     Filtra por: data (hoje/semana/mês), categoria e busca por texto.
+    Suporta paginação por "Ver mais" (offset) e resposta AJAX parcial
+    para carregar mais cards sem recarregar a página.
     """
+    LIMITE = 12
     promos = Promo.objects.all()
 
     # Filtro de data — usa horário de Brasília (America/Sao_Paulo)
@@ -53,22 +56,41 @@ def promos_view(request):
     if q:
         promos = promos.filter(titulo__icontains=q) | Promo.objects.filter(texto_original__icontains=q)
 
-    promos = promos.order_by('-criado_em')[:100]
+    promos = promos.order_by('-criado_em')
+    total = promos.count()
+
+    # "Ver mais": carrega a partir de um offset
+    try:
+        offset = max(int(request.GET.get('offset', '0')), 0)
+    except (TypeError, ValueError):
+        offset = 0
+
+    busca_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' and bool(request.GET.get('offset'))
+    pagina = promos[offset:offset + LIMITE]
+    tem_mais = total > (offset + len(pagina))
+
+    if busca_ajax:
+        return render(request, 'bot/_promo_grid_page.html', {
+            'promos': pagina,
+            'offset': offset,
+            'tem_mais': tem_mais,
+            'total': total,
+        })
 
     categorias = Promo.CATEGORIA_CHOICES
 
-    # Não é mais necessário processar cupons ou links complexos
-    pass
-
     return render(request, 'bot/promos.html', {
-        'promos': promos,
+        'promos': pagina,
         'periodo': periodo,
         'categoria_ativa': categoria,
         'categorias': categorias,
         'lojas': lojas,
         'loja_ativa': loja,
         'q': q,
-        'total': promos.count(),
+        'total': total,
+        'offset': offset,
+        'tem_mais': tem_mais,
+        'LIMITE': LIMITE,
     })
 
 

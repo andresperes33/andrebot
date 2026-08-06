@@ -1,0 +1,35 @@
+{% for promo in promos %}
+<a href="{% url 'promo_detail' promo.pk %}" class="card" style="color:inherit;">
+    <span class="corner-square"></span>
+    <div class="card-thumb">
+        {% if promo.imagem_url %}
+            <img src="{{ promo.imagem_url }}" alt="{{ promo.titulo }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="no-img" style="display:none"><i class="fas fa-tag"></i></div>
+        {% else %}
+            <div class="no-img"><i class="fas fa-tag"></i></div>
+        {% endif %}
+        <span class="badge-tag card-badge">{{ promo.get_categoria_display }}</span>
+    </div>
+    <div class="card-body">
+        <h3 class="card-title">{{ promo.titulo|truncatechars:50 }}</h3>
+        {% if promo.preco %}<div class="card-price"><small>por</small> {{ promo.preco }}</div>{% endif %}
+        {% if promo.cupom %}
+        <div class="card-cupom">
+            <code>{{ promo.cupom }}</code>
+            <button class="copy-btn" onclick="event.preventDefault();copiarCupom(this, '{{ promo.cupom|escapejs }}')" aria-label="Copiar cupom"><i class="fas fa-copy"></i></button>
+        </div>
+        {% endif %}
+        <div class="card-footer">
+            {% if promo.loja %}<span class="card-loja"><i class="fas fa-store"></i> {{ promo.loja }}</span>{% endif %}
+            <span class="card-date">{{ promo.criado_em|date:"d/m \à\s H:i" }}</span>
+        </div>
+        <span class="card-cta">Ver oferta <i class="fas fa-arrow-right"></i></span>
+    </div>
+</a>
+{% if forloop.counter|divisibleby:6 %}
+<div class="ad-placeholder">
+    <i class="fas fa-rectangle-ad"></i>
+    <span>Espaço para anúncio (Google AdSense)</span>
+</div>
+{% endif %}
+{% endfor %}
