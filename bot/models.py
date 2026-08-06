@@ -65,6 +65,7 @@ class Promo(models.Model):
         ('headset', 'Fone / Headset'),
         ('teclado', 'Teclado'),
         ('mouse', 'Mouse'),
+        ('mousepad', 'Mousepad'),
         ('cadeira', 'Cadeira Gamer'),
         ('impressora', 'Impressora'),
         ('fonte', 'Fonte'),

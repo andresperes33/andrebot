@@ -71,8 +71,11 @@ _REGEX_CATEGORIA = [
     ('teclado', [
         r'\bteclado\b', r'\bkeyboard\b', r'\bteclado\s*mecanico\b', r'\bswitch\s*(red|blue|brown|mechanical)\b',
     ]),
+    ('mousepad', [
+        r'\bmouse ?pad\b', r'\bmousepad\b', r'\bpad\b', r'\bpisapads?\b', r'\bcontrol\s*pad\b',
+    ]),
     ('mouse', [
-        r'\bmouse\b', r'\bmousepad\b',
+        r'\bmouse\b',
     ]),
     ('fonte', [
         r'\bpsu\b', r'\batx\b', r'\b\d{3,4}\s*w\b', r'\bfonte\s*(atx)?\s*\d{3,4}\s*w\b',
