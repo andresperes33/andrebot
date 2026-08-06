@@ -3,7 +3,7 @@
 {% load urlize_blank %}
 
 {% block title %}{{ promo.titulo }} | Nitro Tech{% endblock %}
-{% block description %}{{ promo.titulo }} — {{ promo.preco }}. Promoção de {{ promo.get_categoria_display }} capturada automaticamente do Telegram.{% endblock %}
+{% block description %}{{ promo.titulo }} — {{ promo.preco }}. Promoção de {{ promo.get_categoria_display }} sempre atualizada.{% endblock %}
 
 {% block nav_promos %}active{% endblock %}
 
@@ -12,7 +12,7 @@
 <meta property="og:type" content="article">
 <meta property="og:url" content="{{ SITE_URL }}{% url 'promo_detail' promo.pk %}">
 <meta property="og:title" content="{{ promo.titulo }}">
-<meta property="og:description" content="{{ promo.preco }} — Promoção de {{ promo.get_categoria_display }} capturada automaticamente do Telegram.">
+<meta property="og:description" content="{{ promo.preco }} — Promoção de {{ promo.get_categoria_display }} sempre atualizada.">
 {% if promo.imagem_url %}<meta property="og:image" content="{{ promo.imagem_url }}">{% endif %}
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
@@ -63,7 +63,7 @@
                 <div class="no-img"><i class="fas fa-tag"></i></div>
             {% endif %}
         </div>
-        <p class="detail-caption">Imagem da postagem original capturada no Telegram</p>
+        <p class="detail-caption">Imagem da postagem original</p>
     </div>
 
     <div class="detail-info">

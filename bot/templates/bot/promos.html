@@ -20,12 +20,12 @@
     <div class="hero-inner">
         <span class="hero-eyebrow">Monitoramento em tempo real</span>
         <h1 class="hero-title">Promoções de Tech</h1>
-        <p class="hero-sub">Eu capturo toda oferta postada no Telegram e trago ela pra você aqui no site, com foto, link e cupom. SSD, placa de vídeo, notebook e muito mais — 24 horas por dia. Você acompanha tudo de onde estiver.</p>
+        <p class="hero-sub">Eu reúno as melhores ofertas e trago pra você aqui no site, com foto, link e cupom. SSD, placa de vídeo, notebook e muito mais — 24 horas por dia. Você acompanha tudo de onde estiver.</p>
         <div class="hero-actions">
             <a href="#grid" class="btn btn-primary">Ver ofertas <i class="fas fa-arrow-down"></i></a>
             <a href="https://t.me/AlertaTechBrasil" target="_blank" class="btn btn-outline-on-dark"><i class="fab fa-telegram-plane"></i> Canal do Telegram</a>
         </div>
-        <div class="hero-tag"><i class="fas fa-circle-check"></i> Cada promo do grupo também sai nesta página</div>
+        <div class="hero-tag"><i class="fas fa-circle-check"></i> Toda promo aqui tem foto, link e cupom</div>
     </div>
 </div>
 
@@ -70,7 +70,7 @@
 <div id="resultado">
 <div class="stats">
     <span class="stats-count">{{ total }} oferta{{ total|pluralize:"s" }} encontrada{{ total|pluralize:"s" }}</span>
-    <span class="stats-caption">Publicado automaticamente a partir do grupo do Telegram</span>
+    <span class="stats-caption">Ofertas atualizadas em tempo real</span>
 </div>
 
 {% if promos %}
@@ -92,7 +92,7 @@
 <div class="empty">
     <div class="empty-icon"><i class="fas fa-magnifying-glass"></i></div>
     <h2>Nenhuma oferta encontrada</h2>
-    <p>Tente mudar o período ou a categoria. O bot está monitorando e logo aparecerão novas ofertas!</p>
+    <p>Tente mudar o período ou a categoria. Novas ofertas aparecem aqui em breve!</p>
     <a href="/promos/" class="btn btn-primary">Ver todas as ofertas</a>
 </div>
 {% endif %}
