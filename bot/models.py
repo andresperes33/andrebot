@@ -73,6 +73,7 @@ class Promo(models.Model):
         ('controle', 'Controle / Gamepad'),
         ('webcam', 'Webcam'),
         ('roteador', 'Roteador'),
+        ('console', 'Console'),
         ('outros', 'Outros'),
     ]
 

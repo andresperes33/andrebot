@@ -13,6 +13,11 @@ def _norm(texto):
 # Padrões por categoria, em ordem de prioridade (mais específica primeiro).
 # Todos os padrões são aplicados sobre texto normalizado (sem acento, minúsculo).
 _REGEX_CATEGORIA = [
+    ('console', [
+        r'\bnintendo\b', r'\bswitch\b', r'\bps[0-9]?\b', r'\bplaystation\b',
+        r'\bxbox\b', r'\bsteam\s*deck\b', r'\bok\s*1\b', r'\banbernic\b',
+        r'\bsup\b', r'\bhandheld\b', r'\bconsole\b',
+    ]),
     ('notebook', [
         r'\bnotebook\b', r'\blaptop\b', r'\bmacbook\b', r'\bultrabook\b', r'\bchromebook\b',
     ]),
