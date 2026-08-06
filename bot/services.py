@@ -87,20 +87,48 @@ _LOJAS = [
 ]
 
 
+# Linhas que são instruções/cupom, não nome de produto (usadas só no modo cupom)
+_TERMOS_CUPOM_INSTRUCAO = [
+    'cupom', 'resgate', 'link', 'carrinho', 'siga', 'use', 'ativa',
+    'moedas', 'no app', 'r$', 'desconto', 'off', 'economize', 'valido',
+    'válido', 'clique', 'aproveite', 'corre', 'pega o cupom', 'cupom:',
+]
+
+
 def _linha_titulo(texto):
     """
     Pega a primeira linha que parece título de produto,
     ignorando cabeçalhos ('Postagem original') e nomes de loja
     que costumam vir ANTES do título real.
 
-    Se a mensagem é um CUPOM, prioriza a linha que menciona o cupom
-    (ex.: 'NOVO CUPOM SHOPEE') em vez de pegar o código do cupom
-    (ex.: 'S3M4N488') que costuma vir antes.
+    Se a mensagem é um CUPOM, usa a linha que menciona o cupom
+    (ex.: 'NOVO CUPOM SHOPEE') APENAS quando não existe um título
+    de produto real (ex.: o cupom vem como extra de uma oferta).
     """
     texto = texto or ''
 
-    # Cupom: procura a primeira linha que fala de cupom
-    if 'cupom' in texto.casefold():
+    tem_cupom = 'cupom' in texto.casefold()
+
+    # 1) Se tem cupom, procura PRIMEIRO um título de produto real:
+    #    linha que não seja instrução/cupom nem código de cupom (sem espaços)
+    if tem_cupom:
+        for linha in texto.split('\n'):
+            limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
+            baixa = limpa.casefold()
+            if not limpa or len(limpa) <= 5:
+                continue
+            if not re.search(r'\s', limpa):
+                continue  # parece código de cupom (sem espaços, ex: S3M4N488)
+            if any(palavra in baixa for palavra in _TERMOS_CUPOM_INSTRUCAO):
+                continue
+            if any(prefixo in baixa for prefixo in _TERMOS_CABECALHO):
+                continue
+            if any(loja in baixa for loja in _LOJAS) and len(limpa) < 30:
+                continue
+            return limpa
+
+    # 2) Cupom: se não achou produto, usa a primeira linha que fala de cupom
+    if tem_cupom:
         for linha in texto.split('\n'):
             baixa = linha.casefold()
             if 'cupom' not in baixa:
