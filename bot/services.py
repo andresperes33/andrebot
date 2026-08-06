@@ -141,6 +141,8 @@ def _linha_titulo(texto):
             continue
         if not re.search(r'\s', limpa):
             continue  # código de cupom sem espaços (ex: S3M4N488)
+        if limpa.lstrip().startswith('-'):
+            continue  # nota/bullet (ex.: '-Direto do Brasil')
         if any(prefixo in baixa for prefixo in _TERMOS_CABECALHO):
             continue
         if tem_cupom and _eh_anuncio_cupom(limpa):
