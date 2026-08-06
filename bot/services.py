@@ -249,23 +249,25 @@ def _linha_titulo(texto):
 
 
 def texto_card(texto):
-    """Mensagem fiel ao Telegram para exibir no card do site.
+    """Copia fiel do texto do Telegram para o card do site.
 
-    Mantém o texto como foi postado (emojis, formatação, linhas), removendo
-    apenas o cabeçalho 'Postagem original' e tudo que vier do primeiro link
-    em diante. Retorna a mensagem multi-linha."""
+    Mantém tudo exatamente como postado (cabeçalho tipo '🇧🇷 Aliexpress',
+    'Produto no Brasil', '12x sem juros', emojis, valor, cupom), removendo
+    apenas o marcador fixo 'Postagem original' e o que vier do primeiro link
+    em diante. Retorna a mensagem multi-linha completa."""
     if not texto:
         return ''
-    # Corta a partir do primeiro link (descrição vem antes do link de compra).
+    # Corta a partir do primeiro link (descrição/valor vêm antes do link de compra).
     texto = re.split(r'(?i)\bhttps?://\S+', texto)[0]
     linhas = []
     for linha in texto.split('\n'):
         limpa = linha.strip()
-        baixa = limpa.casefold()
         if not limpa:
             continue
-        # remove o cabeçalho fixo do canal
-        if any(p in baixa for p in _TERMOS_CABECALHO):
+        baixa = limpa.casefold()
+        # remove só o marcador fixo 'Postagem original'
+        if baixa in ('postagem original', 'postagem original ',
+                     'postagem', 'a postagem'):
             continue
         linhas.append(limpa)
     return '\n'.join(linhas).strip()
