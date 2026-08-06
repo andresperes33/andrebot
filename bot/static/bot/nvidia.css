@@ -490,12 +490,13 @@ button, input { font-family: inherit; }
 .card-desc {
     font-size: 15px;
     font-weight: 400;
-    line-height: 1.67;
+    line-height: 1.6;
     color: var(--mute);
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 5;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    white-space: pre-line;
 }
 .card-price {
     font-size: 36px;

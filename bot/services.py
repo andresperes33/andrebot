@@ -263,7 +263,7 @@ def texto_card(texto):
     linhas = []
     tem_cupom = 'cupom' in texto.casefold()
     for linha in texto.split('\n'):
-        limpa = re.sub(r'[^\w\s.,!?%/\-+@:]', '', linha).strip()
+        limpa = re.sub(r'[^\w\s.,!?%/\-+@:$]', '', linha).strip()
         baixa = limpa.casefold()
         if not limpa:
             if linhas:

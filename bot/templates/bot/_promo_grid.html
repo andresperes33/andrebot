@@ -14,9 +14,8 @@
     <div class="card-body">
         <h3 class="card-title">{{ promo.titulo|truncatechars:50 }}</h3>
         {% if promo.texto_original|card_text %}
-        <div class="card-desc">{{ promo.texto_original|card_text|truncatechars:120 }}</div>
+        <div class="card-desc">{{ promo.texto_original|card_text|truncatechars:200 }}</div>
         {% endif %}
-        {% if promo.preco %}<div class="card-price"><small>por</small> {{ promo.preco }}</div>{% endif %}
         {% if promo.cupom %}
         <div class="card-cupom">
             <code>{{ promo.cupom }}</code>
