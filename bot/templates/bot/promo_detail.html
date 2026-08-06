@@ -1,5 +1,6 @@
 {% extends 'bot/base.html' %}
 {% load static %}
+{% load urlize_blank %}
 
 {% block title %}{{ promo.titulo }} | Nitro Tech{% endblock %}
 {% block description %}{{ promo.titulo }} — {{ promo.preco }}. Promoção de {{ promo.get_categoria_display }} capturada automaticamente do Telegram.{% endblock %}
@@ -91,7 +92,7 @@
 
         <div class="card">
             <span class="detail-label">Postagem original</span>
-            <div class="detail-text">{{ promo.texto_original|urlize|linebreaksbr }}</div>
+            <div class="detail-text">{{ promo.texto_original|urlize_blank|linebreaksbr }}</div>
         </div>
 
         <div class="detail-meta">
