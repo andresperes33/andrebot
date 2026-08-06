@@ -33,10 +33,19 @@ def cortar_rodape_imagem(caminho, rodape_px=10):
             img.close()
             return caminho
         area = (0, 0, largura, altura - rodape_px)
-        rend = img.convert('RGB')
-        rend.crop(area).save(caminho, 'JPEG', quality=92)
+        rend = img.crop(area)
+
+        # Preserva o formato original (PNG mantém transparência; JPEG/JPG mexer de novo).
+        formato = (img.format or 'JPEG').upper()
+        if formato == 'PNG':
+            rend.save(caminho, 'PNG')
+        elif formato in ('JPEG', 'JPG'):
+            rend.convert('RGB').save(caminho, 'JPEG', quality=95)
+        else:
+            rend.convert('RGB').save(caminho, 'JPEG', quality=95)
+
         img.close()
-        print(f"🖼️ Rodapé cortado ({rodape_px}px) em {caminho}")
+        print(f"🖼️ Rodapé cortado ({rodape_px}px, {formato}) em {caminho}")
         return caminho
     except Exception as err:
         print(f"Erro ao cortar rodapé da imagem: {err}")

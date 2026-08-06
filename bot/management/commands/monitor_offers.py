@@ -309,7 +309,7 @@ class Command(BaseCommand):
                     try:
                         from bot.services import cortar_rodape_imagem
                         photo_path = await asyncio.to_thread(
-                            cortar_rodape_imagem, photo_path, 10
+                            cortar_rodape_imagem, photo_path, 40
                         )
                     except Exception as crop_err:
                         logger.warning(f"⚠️ Erro ao cortar rodapé: {crop_err}")
