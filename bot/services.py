@@ -248,24 +248,46 @@ def _linha_titulo(texto):
     return ''
 
 
+def _linha_marcador_link(linha):
+    """True se a linha é um rótulo/marcador de link (ex.: '⬇️',
+    '⬇️ NO PC', '🥇 Link com moedas:', '🖥 Link para PC:', '🔗 Link').
+    Essas linhas precedem as URLs e não devem aparecer no card."""
+    if not linha:
+        return True
+    baixa = linha.casefold().strip()
+    # setas / cadeado / labels claros de link
+    if any(s in linha for s in ('⬇', '🔗', '🖥', '🥇', '↓', 'glyph', 'chainem')):
+        return True
+    if re.search(r'\b(link|pcinho|removido done)\b', baixa) and len(linha) < 60:
+        return True
+    if re.search(r'\bno pc\b|\bpara pc\b|\bcom moedas\b|\bcommoedas\b', baixa):
+        return True
+    return False
+
+
 def texto_card(texto):
     """Copia fiel do texto do Telegram para o card do site.
 
     Mantém tudo exatamente como postado (cabeçalho tipo '🇧🇷 Aliexpress',
     'Produto no Brasil', '12x sem juros', emojis, valor, cupom), removendo
-    apenas o marcador fixo 'Postagem original' e o que vier do primeiro link
-    em diante. Retorna a mensagem multi-linha completa."""
+    apenas o marcador fixo 'Postagem original' e toda a seção de links
+    (URLs + marcadores tipo '⬇️', '🥇 Link com moedas:'). Retorna a
+    mensagem multi-linha completa."""
     if not texto:
         return ''
-    # Corta a partir do primeiro link (descrição/valor vêm antes do link de compra).
-    texto = re.split(r'(?i)\bhttps?://\S+', texto)[0]
     linhas = []
     for linha in texto.split('\n'):
         limpa = linha.strip()
         if not limpa:
+            if linhas:
+                linhas.append('')
             continue
         baixa = limpa.casefold()
-        # remove só o marcador fixo 'Postagem original'
+        # marca o fim: primeira URL ou marcador de link -> para aqui
+        if re.search(r'(?i)\bhttps?://\S+', limpa):
+            break
+        if _linha_marcador_link(limpa):
+            break
         if baixa in ('postagem original', 'postagem original ',
                      'postagem', 'a postagem'):
             continue
