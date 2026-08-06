@@ -115,3 +115,38 @@ def detectar_categoria(texto, titulo=None):
             if re.search(p, haystack):
                 return categoria
     return 'outros'
+
+
+# Domínio (ou parte dele) → nome de loja exibido no card.
+_LOJA_POR_DOMINIO = [
+    ('shopee', 'Shopee'),
+    ('amazon', 'Amazon'),
+    ('aliexpress', 'AliExpress'),
+    ('mercadolivre', 'Mercado Livre'),
+    ('mercado', 'Mercado Livre'),
+    ('magazineluiza', 'Magazine Luíza'),
+    ('magalu', 'Magazine Luíza'),
+    ('kabum', 'KaBuM'),
+    ('pichau', 'Pichau'),
+    ('terabyte', 'Terabyte'),
+    ('americanas', 'Americanas'),
+    ('casasbahia', 'Casas Bahia'),
+    ('pontofrio', 'Ponto'),
+    ('submarino', 'Submarino'),
+    ('walmart', 'Walmart'),
+    ('renner', 'Renner'),
+    ('extra.com', 'Extra'),
+    ('fastshop', 'Fast Shop'),
+]
+
+
+def detectar_loja(link):
+    """Detecta a loja a partir do domínio do link de afiliado/produto.
+    Ex.: 'https://s.shopee.com.br/xyz' → 'Shopee'."""
+    if not link:
+        return ''
+    baixo = sem_acento(link).lower()
+    for chave, nome in _LOJA_POR_DOMINIO:
+        if chave in baixo:
+            return nome
+    return ''

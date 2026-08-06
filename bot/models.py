@@ -95,3 +95,9 @@ class Promo(models.Model):
 
     def __str__(self):
         return f"{self.titulo[:60]} — {self.preco} ({self.criado_em.strftime('%d/%m %H:%M')})"
+
+    @property
+    def loja(self):
+        """Loja de onde sai a oferta, detectada pelo domínio do link de compra."""
+        from bot.classifier import detectar_loja
+        return detectar_loja(self.link_afiliado)
