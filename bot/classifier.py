@@ -10,6 +10,16 @@ def _norm(texto):
     return re.sub(r'\s+', ' ', sem_acento(texto or '')).lower()
 
 
+def _limpar_compat(texto):
+    """Remove cláusulas de compatibilidade ('compatível com laptop') que não
+    indicam o produto em si. Ex.: 'Crucial SSD ... compatível com laptop'
+    continua sendo um SSD, não um notebook."""
+    if not texto:
+        return texto
+    # Apaga desde 'compatível' até o fim da cláusula (vírgula, ponto ou fim).
+    return re.sub(r'\s+compativel\s*(com\b|para\b|:|\s)*[^,;.]*', ' ', texto, flags=re.I)
+
+
 # Padrões por categoria, em ordem de prioridade (mais específica primeiro).
 # Todos os padrões são aplicados sobre texto normalizado (sem acento, minúsculo).
 _REGEX_CATEGORIA = [
@@ -100,6 +110,11 @@ def detectar_categoria(texto, titulo=None):
     haystack = _norm(texto)
     if not haystack:
         return 'outros'
+
+    # Remove cláusulas de compatibilidade do texto completo, assim
+    # 'compatível com laptop/notebook' não é confundido com o produto.
+    haystack = _norm(_limpar_compat(texto))
+
     # Postagem só de cupom: o título é um anúncio curto com 'cupom'
     # (ex.: 'Novo Cupom AMAZON'). Nesse caso o produto não existe.
     for alvo in (titulo, texto,):
@@ -111,20 +126,27 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'(?<!\w)cupom(?!\w)', primeira_linha) and len(primeira_linha) <= 45:
             return 'cupom'
         break
+
+    # Se houver título do produto, busca nele primeiro. A primeira palavra
+    # tem prioridade (ex.: 'Processador ... Radeon' é processador). Se a
+    # primeira palavra não casar, busca em todo o título (ex.: 'Crucial SSD',
+    # onde 'Crucial' é só a marca e 'SSD' identifica o produto).
     for alvo in (titulo, texto,):
         if not alvo:
             continue
-        primeira_linha = _norm(alvo.split('\n')[0])
-        if not primeira_linha:
+        limpo = _norm(_limpar_compat(alvo))
+        if not limpo:
             continue
+        primeira = limpo.split('\n')[0]
         for categoria, padroes in _REGEX_CATEGORIA:
             for p in padroes:
-                if re.match(p, primeira_linha):
+                if re.match(p, primeira):
                     return categoria
-    for categoria, padroes in _REGEX_CATEGORIA:
-        for p in padroes:
-            if re.search(p, haystack):
-                return categoria
+        for categoria, padroes in _REGEX_CATEGORIA:
+            for p in padroes:
+                if re.search(p, limpo):
+                    return categoria
+
     return 'outros'
 
 
