@@ -87,12 +87,22 @@ _LOJAS = [
 ]
 
 
-# Linhas que são instruções/cupom, não nome de produto (usadas só no modo cupom)
+# Palavras-termo de instruções/cupom. Testadas como PALAVRA INTEIRA
+# (ex.: 'use' não deve bater com 'mouse'). Várias palavras -> aceitas
+# em qualquer parte da linha.
 _TERMOS_CUPOM_INSTRUCAO = [
     'cupom', 'resgate', 'link', 'carrinho', 'siga', 'use', 'ativa',
     'moedas', 'no app', 'r$', 'desconto', 'off', 'economize', 'valido',
-    'válido', 'clique', 'aproveite', 'corre', 'pega o cupom', 'cupom:',
+    'válido', 'clique', 'aproveite', 'pega o cupom',
 ]
+
+
+def _eh_linha_cupom_instrucao(baixa):
+    """True se a linha tem uma palavra de instrução de cupom (por palavra inteira)."""
+    for termo in _TERMOS_CUPOM_INSTRUCAO:
+        if re.search(r'(?<!\w)' + re.escape(termo) + r'(?!\w)', baixa):
+            return True
+    return False
 
 
 def _linha_titulo(texto):
@@ -119,7 +129,7 @@ def _linha_titulo(texto):
                 continue
             if not re.search(r'\s', limpa):
                 continue  # parece código de cupom (sem espaços, ex: S3M4N488)
-            if any(palavra in baixa for palavra in _TERMOS_CUPOM_INSTRUCAO):
+            if _eh_linha_cupom_instrucao(baixa):
                 continue
             if any(prefixo in baixa for prefixo in _TERMOS_CABECALHO):
                 continue
