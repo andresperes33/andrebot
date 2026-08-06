@@ -29,12 +29,40 @@ def _primeiro_link_produto(texto):
 
 
 def _preco_do_texto(texto):
-    """Extrai o primeiro preço (R$ ...) do texto, normalizado."""
-    preco = ''
-    preco_match = re.search(r'R\$\s*[\d.,]+', texto or '')
-    if preco_match:
-        preco = preco_match.group(0).strip()
-    return preco
+    """
+    Extrai o preço real do produto, normalizado.
+
+    Prioriza preços rotulados ('Valor:', 'Preço:', 'Por:', 'R$ no link')
+    e ignora valores de CUPOM (ex.: 'cupom de R$90 OFF', 'R$90 de desconto'),
+    evitando mostrar o desconto como se fosse o preço do produto.
+    """
+    texto = texto or ''
+    linhas = texto.split('\n')
+
+    # 1) Preço rotulado explicitamente (pulando linhas de cupom/desconto)
+    for linha in linhas:
+        baixa = linha.casefold()
+        if any(palavra in baixa for palavra in ('cupom', 'off', 'desconto', 'economize')):
+            continue
+        if any(rotulo in baixa for rotulo in ('valor:', 'preço:', 'preco:', 'por apenas', 'por:', 'preco final')):
+            m = re.search(r'R\$\s*[\d.,]+', linha)
+            if m:
+                return m.group(0).strip()
+
+    # 2) Primeiro R$ que NÃO esteja associado a cupom/desconto
+    for linha in linhas:
+        baixa = linha.casefold()
+        if any(palavra in baixa for palavra in ('cupom', 'off', 'desconto', 'economize', 'use o código', 'use o codigo')):
+            continue
+        m = re.search(r'R\$\s*[\d.,]+', linha)
+        if m:
+            return m.group(0).strip()
+
+    # 3) Fallback: primeiro R$ do texto inteiro
+    m = re.search(r'R\$\s*[\d.,]+', texto)
+    if m:
+        return m.group(0).strip()
+    return ''
 
 
 # Linhas que devem ser ignoradas ao montar o título do produto
