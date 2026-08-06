@@ -4,6 +4,8 @@ from django import template
 from django.utils.html import mark_safe
 from django.utils.html import conditional_escape
 
+from bot.services import texto_card
+
 register = template.Library()
 
 
@@ -36,3 +38,12 @@ def urlize_blank(value):
         pos = m.end()
     partes.append(texto[pos:])
     return mark_safe(''.join(partes))
+
+
+@register.filter
+def card_text(value):
+    """Texto descritivo para o card: a mensagem original até o primeiro
+    link, sem cabeçalhos/notas/cupom (links já removidos)."""
+    if not value:
+        return ''
+    return texto_card(value)

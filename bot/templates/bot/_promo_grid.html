@@ -1,3 +1,4 @@
+{% load urlize_blank %}
 {% for promo in promos %}
 <a href="{% url 'promo_detail' promo.pk %}" class="card" style="color:inherit;">
     <span class="corner-square"></span>
@@ -12,6 +13,9 @@
     </div>
     <div class="card-body">
         <h3 class="card-title">{{ promo.titulo|truncatechars:50 }}</h3>
+        {% if promo.texto_original|card_text %}
+        <div class="card-desc">{{ promo.texto_original|card_text|truncatechars:120 }}</div>
+        {% endif %}
         {% if promo.preco %}<div class="card-price"><small>por</small> {{ promo.preco }}</div>{% endif %}
         {% if promo.cupom %}
         <div class="card-cupom">

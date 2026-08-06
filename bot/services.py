@@ -248,6 +248,38 @@ def _linha_titulo(texto):
     return ''
 
 
+def texto_card(texto):
+    """Extrai a mensagem descritiva para exibir no card do site.
+
+    Pega o texto original ATÉ o primeiro link (removendo os links e todo o
+    resto: cupom, CTA, etc.) e remove cabeçalhos / notas do canal, deixando
+    só a descrição do produto. Retorna string limpa (multi-linha).
+    """
+    if not texto:
+        return ''
+    # Corta no que vier depois do primeiro link (links e restante) — a
+    # descrição do produto sempre vem ANTES do link de compra.
+    texto = re.split(r'(?i)\bhttps?://\S+', texto)[0]
+    linhas = []
+    tem_cupom = 'cupom' in texto.casefold()
+    for linha in texto.split('\n'):
+        limpa = re.sub(r'[^\w\s.,!?%/\-+@:]', '', linha).strip()
+        baixa = limpa.casefold()
+        if not limpa:
+            if linhas:
+                linhas.append('')
+            continue
+        if any(p in baixa for p in _TERMOS_CABECALHO):
+            continue
+        if _eh_linha_nota(baixa):
+            continue
+        if any(loja in baixa for loja in _LOJAS) and len(limpa) < 30:
+            continue
+        # força, cabeçalho e nome de loja vêm antes; mantém tudo que restar
+        linhas.append(limpa)
+    return '\n'.join(linhas).strip()
+
+
 def _chave_dedup(texto):
     """
     Chave de deduplicação estável: link do produto + preço.
