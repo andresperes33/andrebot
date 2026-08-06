@@ -130,11 +130,30 @@ def _eh_linha_cupom_instrucao(baixa):
     return False
 
 
+# Chamadas de engajamento do canal (teasers) que vêm ANTES do produto.
+# Ex.: 'Cade Os Chefs Do Grupo ??' — ignoradas na escolha do título.
+_TERMOS_TEASER = [
+    'cade os', 'cade o', 'cadê os', 'cadê o', 'cade',
+    'quem quer', 'quem quer ver', 'quem procura', 'quem ta', 'quem tá',
+    'reage', 'reagiu', 'topa?', 'quer ver?', 'bora', 'vamo', 'vamos',
+    'olha isso', 'olha so', 'olha só', 'muito bom', 'sim ou nao',
+    'alquem ta', 'tem alguem', 'alguem conseguiu', 'quem vai',
+    'pera ai', 'espera ai', 'cade o pessoal', 'cade voces',
+]
+
+
 def _eh_linha_nota(baixa):
-    """True se a linha é uma nota do canal (ex.: 'dica do brendo3d'),
-    não um título de produto/cupom."""
-    return bool(re.search(r'(?<!\w)dica(?!\w)', baixa)) or \
-        any(nota in baixa for nota in ('obs:', 'nota:', 'atencao:', 'atenção:'))
+    """True se a linha é uma nota/teaser do canal (ex.: 'dica do brendo3d',
+    'cade os chefs do grupo'), não um título de produto/cupom."""
+    if bool(re.search(r'(?<!\w)dica(?!\w)', baixa)):
+        return True
+    if any(nota in baixa for nota in ('obs:', 'nota:', 'atencao:', 'atenção:')):
+        return True
+    # Chamadas de engajamento do canal (teasers) que vêm antes do produto
+    for frase in _TERMOS_TEASER:
+        if baixa.startswith(frase):
+            return True
+    return False
 
 
 def _eh_anuncio_cupom(limpa):
