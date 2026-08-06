@@ -47,6 +47,7 @@ _TERMOS_CABECALHO = [
     'alerta para', 'alerta pra', 'precinho', 'precinho d+', 'aproveite',
     'super precinho', 'imperdivel', 'imperdível', 'olha que', 'olha só',
     'pega essa', 'pega esse', 'pipoca do caos', 'anon esbarrou',
+    'voltou', 'voltei', 'de volta', 'de novo', 'aconteceu denovo',
 ]
 _LOJAS = [
     'aliexpress', 'mercadolivre', 'mercado livre', 'amazon', 'shopee',
