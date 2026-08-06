@@ -92,8 +92,27 @@ def _linha_titulo(texto):
     Pega a primeira linha que parece título de produto,
     ignorando cabeçalhos ('Postagem original') e nomes de loja
     que costumam vir ANTES do título real.
+
+    Se a mensagem é um CUPOM, prioriza a linha que menciona o cupom
+    (ex.: 'NOVO CUPOM SHOPEE') em vez de pegar o código do cupom
+    (ex.: 'S3M4N488') que costuma vir antes.
     """
-    for linha in (texto or '').split('\n'):
+    texto = texto or ''
+
+    # Cupom: procura a primeira linha que fala de cupom
+    if 'cupom' in texto.casefold():
+        for linha in texto.split('\n'):
+            baixa = linha.casefold()
+            if 'cupom' not in baixa:
+                continue
+            limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
+            if not limpa or len(limpa) <= 5:
+                continue
+            if any(prefixo in limpa.casefold() for prefixo in _TERMOS_CABECALHO):
+                continue
+            return limpa
+
+    for linha in texto.split('\n'):
         limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
         baixa = limpa.casefold()
         if len(limpa) <= 5:
