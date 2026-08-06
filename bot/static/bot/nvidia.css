@@ -595,7 +595,7 @@ button, input { font-family: inherit; }
 .load-more-wrap {
     display: flex;
     justify-content: center;
-    padding: 32px 0 8px;
+    padding: 48px 0 16px;
 }
 #btn-ver-mais {
     min-width: 240px;
