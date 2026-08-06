@@ -139,6 +139,17 @@ def _eh_linha_cupom_instrucao(baixa):
     return False
 
 
+# Cores comuns que aparecem no início do título (ex.: '(PRETO) ', 'PRETO ').
+# Removidas do título, pois não identificam o produto.
+_CORES_TITULO = {
+    'preto', 'preta', 'black', 'branco', 'branca', 'white', 'vermelho',
+    'vermelha', 'red', 'azul', 'blue', 'verde', 'green', 'amarelo', 'amarela',
+    'yellow', 'cinza', 'cinza', 'grey', 'gray', 'roxo', 'roxa', 'lilás',
+    'lilas', 'marrom', 'rose', 'rosa', 'pink', 'dourado', 'dourada', 'dourado',
+    'prata', 'prateado', 'prateada', 'silver', 'bege', 'beige',
+}
+
+
 # Chamadas de engajamento do canal (teasers) que vêm ANTES do produto.
 # Ex.: 'Cade Os Chefs Do Grupo ??' — ignoradas na escolha do título.
 _TERMOS_TEASER = [
@@ -158,9 +169,11 @@ def _eh_linha_nota(baixa):
         return True
     if any(nota in baixa for nota in ('obs:', 'nota:', 'atencao:', 'atenção:')):
         return True
-    # Chamadas de engajamento do canal (teasers) que vêm antes do produto
+    # Chamadas de engajamento do canal (teasers) que vêm antes do produto.
+    # Confere no INÍCIO da linha, com palavra inteira ('cade' não bate com
+    # 'cadeira').
     for frase in _TERMOS_TEASER:
-        if baixa.startswith(frase):
+        if re.search(r'^(?:\w+\s+)*' + re.escape(frase) + r'(?!\w)', baixa):
             return True
     return False
 
@@ -178,6 +191,18 @@ def _eh_anuncio_cupom(limpa):
         if re.search(r'(?<!\w)' + re.escape(termo) + r'(?!\w)', baixa):
             return False
     return True
+
+
+def _limpar_cor_inicio(texto):
+    """Remove uma cor que apareça no INÍCIO do título (ex.: 'PRETO Mousepad',
+    '(preto) Mousepad'), já que cor não identifica o produto."""
+    if not texto:
+        return texto
+    limpo = texto.strip()
+    primeira = re.split(r'\s+', limpo)[0].strip('()[]{}_-,.')
+    if primeira.casefold() in _CORES_TITULO:
+        return re.sub(r'^[\s\w-]+?\s+', '', limpo, count=1)
+    return limpo
 
 
 def _linha_titulo(texto):
@@ -213,7 +238,7 @@ def _linha_titulo(texto):
             continue
         if any(loja in baixa for loja in _LOJAS) and len(limpa) < 30:
             continue
-        return limpa
+        return _limpar_cor_inicio(limpa)
     return ''
 
 
