@@ -25,6 +25,7 @@
     --radius-sm: 2px;
     --radius-none: 0px;
     --font: 'Inter', Arial, Helvetica, sans-serif;
+    --font-promo: 'Space Grotesk', 'Inter', Arial, Helvetica, sans-serif;
     --container: 1280px;
     --section: 64px;
 }
@@ -488,9 +489,10 @@ button, input { font-family: inherit; }
     color: var(--ink);
 }
 .card-desc {
-    font-size: 15px;
-    font-weight: 400;
-    line-height: 1.6;
+    font-family: var(--font-promo);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.65;
     color: var(--mute);
     white-space: pre-line;
 }
@@ -722,8 +724,9 @@ button, input { font-family: inherit; }
     letter-spacing: 1px;
 }
 .detail-text {
+    font-family: var(--font-promo);
     font-size: 16px;
-    line-height: 1.5;
+    line-height: 1.65;
     color: var(--body);
     white-space: pre-wrap;
     word-break: break-word;
