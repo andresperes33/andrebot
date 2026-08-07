@@ -58,6 +58,7 @@ class Promo(models.Model):
         ('placa_mae', 'Placa-mãe'),
         ('processador', 'Processador'),
         ('memoria_ram', 'Memória RAM'),
+        ('kit', 'Kit (Placa + CPU + RAM)'),
         ('notebook', 'Notebook'),
         ('monitor', 'Monitor'),
         ('celular', 'Celular / Smartphone'),

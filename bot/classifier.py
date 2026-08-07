@@ -22,6 +22,8 @@ def _limpar_compat(texto):
 
 # Padrões por categoria, em ordem de prioridade (mais específica primeiro).
 # Todos os padrões são aplicados sobre texto normalizado (sem acento, minúsculo).
+# Obs.: 'kit' não entra aqui — é tratado antes, com validação de hardware
+# (só é kit se vier placa-mãe/processador/memória junto), ver detectar_categoria.
 _REGEX_CATEGORIA = [
     ('console', [
         r'\bnintendo\b', r'\bswitch\b', r'\bps[0-9]?\b', r'\bplaystation\b',
@@ -129,6 +131,24 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'(?<!\w)cupom(?!\w)', primeira_linha) and len(primeira_linha) <= 45:
             return 'cupom'
         break
+
+    # Kit (placa-mãe + processador + memória) tem prioridade sobre qualquer
+    # componente individual: 'Processador Kit X99 ...' é um kit, não um
+    # processador. Só considera kit quando há hardware de PC junto, para
+    # não pegar 'kit de limpeza', 'kit de 2 peças', etc.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        limpo = _norm(_limpar_compat(alvo))
+        if not limpo:
+            continue
+        tem_kit = re.search(r'\bkit\b', limpo)
+        tem_hardware = re.search(
+            r'\b(x99|x79|xeon|processador|placa[ -]?mae|memoria|ddr|c612|s2011|core\s*i[3579]|ryzen|am[45]|motherboard|gabinete|fonte|fan|ventoinha|cooler)\b',
+            limpo,
+        )
+        if tem_kit and tem_hardware:
+            return 'kit'
 
     # Se houver título do produto, busca nele primeiro. A primeira palavra
     # tem prioridade (ex.: 'Processador ... Radeon' é processador). Se a
