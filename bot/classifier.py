@@ -16,8 +16,10 @@ def _limpar_compat(texto):
     continua sendo um SSD, não um notebook."""
     if not texto:
         return texto
+    # Normaliza para o regex (evita 'compatível' com acento não casar).
+    base = sem_acento(texto or '')
     # Apaga desde 'compatível' até o fim da cláusula (vírgula, ponto ou fim).
-    return re.sub(r'\s+compativel\s*(com\b|para\b|:|\s)*[^,;.]*', ' ', texto, flags=re.I)
+    return re.sub(r'\s+compativel\s*(com\b|para\b|:|\s)*[^,;.]*', ' ', base, flags=re.I)
 
 
 # Padrões por categoria, em ordem de prioridade (mais específica primeiro).
