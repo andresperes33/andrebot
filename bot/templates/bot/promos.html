@@ -33,11 +33,33 @@
     <div class="filters-inner">
         <div class="filter-group">
             <span class="filter-label">Período</span>
-            <a href="?periodo=hoje{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if periodo == 'hoje' %}active{% endif %}">Hoje</a>
-            <a href="?periodo=semana{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if periodo == 'semana' %}active{% endif %}">Esta Semana</a>
-            <a href="?periodo=mes{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if periodo == 'mes' %}active{% endif %}">Este Mês</a>
-            <a href="?periodo=tudo{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if periodo == 'tudo' %}active{% endif %}">Tudo</a>
+            <select id="filtro-periodo" class="filter-select">
+                <option value="hoje" {% if periodo == 'hoje' %}selected{% endif %}>Hoje</option>
+                <option value="semana" {% if periodo == 'semana' %}selected{% endif %}>Esta Semana</option>
+                <option value="mes" {% if periodo == 'mes' %}selected{% endif %}>Este Mês</option>
+                <option value="tudo" {% if periodo == 'tudo' %}selected{% endif %}>Tudo</option>
+            </select>
         </div>
+        <div class="filter-group">
+            <span class="filter-label">Categoria</span>
+            <select id="filtro-categoria" class="filter-select">
+                <option value="" {% if not categoria_ativa %}selected{% endif %}>Todas</option>
+                {% for slug, nome in categorias %}
+                <option value="{{ slug }}" {% if categoria_ativa == slug %}selected{% endif %}>{{ nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if lojas %}
+        <div class="filter-group">
+            <span class="filter-label">Loja</span>
+            <select id="filtro-loja" class="filter-select">
+                <option value="" {% if not loja_ativa %}selected{% endif %}>Todas</option>
+                {% for lojanome in lojas %}
+                <option value="{{ lojanome }}" {% if loja_ativa == lojanome %}selected{% endif %}>{{ lojanome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
         <form class="search-form" method="get" action="/promos/">
             {% if periodo != 'hoje' %}<input type="hidden" name="periodo" value="{{ periodo }}">{% endif %}
             {% if categoria_ativa %}<input type="hidden" name="cat" value="{{ categoria_ativa }}">{% endif %}
@@ -45,26 +67,6 @@
             <button class="btn-search" type="submit" aria-label="Buscar"><i class="fas fa-search"></i></button>
         </form>
     </div>
-    <div class="filters-inner" style="padding-top:0;">
-        <div class="filter-group">
-            <span class="filter-label">Categoria</span>
-            <a href="?periodo={{ periodo }}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if not categoria_ativa %}active{% endif %}">Todas</a>
-            {% for slug, nome in categorias %}
-            <a href="?periodo={{ periodo }}&cat={{ slug }}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if categoria_ativa == slug %}active{% endif %}">{{ nome }}</a>
-            {% endfor %}
-        </div>
-    </div>
-    {% if lojas %}
-    <div class="filters-inner" style="padding-top:0;">
-        <div class="filter-group">
-            <span class="filter-label">Loja</span>
-            <a href="?periodo={{ periodo }}{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if not loja_ativa %}active{% endif %}">Todas</a>
-            {% for lojanome in lojas %}
-            <a href="?periodo={{ periodo }}{% if categoria_ativa %}&cat={{ categoria_ativa }}{% endif %}&loja={{ lojanome|urlencode }}{% if q %}&q={{ q }}{% endif %}#grid" data-filtro class="pill-tab {% if loja_ativa == lojanome %}active{% endif %}">{{ lojanome }}</a>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
 </div>
 
 <div id="resultado">
@@ -150,6 +152,19 @@
             if (!link) return;
             e.preventDefault();
             carregar(link.getAttribute('href'));
+        });
+
+        // ─── Dropdowns (período/categoria/loja): recarrega ao mudar ───
+        document.addEventListener('change', function (e) {
+            if (!e.target || !e.target.classList || !e.target.classList.contains('filter-select')) return;
+            const periodo = document.getElementById('filtro-periodo');
+            const cat = document.getElementById('filtro-categoria');
+            const loja = document.getElementById('filtro-loja');
+            const params = new URLSearchParams(window.location.search);
+            params.set('periodo', periodo ? periodo.value : 'hoje');
+            if (cat && cat.value) { params.set('cat', cat.value); } else { params.delete('cat'); }
+            if (loja && loja.value) { params.set('loja', loja.value); } else { params.delete('loja'); }
+            carregar('/promos/?' + params.toString() + '#grid');
         });
 
         // ─── "Ver mais promoções": carrega os próximos cards via AJAX ───

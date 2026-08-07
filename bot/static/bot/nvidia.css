@@ -341,6 +341,26 @@ button, input { font-family: inherit; }
 .pill-tab.active { background: var(--ink); color: var(--on-dark); }
 
 .search-form { display: flex; gap: 8px; }
+.filter-select {
+    height: 40px;
+    padding: 0 34px 0 16px;
+    background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    font-size: 14.4px;
+    font-weight: 700;
+    letter-spacing: 0.144px;
+    color: var(--ink);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23343a40' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    transition: border-color 0.15s;
+}
+.filter-select:hover { border-color: var(--primary); }
+.filter-select:focus { outline: none; border-color: var(--primary); }
 .search-input {
     width: 220px;
     height: 40px;
