@@ -7,6 +7,29 @@ import urllib.parse
 import requests
 from django.conf import settings
 
+# Rodapé de canais anexado às promoções (Telegram/WhatsApp/site). Em texto puro.
+_RODAPE_CANAIS_TEXTO = (
+    "\n\n"
+    "📲 Canais da Nitro Tech:\n"
+    "📢 Telegram: https://t.me/Nitro_Tech_1\n"
+    "💬 WhatsApp: https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD\n"
+    "🤖 Bot: https://t.me/alertas_andre_bot\n"
+    "🌐 Site: https://www.nitrotech.store\n"
+    "📸 Instagram: https://www.instagram.com/nitro_tech_brasil/"
+)
+
+# Mesmo rodapé em HTML, com links clicáveis (usado na página do produto).
+_RODAPE_CANAIS_HTML = """
+<div class="detail-channels">
+    <div class="detail-label">📲 Canais da Nitro Tech</div>
+    <a href="https://t.me/Nitro_Tech_1" target="_blank" rel="noopener">📢 Grupo no Telegram</a>
+    <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" rel="noopener">💬 Grupo no WhatsApp</a>
+    <a href="https://t.me/alertas_andre_bot" target="_blank" rel="noopener">🤖 Bot Nitro Tech</a>
+    <a href="https://www.nitrotech.store" target="_blank" rel="noopener">🌐 Site / App</a>
+    <a href="https://www.instagram.com/nitro_tech_brasil/" target="_blank" rel="noopener">📸 Instagram</a>
+</div>
+"""
+
 
 def _normalizar_url(url):
     """Normaliza uma URL de produto em uma chave estável para deduplicação."""

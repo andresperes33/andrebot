@@ -753,6 +753,20 @@ button, input { font-family: inherit; }
     word-break: break-word;
 }
 .detail-text strong { color: var(--primary-dark); font-weight: 700; }
+.detail-channels {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--hairline);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.detail-channels a {
+    color: var(--link-blue);
+    font-weight: 600;
+    word-break: break-word;
+}
+.detail-channels a:hover { text-decoration: underline; }
 .detail-text a { color: var(--link-blue); text-decoration: underline; }
 .detail-meta {
     display: flex;

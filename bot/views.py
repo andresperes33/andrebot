@@ -3,17 +3,25 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import Promo
 
+# Lojas sempre exibidas no filtro, mesmo sem promoções no período atual.
+_LOJAS_FIXAS = [
+    'Shopee', 'Amazon', 'AliExpress', 'Mercado Livre', 'KaBuM',
+    'Magazine Luíza', 'Pichau', 'Terabyte', 'Americanas', 'Casas Bahia',
+]
+
 
 def promo_detail_view(request, pk):
     """
     Página individual de uma promoção.
     Mostra foto, preço, cupom, texto original com links e meta tags de compartilhamento.
     """
+    from bot.services import _RODAPE_CANAIS_HTML
     promo = get_object_or_404(Promo, pk=pk)
     recentes = Promo.objects.exclude(pk=pk)[:3]
     return render(request, 'bot/promo_detail.html', {
         'promo': promo,
         'recentes': recentes,
+        'rodape_canais': _RODAPE_CANAIS_HTML,
     })
 
 
@@ -44,7 +52,9 @@ def promos_view(request):
 
     # Loja da semana/mês atual (para os filtros exibidos).
     # Calculado ANTES de aplicar o filtro de loja, para todas as lojas ficarem visíveis.
-    lojas = list(promos.exclude(loja='').order_by('loja').values_list('loja', flat=True).distinct())
+    lojas_bd = list(promos.exclude(loja='').order_by('loja').values_list('loja', flat=True).distinct())
+    # As lojas fixas (KaBuM etc.) sempre aparecem, mesmo sem promoções no período.
+    lojas = list(_LOJAS_FIXAS) + [l for l in lojas_bd if l not in _LOJAS_FIXAS]
 
     # Filtro por loja
     loja = request.GET.get('loja', '')

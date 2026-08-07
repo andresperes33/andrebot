@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import logging
 import os
 import re
@@ -18,17 +18,6 @@ logger = logging.getLogger(__name__)
 _last_id: int = 0
 _last_id_loaded: bool = False
 _processing_ids: set = set()
-
-# ─── Rodapé de canais, anexado ao final de cada promo no Telegram e WhatsApp ──
-_RODAPE_CANAIS = (
-    "\n\n"
-    "📲 Canais da Nitro Tech:\n"
-    "📢 Telegram: https://t.me/Nitro_Tech_1\n"
-    "💬 WhatsApp: https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD\n"
-    "🤖 Bot: https://t.me/alertas_andre_bot\n"
-    "🌐 Site: https://www.nitrotech.store\n"
-    "📸 Instagram: https://www.instagram.com/nitro_tech_brasil/"
-)
 
 
 @sync_to_async
@@ -192,7 +181,7 @@ class Command(BaseCommand):
                     return False
 
                 # ─── Converte links e processa texto ─────────────────────────
-                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer
+                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer, _RODAPE_CANAIS_TEXTO
 
                 channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
 
@@ -327,12 +316,12 @@ class Command(BaseCommand):
 
                 # ─── Envia para o Telegram ───────────────────────────────────
                 try:
-                    texto_telegram = modified_text + _RODAPE_CANAIS
+                    texto_telegram = modified_text + _RODAPE_CANAIS_TEXTO
                     if photo_path and os.path.exists(photo_path):
                         # O caption com foto é limitado a 1024 chars; reserva
                         # espaço para o rodapé sempre aparecer completo.
-                        limite = 1024 - len(_RODAPE_CANAIS)
-                        caption = modified_text[:max(limite, 0)] + _RODAPE_CANAIS
+                        limite = 1024 - len(_RODAPE_CANAIS_TEXTO)
+                        caption = modified_text[:max(limite, 0)] + _RODAPE_CANAIS_TEXTO
                         await client.send_file(group_id, photo_path, caption=caption[:1024])
                         logger.info("✅ Enviado para Telegram (com foto)")
                     else:
@@ -343,7 +332,7 @@ class Command(BaseCommand):
 
                 # ─── Envia para o WhatsApp ───────────────────────────────────
                 try:
-                    texto_whatsapp = modified_text + _RODAPE_CANAIS
+                    texto_whatsapp = modified_text + _RODAPE_CANAIS_TEXTO
                     send_whatsapp_message(texto_whatsapp, photo_path)
                     logger.info("✅ Enviado para WhatsApp")
                 except Exception as wa_err:
