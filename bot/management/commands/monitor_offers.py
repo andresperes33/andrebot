@@ -22,19 +22,12 @@ _processing_ids: set = set()
 # ─── Rodapé de canais, anexado ao final de cada promo no Telegram e WhatsApp ──
 _RODAPE_CANAIS = (
     "\n\n"
-    "📲 Nossos canais de comunicação\n\n"
-    "Escolha o canal que preferir e fique por dentro das melhores "
-    "promoções da Nitro Tech:\n\n"
-    "📢 Grupo no Telegram\n"
-    "https://t.me/Nitro_Tech_1\n\n"
-    "💬 Grupo no WhatsApp\n"
-    "https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD\n\n"
-    "🤖 Bot Nitro Tech – Alerta de Promoções\n"
-    "https://t.me/alertas_andre_bot\n\n"
-    "🌐 Site / App\n"
-    "https://www.nitrotech.store\n\n"
-    "📸 Instagram\n"
-    "https://www.instagram.com/nitro_tech_brasil/"
+    "📲 Canais da Nitro Tech:\n"
+    "📢 Telegram: https://t.me/Nitro_Tech_1\n"
+    "💬 WhatsApp: https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD\n"
+    "🤖 Bot: https://t.me/alertas_andre_bot\n"
+    "🌐 Site: https://www.nitrotech.store\n"
+    "📸 Instagram: https://www.instagram.com/nitro_tech_brasil/"
 )
 
 
