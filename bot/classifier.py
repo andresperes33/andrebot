@@ -130,7 +130,6 @@ def detectar_categoria(texto, titulo=None):
             continue
         if re.search(r'(?<!\w)cupom(?!\w)', primeira_linha) and len(primeira_linha) <= 45:
             return 'cupom'
-        break
 
     # Kit (placa-mãe + processador + memória) tem prioridade sobre qualquer
     # componente individual: 'Processador Kit X99 ...' é um kit, não um

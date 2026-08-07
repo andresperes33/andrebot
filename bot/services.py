@@ -190,7 +190,7 @@ def _eh_anuncio_cupom(limpa):
     baixa = limpa.casefold()
     if not re.search(r'(?<!\w)cupom(?!\w)', baixa):
         return False
-    if len(limpa) > 30:
+    if len(limpa) > 60:
         return False
     for termo in ('use ', 'siga', 'resgate', 'clique', 'pega', 'atraves',
                   'desconto', 'no app', 'válido', 'valido', 'ativar'):
