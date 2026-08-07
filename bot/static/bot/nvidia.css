@@ -516,6 +516,7 @@ button, input { font-family: inherit; }
     color: var(--mute);
     white-space: pre-line;
 }
+.card-desc strong { color: var(--primary-dark); font-weight: 700; }
 .card-price {
     font-size: 36px;
     font-weight: 700;
@@ -751,6 +752,7 @@ button, input { font-family: inherit; }
     white-space: pre-wrap;
     word-break: break-word;
 }
+.detail-text strong { color: var(--primary-dark); font-weight: 700; }
 .detail-text a { color: var(--link-blue); text-decoration: underline; }
 .detail-meta {
     display: flex;

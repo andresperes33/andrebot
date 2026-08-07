@@ -47,3 +47,23 @@ def card_text(value):
     if not value:
         return ''
     return texto_card(value)
+
+
+# Valores a destacar em negrito: preço em R$, percentuais de desconto
+# e parcelas (ex.: R$ 96,54, 15% OFF, em até 12x).
+_VALOR_RE = re.compile(
+    r'(R\$\s?\d[\d.,]*(?:\s*[-\s]\s*\d[\d.,]*)?'
+    r'|\d+(?:[.,]\d+)?\s*%'
+    r'|\d+\s*x)',
+    re.IGNORECASE,
+)
+
+
+@register.filter(is_safe=True)
+def destacar_valores(value):
+    """Envolve valores (preço R$, desconto %, parcelas) em <strong>."""
+    if not value:
+        return ''
+    texto = conditional_escape(value)
+    texto = _VALOR_RE.sub(r'<strong>\1</strong>', texto)
+    return mark_safe(texto)
