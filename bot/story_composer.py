@@ -133,7 +133,7 @@ def compor_story_card(foto_path, mensagem, output_path=None):
     # "LINK NA BIO" no rodapé da área branca (final do card), sem barra externa
     fonte_bio = _carregar_fonte(58, bold=True)
     if fonte_bio:
-        marcador = '🔗  LINK NA BIO'
+        marcador = '🔗  LINK DO SITE NA BIO!'
         larg = draw.textlength(marcador, font=fonte_bio)
         x = (W - larg) / 2
         # selo discreto: fundo escuro arredondado só em volta do texto
