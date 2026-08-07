@@ -19,6 +19,24 @@ _last_id: int = 0
 _last_id_loaded: bool = False
 _processing_ids: set = set()
 
+# ─── Rodapé de canais, anexado ao final de cada promo no Telegram e WhatsApp ──
+_RODAPE_CANAIS = (
+    "\n\n"
+    "📲 Nossos canais de comunicação\n\n"
+    "Escolha o canal que preferir e fique por dentro das melhores "
+    "promoções da Nitro Tech:\n\n"
+    "📢 Grupo no Telegram\n"
+    "https://t.me/Nitro_Tech_1\n\n"
+    "💬 Grupo no WhatsApp\n"
+    "https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD\n\n"
+    "🤖 Bot Nitro Tech – Alerta de Promoções\n"
+    "https://t.me/alertas_andre_bot\n\n"
+    "🌐 Site / App\n"
+    "https://www.nitrotech.store\n\n"
+    "📸 Instagram\n"
+    "https://www.instagram.com/nitro_tech_brasil/"
+)
+
 
 @sync_to_async
 def _db_get_last_id():
@@ -316,18 +334,24 @@ class Command(BaseCommand):
 
                 # ─── Envia para o Telegram ───────────────────────────────────
                 try:
+                    texto_telegram = modified_text + _RODAPE_CANAIS
                     if photo_path and os.path.exists(photo_path):
-                        await client.send_file(group_id, photo_path, caption=modified_text[:1024])
+                        # O caption com foto é limitado a 1024 chars; reserva
+                        # espaço para o rodapé sempre aparecer completo.
+                        limite = 1024 - len(_RODAPE_CANAIS)
+                        caption = modified_text[:max(limite, 0)] + _RODAPE_CANAIS
+                        await client.send_file(group_id, photo_path, caption=caption[:1024])
                         logger.info("✅ Enviado para Telegram (com foto)")
                     else:
-                        await client.send_message(group_id, modified_text)
+                        await client.send_message(group_id, texto_telegram)
                         logger.info("✅ Enviado para Telegram (só texto)")
                 except Exception as tg_err:
                     logger.error(f"❌ Erro Telegram: {tg_err}")
 
                 # ─── Envia para o WhatsApp ───────────────────────────────────
                 try:
-                    send_whatsapp_message(modified_text, photo_path)
+                    texto_whatsapp = modified_text + _RODAPE_CANAIS
+                    send_whatsapp_message(texto_whatsapp, photo_path)
                     logger.info("✅ Enviado para WhatsApp")
                 except Exception as wa_err:
                     logger.error(f"❌ Erro WhatsApp: {wa_err}")
