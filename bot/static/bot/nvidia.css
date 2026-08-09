@@ -772,6 +772,11 @@ button, input { font-family: inherit; }
     flex-direction: column;
     margin-top: 6px;
 }
+.detail-chart-wrap {
+    position: relative;
+    height: 180px;
+    margin: 10px 0 6px;
+}
 .price-row {
     display: flex;
     align-items: center;

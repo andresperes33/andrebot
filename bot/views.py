@@ -23,6 +23,7 @@ def promo_detail_view(request, pk):
     # ── Histórico de preços do mesmo produto ──────────────────────────────
     historico = []
     preco_atual = promo.preco
+    pontos_grafico = []
     if promo.produto_chave:
         registros = (Promo.objects
                      .filter(produto_chave=promo.produto_chave)
@@ -41,11 +42,20 @@ def promo_detail_view(request, pk):
             historico.append(item)
             anterior = r
 
+            # Ponto do gráfico: data ISO + valor numérico (para o Chart.js)
+            valor = _valor_numero(r.preco)
+            if valor is not None:
+                pontos_grafico.append({
+                    'data': r.criado_em.astimezone(timezone.get_current_timezone()).isoformat(),
+                    'valor': valor,
+                })
+
     return render(request, 'bot/promo_detail.html', {
         'promo': promo,
         'recentes': recentes,
         'rodape_canais': _RODAPE_CANAIS_HTML,
         'historico': historico,
+        'pontos_grafico': pontos_grafico,
     })
 
 

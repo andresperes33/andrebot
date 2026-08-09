@@ -99,6 +99,11 @@
         {% if historico %}
         <div class="card">
             <span class="detail-label">Histórico de preços</span>
+            {% if pontos_grafico %}
+            <div class="detail-chart-wrap">
+                <canvas id="priceChart" height="120" aria-label="Gráfico do histórico de preços" role="img"></canvas>
+            </div>
+            {% endif %}
             <div class="detail-pricechart">
                 {% for item in historico %}
                 <div class="price-row">
@@ -174,6 +179,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
     function copiarCupom(el, cupom) {
         navigator.clipboard.writeText(cupom).then(() => {
@@ -189,5 +195,67 @@
             }, 2000);
         });
     }
+
+    {% if pontos_grafico %}
+    {{ pontos_grafico|json_script:"pontos-grafico" }}
+    (function () {
+        const ctx = document.getElementById('priceChart');
+        if (!ctx || typeof Chart === 'undefined') return;
+        const pontos = JSON.parse(document.getElementById('pontos-grafico').textContent);
+        const primeiro = pontos[0].valor;
+        const ultimo = pontos[pontos.length - 1].valor;
+        const caiu = ultimo < primeiro;
+        const cor = caiu ? '#1a9e4b' : (ultimo > primeiro ? '#d92626' : '#6b7280');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: pontos.map(function (p) {
+                    return new Date(p.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                }),
+                datasets: [{
+                    data: pontos.map(function (p) { return p.valor; }),
+                    borderColor: cor,
+                    backgroundColor: cor + '22',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: cor,
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (c) {
+                                return 'R$ ' + c.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#9aa4b2', maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
+                        grid: { display: false }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#9aa4b2',
+                            callback: function (v) {
+                                return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                            }
+                        },
+                        grid: { color: 'rgba(128,138,150,0.12)' }
+                    }
+                }
+            }
+        });
+    })();
+    {% endif %}
 </script>
 {% endblock %}
