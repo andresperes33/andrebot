@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from datetime import timedelta
+import re
 from .models import Promo
 
 # Lojas sempre exibidas no filtro, mesmo sem promoções no período atual.
@@ -18,11 +19,64 @@ def promo_detail_view(request, pk):
     from bot.services import _RODAPE_CANAIS_HTML
     promo = get_object_or_404(Promo, pk=pk)
     recentes = Promo.objects.exclude(pk=pk)[:3]
+
+    # ── Histórico de preços do mesmo produto ──────────────────────────────
+    historico = []
+    preco_atual = promo.preco
+    if promo.produto_chave:
+        registros = (Promo.objects
+                     .filter(produto_chave=promo.produto_chave)
+                     .order_by('criado_em'))
+        anterior = None
+        for r in registros:
+            item = {
+                'promo': r,
+                'preco': r.preco,
+                'variacao': None,   # em R$
+                'trend': None,      # 'alta' | 'baixa' | 'igual'
+            }
+            if anterior and anterior.preco:
+                item['variacao'] = _variacao_preco(preco_novo=r.preco, preco_anterior=anterior.preco)
+                item['trend'] = _trend_preco(preco_novo=r.preco, preco_anterior=anterior.preco)
+            historico.append(item)
+            anterior = r
+
     return render(request, 'bot/promo_detail.html', {
         'promo': promo,
         'recentes': recentes,
         'rodape_canais': _RODAPE_CANAIS_HTML,
+        'historico': historico,
     })
+
+
+def _valor_numero(preco):
+    """Converte 'R$ 1.234,56' em 1234.56 (ou None se inválido)."""
+    m = re.search(r'R\$\s*([\d.,]+)', preco or '')
+    if not m:
+        return None
+    num = m.group(1).replace('.', '').replace(',', '.')
+    try:
+        return float(num)
+    except ValueError:
+        return None
+
+
+def _variacao_preco(preco_novo, preco_anterior):
+    novo, ant = _valor_numero(preco_novo), _valor_numero(preco_anterior)
+    if novo is None or ant is None:
+        return None
+    return round(novo - ant, 2)
+
+
+def _trend_preco(preco_novo, preco_anterior):
+    variacao = _variacao_preco(preco_novo, preco_anterior)
+    if variacao is None:
+        return None
+    if variacao > 0:
+        return 'alta'
+    if variacao < 0:
+        return 'baixa'
+    return 'igual'
 
 
 def promos_view(request):

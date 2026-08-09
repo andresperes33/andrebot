@@ -331,6 +331,14 @@ def _chave_dedup(texto):
     return link
 
 
+def _chave_produto(texto):
+    """
+    Chave do produto (sem preço): URL normalizada do primeiro link de produto.
+    Usada para agrupar registros do MESMO produto e montar o histórico de preços.
+    """
+    return _normalizar_url(_primeiro_link_produto(texto))
+
+
 def promo_ja_postada(texto):
     """
     Verifica se uma promoção já foi postada/salva antes.
@@ -434,6 +442,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
             cupom='',
             link_afiliado=link_afiliado,
             url_chave=url_chave,
+            produto_chave=_chave_produto(texto),
             imagem_url=imagem_url,
             categoria=categoria,
             loja=loja,
