@@ -4,6 +4,7 @@ import os
 import re
 from django.core.management.base import BaseCommand
 from django.conf import settings
+from bot.models import Promo
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 from asgiref.sync import sync_to_async
@@ -362,21 +363,32 @@ class Command(BaseCommand):
                 try:
                     from bot.instagram_stories import post_instagram_story
                     from bot.story_gate import pode_publicar_story, registrar_publicacao
-                    # Link da página do produto no site (sticker clicável no Story)
-                    pagina_url = ''
-                    if promo_id:
-                        base_site = (getattr(settings, 'SITE_URL', '') or '').rstrip('/')
-                        if base_site:
-                            pagina_url = f"{base_site}/promos/{promo_id}/"
 
-                    permitido, motivo = await asyncio.to_thread(pode_publicar_story)
-                    if not permitido:
-                        logger.info(f"⏸️ Story adiado ({motivo}). Promo segue salva no banco e no Telegram.")
+                    # Cupons não vão para o Instagram — somente produtos.
+                    if promo_id:
+                        categoria = await asyncio.to_thread(
+                            lambda: Promo.objects.filter(pk=promo_id).values_list('categoria', flat=True).first()
+                        )
                     else:
-                        publicou = await asyncio.to_thread(post_instagram_story, modified_text, photo_path, pagina_url)
-                        if publicou:
-                            await asyncio.to_thread(registrar_publicacao)
-                            logger.info("📸 Story publicado no Instagram (dentro da janela/cooldown).")
+                        categoria = None
+                    if categoria == 'cupom':
+                        logger.info("⏸️ Cupom não vai para o Instagram (somente produtos).")
+                    else:
+                        # Link da página do produto no site (sticker clicável no Story)
+                        pagina_url = ''
+                        if promo_id:
+                            base_site = (getattr(settings, 'SITE_URL', '') or '').rstrip('/')
+                            if base_site:
+                                pagina_url = f"{base_site}/promos/{promo_id}/"
+
+                        permitido, motivo = await asyncio.to_thread(pode_publicar_story)
+                        if not permitido:
+                            logger.info(f"⏸️ Story adiado ({motivo}). Promo segue salva no banco e no Telegram.")
+                        else:
+                            publicou = await asyncio.to_thread(post_instagram_story, modified_text, photo_path, pagina_url)
+                            if publicou:
+                                await asyncio.to_thread(registrar_publicacao)
+                                logger.info("📸 Story publicado no Instagram (dentro da janela/cooldown).")
                 except Exception as ig_err:
                     logger.error(f"❌ Erro Instagram: {ig_err}")
 
