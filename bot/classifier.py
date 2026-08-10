@@ -152,6 +152,27 @@ def detectar_categoria(texto, titulo=None):
         if tem_kit and tem_hardware:
             return 'kit'
 
+    # Cupom genérico SEM a palavra 'cupom' no título (ex.: 'AUMENTOU O
+    # LIMITE!!', '10% OFF', 'Limite de R$ 200,00 OFF', 'Compra mínima').
+    # Só é cupom se o título NÃO for nome de produto (nenhuma categoria
+    # casa), senão 'Notebook 10% OFF' viraria cupom.
+    alvo_titulo = titulo or texto
+    if alvo_titulo:
+        t_limpo = _norm(_limpar_compat(alvo_titulo))
+        primeira = t_limpo.split('\n')[0]
+        eh_produto = any(
+            re.match(p, primeira) or re.search(p, primeira)
+            for _, padroes in _REGEX_CATEGORIA
+            for p in padroes
+        )
+        if not eh_produto:
+            texto_baixo = _norm(texto)
+            tem_off = re.search(r'\b\d+\s*%?\s*(?:off|de desconto)\b', texto_baixo)
+            tem_limite = re.search(r'\b(?:limite|compra\s*m[ií]nima)\b', texto_baixo)
+            tem_cupom = 'cupom' in texto_baixo or 'desconto' in texto_baixo
+            if tem_off and (tem_limite or tem_cupom):
+                return 'cupom'
+
     # Se houver título do produto, busca nele primeiro. A primeira palavra
     # tem prioridade (ex.: 'Processador ... Radeon' é processador). Se a
     # primeira palavra não casar, busca em todo o título (ex.: 'Crucial SSD',
