@@ -123,14 +123,15 @@ def detectar_categoria(texto, titulo=None):
     haystack = _norm(_limpar_compat(texto))
 
     # Postagem só de cupom: o título é um anúncio curto com 'cupom'
-    # (ex.: 'Novo Cupom AMAZON'). Nesse caso o produto não existe.
+    # (ex.: 'Novo Cupom AMAZON', 'CUPOM 10% OFF ...'). Nesse caso o produto não existe.
+    from bot.services import _eh_anuncio_cupom
     for alvo in (titulo, texto,):
         if not alvo:
             continue
         primeira_linha = _norm(alvo.split('\n')[0])
         if not primeira_linha:
             continue
-        if re.search(r'(?<!\w)cupom(?!\w)', primeira_linha) and len(primeira_linha) <= 45:
+        if _eh_anuncio_cupom(primeira_linha):
             return 'cupom'
 
     # Kit (placa-mãe + processador + memória) tem prioridade sobre qualquer
