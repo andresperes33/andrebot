@@ -51,10 +51,11 @@ def card_text(value):
 
 # Valores a destacar em negrito: preço em R$, percentuais de desconto
 # e parcelas (ex.: R$ 96,54, 15% OFF, em até 12x).
+# Usa [ \t] em vez de \s para nunca cruzar quebras de linha.
 _VALOR_RE = re.compile(
-    r'(R\$\s?\d[\d.,]*(?:\s*[-\s]\s*\d[\d.,]*)?'
-    r'|\d+(?:[.,]\d+)?\s*%'
-    r'|\d+\s*x)',
+    r'(R\$[ \t]?\d[\d.,]*(?:[ \t]*-[ \t]*\d[\d.,]*)?'
+    r'|\d+(?:[.,]\d+)?[ \t]*%'
+    r'|\d+[ \t]*x)',
     re.IGNORECASE,
 )
 
@@ -67,3 +68,35 @@ def destacar_valores(value):
     texto = conditional_escape(value)
     texto = _VALOR_RE.sub(r'<strong>\1</strong>', texto)
     return mark_safe(texto)
+
+
+# Normaliza preços do tipo '344' para '344,00', 'R$ 1.299' para 'R$ 1.299,00',
+# 'R$ 344,9' para 'R$ 344,90'. Mantém preços já com 2 casas.
+# Formato brasileiro: 1.299,90, 12.499, 344. Não toca percentuais (10%),
+# parcelas (12x), unidades (1TB) ou códigos (P510).
+_PRECO_LIMPO_RE = re.compile(
+    r'(?<![A-Za-z0-9])'
+    r'(\d{1,3}(?:\.\d{3})*(?:[.,]\d{1,2})?)'
+    r'(?!\d)'
+    r'(?=[\s.,;:!?\u2026-]|$)'
+    r'(?!\s*[%xX])',
+)
+
+
+@register.filter
+def preco_completo(value):
+    """Garante que um preço tenha sempre 2 casas decimais (ex.: 344 -> 344,00)."""
+    if not value:
+        return value or ''
+
+    def _fix(num):
+        num = num.replace('.', '').replace(',', '.')
+        try:
+            v = float(num)
+        except ValueError:
+            return num
+        if v == int(v):
+            return f"{int(v):,}".replace(',', '.') + ",00"
+        return f"{v:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+
+    return _PRECO_LIMPO_RE.sub(lambda m: _fix(m.group(1)), value)

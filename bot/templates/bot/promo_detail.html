@@ -71,7 +71,7 @@
             {% if promo.preco %}
             <div>
                 <span class="detail-label">Preço</span>
-                <div class="detail-price">{{ promo.preco }}</div>
+                <div class="detail-price">{{ promo.preco|preco_completo }}</div>
             </div>
             {% endif %}
 
@@ -92,7 +92,7 @@
 
         <div class="card">
             <span class="detail-label">Postagem original</span>
-            <div class="detail-text">{{ promo.texto_original|urlize_blank|destacar_valores|linebreaksbr }}</div>
+            <div class="detail-text">{{ promo.texto_original|preco_completo|urlize_blank|destacar_valores|linebreaksbr }}</div>
             {{ rodape_canais|safe }}
         </div>
 
@@ -109,9 +109,9 @@
                 <div class="price-row">
                     <span class="price-row-date">{{ item.promo.criado_em|date:"d/m/Y \à\s H:i" }}</span>
                     {% if item.promo.pk == promo.pk %}
-                        <span class="price-row-val current">{{ item.preco }}</span>
+                        <span class="price-row-val current">{{ item.preco|preco_completo }}</span>
                     {% else %}
-                        <span class="price-row-val">{{ item.preco }}</span>
+                        <span class="price-row-val">{{ item.preco|preco_completo }}</span>
                     {% endif %}
                     {% if item.variacao is not None %}
                         {% if item.trend == 'baixa' %}
@@ -163,7 +163,7 @@
                 </div>
                 <div class="card-body">
                     <h3 class="card-title">{{ promo.titulo|truncatechars:50 }}</h3>
-                    {% if promo.preco %}<div class="card-price"><small>por</small> {{ promo.preco }}</div>{% endif %}
+                    {% if promo.preco %}<div class="card-price"><small>por</small> {{ promo.preco|preco_completo }}</div>{% endif %}
                     <div class="card-footer">
                         <span class="card-date">{{ promo.criado_em|date:"d/m" }}</span>
                     </div>
