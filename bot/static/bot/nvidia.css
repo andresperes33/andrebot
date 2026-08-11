@@ -853,6 +853,45 @@ button, input { font-family: inherit; }
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
 
+/* ─── Voltar ao topo ─────────────────────────────────────────── */
+.to-top {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: var(--on-primary);
+    border: none;
+    cursor: pointer;
+    z-index: 9980;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(16px);
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.to-top.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+.to-top:hover { background: var(--primary-dark); }
+.to-top i { font-size: 18px; }
+.to-top::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-bottom: 8px solid var(--on-primary);
+}
+
 /* ─── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 1280px) {
     .promos-grid { grid-template-columns: repeat(3, 1fr); }

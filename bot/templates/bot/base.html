@@ -128,8 +128,23 @@
 
 <div id="toast" class="toast"></div>
 
+<button type="button" class="to-top" id="toTopBtn" aria-label="Voltar ao topo"><i class="fas fa-chevron-up"></i></button>
+
 {% block scripts %}{% endblock %}
 <script>
+var toTopBtn = document.getElementById('toTopBtn');
+if (toTopBtn) {
+    window.addEventListener('scroll', function () {
+        if (window.scrollY > 400) {
+            toTopBtn.classList.add('show');
+        } else {
+            toTopBtn.classList.remove('show');
+        }
+    }, { passive: true });
+    toTopBtn.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
         navigator.serviceWorker.register('{% static 'bot/sw.js' %}').catch(function (err) {
