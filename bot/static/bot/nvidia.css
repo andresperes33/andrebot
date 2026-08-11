@@ -882,7 +882,24 @@ button, input { font-family: inherit; }
     .hero-actions, .detail-actions { flex-direction: column; }
     .hero-actions .btn, .detail-actions .btn { width: 100%; }
     .utility-left span { display: none; }
-    .utility-right { gap: 14px; }
-    .utility-link { font-size: 14px; }
+    .utility-right { gap: 10px; }
+    .utility-link {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.12);
+        justify-content: center;
+        font-size: 0;
+        gap: 0;
+    }
+    .utility-link i {
+        font-size: 19px;
+        color: #ffffff;
+        line-height: 1;
+    }
+    .utility-link:hover { background: rgba(255,255,255,0.22); color: #ffffff; }
+    .utility-link.telegram i { color: #2aabee; }
+    .utility-link.whatsapp i { color: #25d366; }
+    .utility-link.instagram i { color: #e4405f; }
     .utility-label { display: none; }
 }
