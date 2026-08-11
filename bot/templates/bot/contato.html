@@ -1,0 +1,51 @@
+{% extends 'bot/base.html' %}
+{% load static %}
+
+{% block title %}Contato | Nitro Tech{% endblock %}
+{% block description %}Fale com a Nitro Tech: dúvidas, sugestões de produtos ou problemas com um cupom. Respondemos no seu e-mail.{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
+    <div class="breadcrumb-inner">
+        <a href="/promos/">Início</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <span class="breadcrumb-current">Contato</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="hero-dark" style="padding:56px 24px 48px;">
+    <span class="corner-square"></span>
+    <div class="hero-inner">
+        <span class="hero-eyebrow">Fale com a gente</span>
+        <h1 class="hero-title">Contato</h1>
+        <p class="hero-sub">Dúvidas, sugestões de produtos ou cupom que não funcionou? Manda pra gente.</p>
+    </div>
+</div>
+
+<div class="container" style="max-width:820px;padding:48px 24px;">
+    <div class="card">
+        <span class="detail-label">Canal de atendimento</span>
+        <p style="font-size:16px;line-height:1.7;color:var(--mute);margin:12px 0;">Prefere e-mail? Nos chame para:</p>
+        <p style="font-size:20px;font-weight:700;color:var(--primary-dark);margin-bottom:24px;">contato@nitrotech.store</p>
+        <p style="font-size:16px;line-height:1.7;color:var(--mute);margin-bottom:8px;">Ou fale com a gente pelos nossos canais:</p>
+        <div class="detail-channels" style="margin-top:12px;">
+            <a href="https://t.me/Nitro_Tech_1" target="_blank" rel="noopener">📢 Grupo no Telegram</a>
+            <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" rel="noopener">💬 Grupo no WhatsApp</a>
+            <a href="https://www.instagram.com/nitro_tech_brasil/" target="_blank" rel="noopener">📸 Instagram</a>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+        <span class="detail-label">Dicas para agilizar sua mensagem</span>
+        <ul style="padding-left:20px;margin:12px 0 4px;color:var(--mute);line-height:2;">
+            <li>Se for um problema com cupom: cole o link da oferta;</li>
+            <li>Se for sugestão de produto: diga marca e modelo;</li>
+            <li>Respondemos em até 48h úteis.</li>
+        </ul>
+    </div>
+</div>
+
+{% endblock %}

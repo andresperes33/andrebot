@@ -1,0 +1,51 @@
+{% extends 'bot/base.html' %}
+{% load static %}
+
+{% block title %}Sobre a Nitro Tech{% endblock %}
+{% block description %}Conheça a Nitro Tech: quem somos, como o bot encontra as melhores promoções de tecnologia e como você pode aproveitar as ofertas.{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
+    <div class="breadcrumb-inner">
+        <a href="/promos/">Início</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <span class="breadcrumb-current">Sobre</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="hero-dark" style="padding:56px 24px 48px;">
+    <span class="corner-square"></span>
+    <div class="hero-inner">
+        <span class="hero-eyebrow">Quem somos</span>
+        <h1 class="hero-title">Sobre a Nitro Tech</h1>
+        <p class="hero-sub">Ofertas de tecnologia monitoradas 24 horas por dia por um robô — e curadas por uma pessoa de verdade antes de chegarem até você.</p>
+    </div>
+</div>
+
+<div class="container" style="max-width:820px;padding:48px 24px;">
+    <div class="section-eyebrow">A nossa missão</div>
+    <h2 style="margin:8px 0 16px;font-size:28px;color:var(--body);">Encontrar o melhor preço para você</h2>
+    <p style="font-size:16px;line-height:1.7;color:var(--mute);margin-bottom:16px;">A Nitro Tech nasceu de um problema simples: as melhores promoções de hardware e tecnologia aparecem e somem em minutos. Nós montamos um robô que monitora canais especializados em tempo real e destaca as ofertas com o melhor custo-benefício.</p>
+    <p style="font-size:16px;line-height:1.7;color:var(--mute);margin-bottom:16px;">Todo produto publicado aqui passa por uma verificação manual. A gente confere se o preço faz sentido, se o cupom funciona e se o link está correto antes de liberar para o site, para o Telegram e para o WhatsApp.</p>
+
+    <h2 style="margin:40px 0 16px;font-size:24px;color:var(--body);">O que você encontra aqui</h2>
+    <ul style="padding-left:20px;margin-bottom:16px;color:var(--mute);line-height:2;">
+        <li>Ofertas de SSD, placa de vídeo, processador, notebook, monitor, memória RAM e muito mais;</li>
+        <li>Cupons de desconto verificados;</li>
+        <li>Links de afiliados — você não paga nada a mais por isso;</li>
+        <li>Atualização 24 horas por dia, todos os dias.</li>
+    </ul>
+
+    <h2 style="margin:40px 0 16px;font-size:24px;color:var(--body);">Acompanhe fora do site</h2>
+    <p style="font-size:16px;line-height:1.7;color:var(--mute);margin-bottom:16px;">As ofertas saem primeiro nos nossos canais. Entre para não perder nenhuma:</p>
+    <div class="detail-channels">
+        <a href="https://t.me/Nitro_Tech_1" target="_blank" rel="noopener">📢 Grupo no Telegram</a>
+        <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" rel="noopener">💬 Grupo no WhatsApp</a>
+        <a href="https://www.instagram.com/nitro_tech_brasil/" target="_blank" rel="noopener">📸 Instagram</a>
+    </div>
+</div>
+
+{% endblock %}

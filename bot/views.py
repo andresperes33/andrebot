@@ -9,6 +9,36 @@ _LOJAS_FIXAS = [
     'Magazine Luíza', 'Pichau', 'Terabyte', 'Americanas', 'Casas Bahia',
 ]
 
+# Descrições originais por categoria — conteúdo próprio que ajuda na
+# indexação e na aprovação do AdSense (texto escrito, não réplica de oferta).
+_CATEGORIA_DESCRICOES = {
+    'ssd': 'SSDs e HDs com o melhor preço: NVMe, SATA e M.2 para dar mais velocidade ao seu PC. Encontramos ofertas de armazenamento para upgrade rápido e barato.',
+    'placa_video': 'Placas de vídeo NVIDIA GeForce e AMD Radeon para jogar e renderizar. Acompanhamos RTX, GTX e RX com os menores preços do mercado brasileiro.',
+    'placa_mae': 'Placas-mãe para todas as plataformas: Intel e AMD, sockets AM4, AM5, LGA. Modelos econômicos e gamer em oferta.',
+    'processador': 'Processadores Intel Core e AMD Ryzen para montar ou turbinar seu PC. Do básico ao topo de linha, com os melhores valores encontrados.',
+    'memoria_ram': 'Memória RAM DDR4 e DDR5 em promoção. Kits de memória para melhorar o desempenho do seu computador sem gastar muito.',
+    'kit': 'Kits de montagem com placa-mãe, processador e memória juntos. A forma mais econômica de montar um PC do zero.',
+    'notebook': 'Notebooks e laptops para estudo, trabalho e jogos. Ultrabooks, gamer e convencionais com as melhores ofertas.',
+    'monitor': 'Monitores com taxas de atualização de 144Hz, 165Hz, 240Hz e mais. Full HD, QHD e ultrawide para melhorar sua experiência.',
+    'celular': 'Celulares e smartphones Android com o menor preço: Xiaomi, Samsung, Motorola e mais. Confira antes de comprar.',
+    'tv': 'Smart TVs e televisores 4K, QLED e OLED com preços imperdíveis para assistir seus conteúdos com a melhor imagem.',
+    'headset': 'Headsets e fones de ouvido para jogos e música, com ou sem fio, microfone e cancelamento de ruído.',
+    'teclado': 'Teclados mecânicos e membranas para melhorar sua digitação e jogatina. Switches, RGB e designs gamer.',
+    'mouse': 'Mouses gamer e de escritório com alta precisão, DPI ajustável e design ergonômico para todas as tarefas.',
+    'mousepad': 'Mousepads grandes e de alta qualidade para precisão nos jogos e conforto no dia a dia.',
+    'cadeira': 'Cadeiras gamers e ergonômicas para cuidar da sua postura nas longas horas de trabalho e gameplay.',
+    'impressora': 'Impressoras e multifuncionais com toner e tinta em promoção para uso doméstico e de escritório.',
+    'fonte': 'Fontes de alimentação com certificação e wattagem para PC. Eficiência e estabilidade para seu hardware.',
+    'gabinete': 'Gabinetes e torres com boa ventilação, vidro temperado e espaços para o seu setup crescer.',
+    'cooler': 'Coolers e water coolers para manter seu processador refrigerado com silêncio e eficiência.',
+    'controle': 'Controles e gamepads para PC e consoles de última geração, com fio ou bluetooth.',
+    'webcam': 'Webcams de alta resolução para reuniões, lives e streaming com boa imagem.',
+    'roteador': 'Roteadores Wi-Fi 6 e mesh para internet rápida e estável em todos os cômodos da casa.',
+    'console': 'Consoles de videogame e handhelds em oferta, com os melhores preços para os gamers.',
+    'cupom': 'Cupons de desconto para usar nas maiores lojas do país. Garanta um desconto a mais nas suas compras.',
+    'outros': 'Ofertas de tecnologia e periféricos variados que não se encaixam nas demais categorias.',
+}
+
 
 def promo_detail_view(request, pk):
     """
@@ -89,6 +119,11 @@ def promos_view(request):
         })
 
     categorias = Promo.CATEGORIA_CHOICES
+    categorias_guia = [
+        {'slug': slug, 'nome': nome, 'desc': _CATEGORIA_DESCRICOES.get(slug, '')}
+        for slug, nome in categorias
+        if _CATEGORIA_DESCRICOES.get(slug, '')
+    ]
 
     return render(request, 'bot/promos.html', {
         'promos': pagina,
@@ -102,6 +137,7 @@ def promos_view(request):
         'offset': offset,
         'tem_mais': tem_mais,
         'LIMITE': LIMITE,
+        'categorias_guia': categorias_guia,
     })
 
 
@@ -110,6 +146,27 @@ def privacy_view(request):
     Página de Política de Privacidade (Obrigatória para AdSense).
     """
     return render(request, 'bot/privacy.html')
+
+
+def sobre_view(request):
+    """
+    Página 'Sobre' — quem é a Nitro Tech e como as ofertas funcionam.
+    """
+    return render(request, 'bot/sobre.html')
+
+
+def contato_view(request):
+    """
+    Página 'Contato' — contato com o responsável pelo site.
+    """
+    return render(request, 'bot/contato.html')
+
+
+def termos_view(request):
+    """
+    Página 'Termos de Uso' do site Nitro Tech.
+    """
+    return render(request, 'bot/termos.html')
 
 
 from django.http import HttpResponse
@@ -137,6 +194,9 @@ def sitemap_xml_view(request):
     base_url = request.build_absolute_uri('/').rstrip('/')
     pages = [
         {"loc": f"{base_url}/promos/", "changefreq": "always", "priority": "1.0"},
+        {"loc": f"{base_url}/sobre/", "changefreq": "monthly", "priority": "0.3"},
+        {"loc": f"{base_url}/contato/", "changefreq": "monthly", "priority": "0.3"},
+        {"loc": f"{base_url}/termos-de-uso/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/politica-de-privacidade/", "changefreq": "monthly", "priority": "0.3"},
     ]
 

@@ -853,6 +853,30 @@ button, input { font-family: inherit; }
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
 
+/* ─── Guia de categorias (conteúdo para SEO/AdSense) ─────────── */
+.cat-guide-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+.cat-guide-card {
+    background: var(--surface-soft);
+    border: 1px solid var(--hairline);
+    padding: 20px;
+}
+.cat-guide-title {
+    font-family: var(--font-promo);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--body);
+    margin-bottom: 6px;
+}
+.cat-guide-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--mute);
+}
+
 /* ─── Voltar ao topo ─────────────────────────────────────────── */
 .to-top {
     position: fixed;
@@ -901,6 +925,7 @@ button, input { font-family: inherit; }
     .footer-inner { grid-template-columns: 1fr 1fr 1fr; }
     .detail-layout { grid-template-columns: 1fr; gap: 32px; }
     .hero-title { font-size: 36px; }
+    .cat-guide-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
     .nav-links { display: none; }
@@ -916,6 +941,7 @@ button, input { font-family: inherit; }
     .section-title { font-size: 28px; }
 }
 @media (max-width: 480px) {
+    .cat-guide-grid { grid-template-columns: 1fr; }
     .promos-grid { grid-template-columns: 1fr; }
     .footer-inner { grid-template-columns: 1fr; }
     .hero-actions, .detail-actions { flex-direction: column; }

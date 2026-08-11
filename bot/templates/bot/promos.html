@@ -100,6 +100,27 @@
 {% endif %}
 </div>
 
+{% if not categoria_ativa %}
+<section class="section" style="padding-top:0;">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-eyebrow">Guia de categorias</div>
+                <h2 class="section-title xl">O que você encontra aqui</h2>
+            </div>
+        </div>
+        <div class="cat-guide-grid">
+            {% for item in categorias_guia %}
+            <div class="cat-guide-card">
+                <h3 class="cat-guide-title">{{ item.nome }}</h3>
+                <p class="cat-guide-text">{{ item.desc }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
 {% endblock %}
 
 {% block scripts %}
