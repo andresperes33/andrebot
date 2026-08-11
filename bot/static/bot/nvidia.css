@@ -767,58 +767,6 @@ button, input { font-family: inherit; }
     word-break: break-word;
 }
 .detail-channels a:hover { text-decoration: underline; }
-.detail-pricechart {
-    display: flex;
-    flex-direction: column;
-    margin-top: 6px;
-}
-.detail-chart-wrap {
-    position: relative;
-    height: 180px;
-    margin: 10px 0 6px;
-}
-.price-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--hairline);
-    font-family: var(--font-promo);
-}
-.price-row:last-child { border-bottom: none; }
-.price-row-date {
-    flex: 0 0 auto;
-    font-size: 13px;
-    color: var(--muted);
-}
-.price-row-val {
-    margin-left: auto;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--primary-dark);
-    white-space: nowrap;
-}
-.price-row-val.current {
-    background: var(--primary);
-    color: var(--on-primary);
-    padding: 2px 10px;
-    border-radius: 8px;
-}
-.price-trend {
-    flex: 0 0 auto;
-    font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-}
-.price-trend.down { color: #1a9e4b; }
-.price-trend.up { color: #d92626; }
-.price-trend.flat { color: var(--muted); }
-.price-trend.first { color: var(--muted); font-weight: 400; }
-.detail-hint {
-    margin-top: 10px;
-    font-size: 12px;
-    color: var(--muted);
-}
 .detail-text a { color: var(--link-blue); text-decoration: underline; }
 .detail-meta {
     display: flex;

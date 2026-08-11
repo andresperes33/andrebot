@@ -96,41 +96,6 @@
             {{ rodape_canais|safe }}
         </div>
 
-        {% if historico %}
-        <div class="card">
-            <span class="detail-label">Histórico de preços</span>
-            {% if pontos_grafico %}
-            <div class="detail-chart-wrap">
-                <canvas id="priceChart" height="120" aria-label="Gráfico do histórico de preços" role="img"></canvas>
-            </div>
-            {% endif %}
-            <div class="detail-pricechart">
-                {% for item in historico %}
-                <div class="price-row">
-                    <span class="price-row-date">{{ item.promo.criado_em|date:"d/m/Y \à\s H:i" }}</span>
-                    {% if item.promo.pk == promo.pk %}
-                        <span class="price-row-val current">{{ item.preco|preco_completo }}</span>
-                    {% else %}
-                        <span class="price-row-val">{{ item.preco|preco_completo }}</span>
-                    {% endif %}
-                    {% if item.variacao is not None %}
-                        {% if item.trend == 'baixa' %}
-                            <span class="price-trend down"><i class="fas fa-caret-down"></i> -R$ {{ item.variacao|floatformat:2 }}</span>
-                        {% elif item.trend == 'alta' %}
-                            <span class="price-trend up"><i class="fas fa-caret-up"></i> +R$ {{ item.variacao|floatformat:2 }}</span>
-                        {% else %}
-                            <span class="price-trend flat"><i class="fas fa-equals"></i> igual</span>
-                        {% endif %}
-                    {% else %}
-                        <span class="price-trend first">primeira vez</span>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-            <p class="detail-hint">Histórico das vezes que o bot viu este produto.</p>
-        </div>
-        {% endif %}
-
         <div class="detail-meta">
             <span><i class="fas fa-bolt" style="color:var(--primary);"></i> Publicado automaticamente pelo bot</span>
             <span>{{ promo.criado_em|date:"d/m/Y \à\s H:i" }}</span>
@@ -179,10 +144,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-{% if pontos_grafico %}
-{{ pontos_grafico|json_script:"pontos-grafico" }}
-{% endif %}
 <script>
     function copiarCupom(el, cupom) {
         navigator.clipboard.writeText(cupom).then(() => {
@@ -198,66 +159,5 @@
             }, 2000);
         });
     }
-
-    {% if pontos_grafico %}
-    (function () {
-        const ctx = document.getElementById('priceChart');
-        if (!ctx || typeof Chart === 'undefined') return;
-        const pontos = JSON.parse(document.getElementById('pontos-grafico').textContent);
-        const primeiro = pontos[0].valor;
-        const ultimo = pontos[pontos.length - 1].valor;
-        const caiu = ultimo < primeiro;
-        const cor = caiu ? '#1a9e4b' : (ultimo > primeiro ? '#d92626' : '#6b7280');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: pontos.map(function (p) {
-                    return new Date(p.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                }),
-                datasets: [{
-                    data: pontos.map(function (p) { return p.valor; }),
-                    borderColor: cor,
-                    backgroundColor: cor + '22',
-                    borderWidth: 2,
-                    pointRadius: 4,
-                    pointBackgroundColor: cor,
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    tension: 0.3,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function (c) {
-                                return 'R$ ' + c.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: { color: '#9aa4b2', maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
-                        grid: { display: false }
-                    },
-                    y: {
-                        ticks: {
-                            color: '#9aa4b2',
-                            callback: function (v) {
-                                return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-                            }
-                        },
-                        grid: { color: 'rgba(128,138,150,0.12)' }
-                    }
-                }
-            }
-        });
-    })();
-    {% endif %}
 </script>
 {% endblock %}
