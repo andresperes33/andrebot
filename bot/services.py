@@ -207,6 +207,19 @@ def _eh_linha_nota(baixa):
     return False
 
 
+def _eh_linha_quantidade(baixa):
+    """True se a linha indica apenas a quantidade de itens da oferta
+    (ex.: '2 Peças!', 'Kit 2 peças', '1 Peça'), não o nome do produto.
+    Essas linhas costumam vir antes do título real da oferta."""
+    if not baixa:
+        return False
+    if re.search(r'^\d{1,3}\s+(?:(?:peca|peça|pecas|peças|unidade|unidades|item|itens)(?:s)?)[!.]?$', baixa):
+        return True
+    if re.search(r'^kit\s+\d{1,3}\s+(?:(?:peca|peça|pecas|peças|unidade|unidades|item|itens)(?:s)?)[!.]?$', baixa):
+        return True
+    return False
+
+
 def _eh_anuncio_cupom(limpa):
     """True se a linha é um anúncio curto de cupom (ex.: 'Novo Cupom AMAZON'),
     distinto de uma instrução de cupom (ex.: 'use o cupom X')."""
@@ -259,6 +272,8 @@ def _linha_titulo(texto):
             continue  # nota/bullet (ex.: '-Direto do Brasil')
         if _eh_linha_nota(baixa):
             continue  # nota do canal (ex.: 'dica do brendo3d')
+        if _eh_linha_quantidade(baixa):
+            continue  # quantidade de itens (ex.: '2 Peças!') — não é o produto
         if any(prefixo in baixa for prefixo in _TERMOS_CABECALHO):
             continue
         if tem_cupom and _eh_anuncio_cupom(limpa):
