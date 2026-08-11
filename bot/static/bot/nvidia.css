@@ -882,4 +882,7 @@ button, input { font-family: inherit; }
     .hero-actions, .detail-actions { flex-direction: column; }
     .hero-actions .btn, .detail-actions .btn { width: 100%; }
     .utility-left span { display: none; }
+    .utility-right { gap: 14px; }
+    .utility-link { font-size: 14px; }
+    .utility-label { display: none; }
 }
