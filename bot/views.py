@@ -187,6 +187,16 @@ def robots_txt_view(request):
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
 
+def ads_txt_view(request):
+    """
+    Gera o ads.txt do Google AdSense (exigido para validar o site).
+    """
+    lines = [
+        "google.com, pub-1945676049008537, DIRECT, f08c47fec0942fa0",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
+
+
 def sitemap_xml_view(request):
     """
     Gera o sitemap.xml com as rotas principais e todas as páginas individuais de promo.
