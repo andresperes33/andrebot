@@ -334,8 +334,11 @@ class Command(BaseCommand):
                 # ─── Envia para o WhatsApp ───────────────────────────────────
                 try:
                     texto_whatsapp = modified_text + _RODAPE_CANAIS_TEXTO
-                    send_whatsapp_message(texto_whatsapp, photo_path)
-                    logger.info("✅ Enviado para WhatsApp")
+                    enviado_wa = send_whatsapp_message(texto_whatsapp, photo_path)
+                    if enviado_wa:
+                        logger.info("✅ Enviado para WhatsApp")
+                    else:
+                        logger.error("❌ WhatsApp: envio falhou (ver status acima)")
                 except Exception as wa_err:
                     logger.error(f"❌ Erro WhatsApp: {wa_err}")
 
