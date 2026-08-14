@@ -182,6 +182,9 @@ _TERMOS_TEASER = [
     'olha isso', 'olha so', 'olha só', 'muito bom', 'sim ou nao',
     'alquem ta', 'tem alguem', 'alguem conseguiu', 'quem vai',
     'pera ai', 'espera ai', 'cade o pessoal', 'cade voces',
+    'ainda no preço', 'ainda no preco', 'ainda no precinho', 'ainda no preção',
+    'no precinho', 'preço antigo', 'preco antigo', 'veio o preço', 'veio o preco',
+    'segura esse', 'segura essa', 'conseguiram', 'depois dessa', 'se liga',
 ]
 
 
