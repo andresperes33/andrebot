@@ -987,6 +987,9 @@ def strip_promo_footer(text):
     cleaned_text = re.sub(r'(?im)^\s*telegram\s*:\s*\S+\s*$', '', cleaned_text)
     cleaned_text = re.sub(r'(?im)^\s*whatsapp\s*:\s*\S+\s*$', '', cleaned_text)
     cleaned_text = re.sub(r'(?im)^\s*#an[uú]ncio\s*$', '', cleaned_text)
+    cleaned_text = re.sub(r'(?im)^\s*🤫\s*➡️\s*Link\s+Geral.*$', '', cleaned_text)
+    cleaned_text = re.sub(r'(?im)^\s*https?://links\.andreindica\.com\.br/?\s*$', '', cleaned_text)
+    cleaned_text = re.sub(r'(?im)^\s*‼️\s*Bot\s+de\s+alerta\s*:\s*@\S+\s*$', '', cleaned_text)
     cleaned_text = re.sub(r'\n{3,}', '\n\n', cleaned_text)
     return cleaned_text.strip()
 
