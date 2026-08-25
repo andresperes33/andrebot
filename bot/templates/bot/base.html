@@ -135,9 +135,19 @@
 
 <div id="toast" class="toast"></div>
 
+<div id="socialProof" class="social-proof" role="alert" aria-live="polite">
+    <button type="button" class="social-proof-close" aria-label="Fechar">&times;</button>
+    <div class="social-proof-icon"><i class="fas fa-microchip"></i></div>
+    <div class="social-proof-body">
+        <div class="social-proof-text"></div>
+        <div class="social-proof-time"></div>
+    </div>
+</div>
+
 <button type="button" class="to-top" id="toTopBtn" aria-label="Voltar ao topo"><i class="fas fa-chevron-up"></i></button>
 
 {% block scripts %}{% endblock %}
+<script src="{% static 'bot/social-proof.js' %}"></script>
 <script>
 var toTopBtn = document.getElementById('toTopBtn');
 if (toTopBtn) {
