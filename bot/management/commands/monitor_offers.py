@@ -12,6 +12,10 @@ from asgiref.sync import sync_to_async
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Aviso anexado a toda promoção enviada ao Telegram (canal fonte) — segue
+# junto para todos os outros canais (WhatsApp, site, alertas).
+_AVISO_PROMOCAO = "⏳A promoção pode encerrar a qualquer momento."
+
 # ─── Cache em memória para last_processed_id ─────────────────────────────────
 # Evita chamadas constantes ao banco em contexto async — mais seguro e rápido.
 # Na inicialização, carrega do banco (persiste entre deploys).
@@ -293,6 +297,7 @@ class Command(BaseCommand):
                             "Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
                             "Se o produto não aparecer, clique em 'DO BRASIL'."
                         )
+                    modified_text += f"\n\n{_AVISO_PROMOCAO}"
 
 
                 # ─── Baixa foto ──────────────────────────────────────────────
