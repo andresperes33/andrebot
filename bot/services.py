@@ -299,8 +299,12 @@ def _linha_marcador_link(linha):
     # setas / cadeado / labels claros de link
     if any(s in linha for s in ('⬇', '🔗', '🖥', '🥇', '↓', 'glyph', 'chainem')):
         return True
-    if re.search(r'\b(link|pcinho|removido done)\b', baixa) and len(linha) < 60:
-        return True
+    if re.search(r'\b(link|pcinho|removido done)\b', baixa) and len(linha) < 40:
+        # Só trata como rótulo se a linha for um rótulo curto de verdade:
+        # começa com 'link' (ex.: 'Link com moedas') ou termina em ':' (ex.: 'Link:').
+        # Evita cortar em linhas que apenas mencionam 'link' (ex.: '3 Modelos no link').
+        if re.match(r'^[^\w]*\blink\b', baixa) or baixa.rstrip().endswith(':'):
+            return True
     if re.search(r'\bno pc\b|\bpara pc\b|\bcom moedas\b|\bcommoedas\b', baixa):
         return True
     return False
