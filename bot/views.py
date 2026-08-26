@@ -50,9 +50,23 @@ def promo_detail_view(request, pk):
     promo = get_object_or_404(Promo, pk=pk)
     recentes = Promo.objects.exclude(pk=pk)[:3]
 
+    # Histórico de preços: mesmas promoções do mesmo produto (mesmo link),
+    # com preço preenchido, da mais antiga para a mais recente.
+    historico = []
+    if produto_chave := promo.produto_chave:
+        historico = list(
+            Promo.objects
+            .filter(produto_chave=promo.produto_chave)
+            .exclude(pk=pk)
+            .exclude(preco='')
+            .order_by('criado_em')
+            .values('preco', 'criado_em')
+        )
+
     return render(request, 'bot/promo_detail.html', {
         'promo': promo,
         'recentes': recentes,
+        'historico': historico,
         'rodape_canais': _RODAPE_CANAIS_HTML,
     })
 

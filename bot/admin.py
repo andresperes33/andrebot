@@ -19,5 +19,5 @@ class PromoAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'preco', 'cupom', 'categoria', 'fonte', 'criado_em')
     list_filter = ('categoria', 'fonte', 'criado_em')
     search_fields = ('titulo', 'cupom', 'texto_original')
-    readonly_fields = ('criado_em',)
+    readonly_fields = ('criado_em', 'produto_chave')
     ordering = ('-criado_em',)

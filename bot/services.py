@@ -449,6 +449,10 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     #             print(f"Promo já existente, ignorada: {link_afiliado[:80]}")
     #             return False
 
+    # Chave do produto: link normalizado SEM preço (identifica o mesmo
+    # produto ao longo do tempo, mesmo que o preço mude).
+    produto_chave = _normalizar_url(_primeiro_link_produto(texto))
+
     # Salva
     try:
         promo = Promo.objects.create(
@@ -457,6 +461,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
             cupom='',
             link_afiliado=link_afiliado,
             url_chave=url_chave,
+            produto_chave=produto_chave,
             imagem_url=imagem_url,
             categoria=categoria,
             loja=loja,

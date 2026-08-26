@@ -768,6 +768,37 @@ button, input { font-family: inherit; }
 }
 .detail-channels a:hover { text-decoration: underline; }
 .detail-text a { color: var(--link-blue); text-decoration: underline; }
+/* Histórico de preços */
+.price-history { margin-top: 14px; }
+.price-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.price-history-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 14px;
+    background: var(--surface, #141414);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+}
+.price-history-row.is-current {
+    border-color: rgba(118,185,0,0.45);
+    background: rgba(118,185,0,0.08);
+}
+.price-history-date {
+    font-size: 13px;
+    color: var(--mute);
+    font-weight: 600;
+}
+.price-history-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
 .detail-meta {
     display: flex;
     align-items: center;

@@ -96,6 +96,26 @@
             {{ rodape_canais|safe }}
         </div>
 
+        {% if historico %}
+        <div class="card">
+            <div class="detail-label"><i class="fas fa-chart-line" style="color:var(--primary);"></i> Histórico de preços</div>
+            <div class="price-history">
+                <div class="price-history-list">
+                    {% for item in historico %}
+                    <div class="price-history-row">
+                        <span class="price-history-date">{{ item.criado_em|date:"d/m/y" }}</span>
+                        <span class="price-history-price">{{ item.preco|preco_completo }}</span>
+                    </div>
+                    {% endfor %}
+                    <div class="price-history-row is-current">
+                        <span class="price-history-date">Hoje ({{ promo.criado_em|date:"d/m/y" }})</span>
+                        <span class="price-history-price">{{ promo.preco|preco_completo }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="detail-meta">
             <span><i class="fas fa-bolt" style="color:var(--primary);"></i> Publicado automaticamente pelo bot</span>
             <span>{{ promo.criado_em|date:"d/m/Y \à\s H:i" }}</span>
