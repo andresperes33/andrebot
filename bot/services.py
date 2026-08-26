@@ -92,6 +92,9 @@ _TOKENS_RUIDO = {
     'novo', 'nova', 'original', 'novos', 'novas',
     'promoção', 'promocao', 'promo', 'oferta', 'imperdível', 'imperdivel',
     'barato', 'barata', 'desconto',
+    'vendido', 'venda', 'por', 'para', 'com', 'da', 'do', 'de', 'em',
+    'controle', 'branco', 'branca', 'preto', 'preta', 'cinza', 'rosa',
+    'azul', 'vermelho', 'dourado', 'prata', 'sony', 'xbox', 'nintendo',
 }
 
 # Palavras que identificam a categoria/tipo mas não o produto em si.
@@ -105,11 +108,11 @@ _TOKENS_TIPO = {
 
 # Plataformas de console — o JOGO é o mesmo em qualquer uma, então a
 # plataforma não deve diferenciar a chave (GTA 6 PS5 = GTA 6 Xbox).
-# Obs.: NÃO inclui 'switch'/'nintendo'/'playstation'/'xbox' porque também
-# são o próprio produto quando o anúncio é de console, não de jogo.
+# Obs.: 'ps4'/'ps5'/'ps3' NÃO estão aqui porque são o próprio produto
+# quando o anúncio é de console; e 'switch'/'nintendo'/'playstation'/'xbox'
+# também, por serem marcas do produto. Só plataformas genéricas de jogo.
 _PLATAFORMAS = {
-    'ps5', 'ps4', 'ps3', 'series', 'one', 'steam', 'pc', 'pcgamer',
-    'epic', 'uu', 'redeem',
+    'series', 'one', 'steam', 'pc', 'pcgamer', 'epic', 'uu', 'redeem',
 }
 
 # Marcas genéricas/lojas que podem aparecer no título e não ajudam a
@@ -129,6 +132,9 @@ _ALIASES = [
     (r'\bgta\s+(?:vi|6)\b', 'gta6'),
     (r'\bgta\s+5\b', 'gta5'),
     (r'\bgod\s+of\s+war\s+:?\s+ragnarok\b', 'gow ragnarok'),
+    (r'\bplaystation\s*(?:5|5\s*pro|slim)\b', 'ps5'),
+    (r'\bplaystation\s*4\b', 'ps4'),
+    (r'\bplaystation\b', 'ps5'),
 ]
 
 
@@ -171,6 +177,10 @@ def _chave_produto(titulo):
             continue
         if re.fullmatch(r'\d+x', w):
             continue
+        if re.fullmatch(r'\d{2,4}gb', w) or re.fullmatch(r'\d{2,4}tb', w):
+            continue  # capacidade de armazenamento varia ('825gb', '1tb')
+        if re.fullmatch(r'\d+', w):
+            continue  # número solto (ex.: '1 Controle', '5') não identifica o produto
         if w in ('bluetooth', 'wireless', 'sem', 'fio', 'rgb'):
             continue
         if re.fullmatch(r'\(\d+\)', w):
