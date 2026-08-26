@@ -231,7 +231,8 @@ def _eh_anuncio_cupom(limpa):
         return False
     if len(limpa) > 60:
         return False
-    for termo in ('use ', 'siga', 'resgate', 'clique', 'pega', 'atraves',
+    for termo in ('use ', 'usem', 'usem o', 'usar', 'usar o', 'usa ', 'usa o',
+                  'siga', 'resgate', 'clique', 'pega', 'atraves',
                   'no app', 'válido', 'valido', 'ativar'):
         if re.search(r'(?<!\w)' + re.escape(termo) + r'(?!\w)', baixa):
             return False
