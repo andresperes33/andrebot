@@ -76,10 +76,13 @@ def promo_detail_view(request, pk):
             .filter(produto_chave=promo.produto_chave)
             .exclude(preco='')
             .order_by('criado_em')
-            .values('preco', 'criado_em', 'pk')
+            .values('preco', 'criado_em', 'pk', 'loja', 'link_afiliado')
         )
         if promo.preco:
-            linhas.append({'preco': promo.preco, 'criado_em': promo.criado_em, 'pk': promo.pk})
+            linhas.append({
+                'preco': promo.preco, 'criado_em': promo.criado_em,
+                'pk': promo.pk, 'loja': promo.loja, 'link_afiliado': promo.link_afiliado,
+            })
 
         # Agrupa por valor numérico; mantém a entrada mais recente.
         por_valor = {}
