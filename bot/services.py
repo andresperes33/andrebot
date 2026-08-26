@@ -4,6 +4,7 @@ import os
 import hashlib
 import json
 import urllib.parse
+import unicodedata
 import requests
 from django.conf import settings
 
@@ -83,6 +84,72 @@ def _primeiro_link_produto(texto):
             continue
         return lnk
     return ''
+
+
+# Palavras genéricas ruído ao normalizar o nome do produto para a chave
+# (repetem entre todas as ofertas e não identificam o produto).
+_TOKENS_RUIDO = {
+    'novo', 'nova', 'original', 'novos', 'novas',
+    'promoção', 'promocao', 'promo', 'oferta', 'imperdível', 'imperdivel',
+    'barato', 'barata', 'desconto',
+}
+
+# Palavras que identificam a categoria/tipo mas não o produto em si.
+# Removidas para que 'Console Switch 2' e 'Switch 2' agrupem juntos.
+_TOKENS_TIPO = {
+    'console', 'videogame', 'video', 'game', 'gamer', 'kit', 'combo',
+    'pacote', 'oficial', 'padrao', 'standard', 'novo', 'nova',
+}
+
+# Marcas genéricas/lojas que podem aparecer no título e não ajudam a
+# identificar o produto (não deve remover marcas do produto em si).
+_PREFIXOS_LOJA = {
+    'aliexpress', 'mercadolivre', 'mercado', 'livre', 'amazon', 'shopee',
+    'magalu', 'magazine', 'luiza', 'kabum', 'pichau', 'terabyte',
+    'americanas', 'casas', 'bahia', 'walmart', 'fast', 'shop', 'renner',
+    'submarino', 'pontofrio', 'ponto', 'cnc', 'seller',
+}
+
+
+def _chave_produto(titulo):
+    """Gera uma chave estável por NOME do produto (normalizado), para agrupar
+    o mesmo item independente da loja/link.
+
+    Ex.: 'Console Nintendo Switch 2 LCD 256GB Novo' e
+         'Nintendo Switch 2 LCD 256GB' → mesma chave.
+
+    Retorna '' se não sobrar nada útil.
+    """
+    if not titulo:
+        return ''
+    t = unicodedata.normalize('NFKD', titulo).encode('ascii', 'ignore').decode('ascii')
+    t = re.sub(r'[^\w\s.,!?/-]', ' ', t).lower()
+    palavras = t.split()
+    limpas = []
+    for w in palavras:
+        if w in _TOKENS_RUIDO:
+            continue
+        if w in _TOKENS_TIPO:
+            continue
+        if w in _PREFIXOS_LOJA:
+            continue
+        # características técnicas que variam entre postagens e não mudam o
+        # produto: potência '350w', '650w'; 'bluetooth'; taxas '144hz'; etc.
+        if re.fullmatch(r'\d{2,4}w', w):
+            continue
+        if re.fullmatch(r'\d{2,4}hz', w):
+            continue
+        if re.fullmatch(r'\d+x', w):
+            continue
+        if w in ('bluetooth', 'wireless', 'sem', 'fio', 'rgb'):
+            continue
+        # remove pontuação isolada
+        if not re.search(r'\w', w):
+            continue
+        limpas.append(w)
+    chave = ' '.join(limpas).strip()
+    chave = re.sub(r'\s+', ' ', chave)
+    return chave
 
 
 def _preco_do_texto(texto):
@@ -449,9 +516,9 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     #             print(f"Promo já existente, ignorada: {link_afiliado[:80]}")
     #             return False
 
-    # Chave do produto: link normalizado SEM preço (identifica o mesmo
-    # produto ao longo do tempo, mesmo que o preço mude).
-    produto_chave = _normalizar_url(_primeiro_link_produto(texto))
+    # Chave do produto: nome normalizado (identifica o mesmo produto em
+    # qualquer loja/link, mesmo que o preço mude ou a postagem seja repetida).
+    produto_chave = _chave_produto(titulo)
 
     # Salva
     try:
