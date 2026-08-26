@@ -51,7 +51,6 @@ _REGEX_CATEGORIA = [
     ('placa_mae', [
         r'placa[- ]mae', r'\bmotherboard\b',
         r'\b(a520|a620|b450|b550|b650|b660|b760|x570|x670|z690|z790|h610|h770)\b',
-        r'\bam[45]\b', r'socket\s*am\d',
     ]),
     ('processador', [
         r'\bprocessador\b', r'\bryzen\b', r'\bintel\s*core\b', r'\bcore\s*i[3579]\b',
