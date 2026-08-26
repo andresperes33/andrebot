@@ -80,6 +80,10 @@ _REGEX_CATEGORIA = [
     ('mouse', [
         r'\bmouse\b',
     ]),
+    ('caixa_som', [
+        r'caixa\s*de\s*som', r'\bsoundbar\b', r'\bcaixa\s*som\b',
+        r'\bcx\s*\d{3,4}\b', r'\bbritania\b',
+    ]),
     ('fonte', [
         r'\bpsu\b', r'\batx\b', r'\b\d{3,4}\s*w\b', r'\bfonte\s*(atx)?\s*\d{3,4}\s*w\b',
     ]),

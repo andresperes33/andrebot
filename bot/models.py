@@ -63,6 +63,7 @@ class Promo(models.Model):
         ('monitor', 'Monitor'),
         ('celular', 'Celular / Smartphone'),
         ('tv', 'TV'),
+        ('caixa_som', 'Caixa de Som / Soundbar'),
         ('headset', 'Fone / Headset'),
         ('teclado', 'Teclado'),
         ('mouse', 'Mouse'),
