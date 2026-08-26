@@ -52,9 +52,23 @@ def promo_detail_view(request, pk):
     recentes = Promo.objects.exclude(pk=pk)[:3]
 
     # Histórico de preços: mesmas promoções do mesmo produto (mesmo link),
-    # com preço preenchido, da mais antiga para a mais recente.
+    # com preço preenchido. Deduplicado por preço — cada valor aparece UMA
+    # vez com a data mais recente, para não virar lista infinita quando a
+    # mesma oferta é repostada (dedup desligado).
     historico = []
     chart_data = []
+
+    def _normalizar_preco(p):
+        # 'R$ 335,00' -> 335.00 ; 'R$335' -> 335.0
+        m = re.search(r'R\$\s*(\d[\d.,]*)', p or '')
+        if not m:
+            return None
+        v = m.group(1).replace('.', '').replace(',', '.')
+        try:
+            return round(float(v), 2)
+        except ValueError:
+            return None
+
     if promo.produto_chave:
         linhas = list(
             Promo.objects
@@ -63,24 +77,25 @@ def promo_detail_view(request, pk):
             .order_by('criado_em')
             .values('preco', 'criado_em', 'pk')
         )
-        # A linha atual entra no fim do gráfico (mais recente).
-        linhas = [l for l in linhas if l['pk'] != promo.pk]
         if promo.preco:
             linhas.append({'preco': promo.preco, 'criado_em': promo.criado_em, 'pk': promo.pk})
 
+        # Agrupa por valor numérico; mantém a entrada mais recente.
+        por_valor = {}
         for item in linhas:
-            m = re.search(r'R\$\s*(\d[\d.,]*)', item['preco'])
-            if not m:
+            v = _normalizar_preco(item['preco'])
+            if v is None:
                 continue
-            valor = m.group(1).replace('.', '').replace(',', '.')
-            try:
-                valor_num = float(valor)
-            except ValueError:
-                continue
+            # Como linhas está ordenada asc por data, sobrescrever faz a
+            # entrada mais recente de cada valor vencer.
+            por_valor[v] = item
+
+        # Ordena pela data da ocorrência mais recente de cada valor.
+        for item in sorted(por_valor.values(), key=lambda it: it['criado_em']):
             historico.append(item)
             chart_data.append({
                 'data': item['criado_em'].isoformat(),
-                'valor': valor_num,
+                'valor': _normalizar_preco(item['preco']),
             })
 
     return render(request, 'bot/promo_detail.html', {

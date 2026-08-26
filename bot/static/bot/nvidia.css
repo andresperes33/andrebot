@@ -770,10 +770,17 @@ button, input { font-family: inherit; }
 .detail-text a { color: var(--link-blue); text-decoration: underline; }
 /* Histórico de preços */
 .price-history { margin-top: 14px; }
-.price-history-chart {
+.price-history-chart-wrap {
+    position: relative;
     width: 100%;
     height: 220px;
     margin-bottom: 16px;
+}
+.price-history-chart-wrap canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
 }
 .price-history-list {
     display: flex;

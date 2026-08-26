@@ -100,7 +100,9 @@
         <div class="card">
             <div class="detail-label"><i class="fas fa-chart-line" style="color:var(--primary);"></i> Histórico de preços</div>
             <div class="price-history">
-                <canvas id="priceChart" class="price-history-chart" aria-label="Evolução do preço"></canvas>
+                <div class="price-history-chart-wrap">
+                    <canvas id="priceChart" aria-label="Evolução do preço"></canvas>
+                </div>
                 <div class="price-history-list">
                     {% for item in historico %}
                     <div class="price-history-row{% if item.pk == promo.pk %} is-current{% endif %}">
@@ -186,10 +188,18 @@
         var pontos = JSON.parse(dataEl.textContent);
         if (!pontos.length) return;
 
+        // Com apenas um valor (ou todos iguais), não faz sentido um "gráfico".
+        var valores = pontos.map(function (p) { return p.valor; });
+        var distintos = valores.filter(function (v, i) { return valores.indexOf(v) === i; });
+        if (distintos.length < 2) {
+            el.closest('.price-history-chart-wrap').style.display = 'none';
+            el.closest('.price-history-chart-wrap').remove();
+            return;
+        }
+
         var labels = pontos.map(function (p) {
             return new Date(p.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         });
-        var valores = pontos.map(function (p) { return p.valor; });
 
         new Chart(el, {
             type: 'line',
@@ -223,6 +233,7 @@
                 },
                 scales: {
                     y: {
+                        grace: '10%',
                         ticks: {
                             color: '#888',
                             callback: function (v) { return 'R$ ' + v.toLocaleString('pt-BR'); }
