@@ -98,7 +98,18 @@ _TOKENS_RUIDO = {
 # Removidas para que 'Console Switch 2' e 'Switch 2' agrupem juntos.
 _TOKENS_TIPO = {
     'console', 'videogame', 'video', 'game', 'gamer', 'kit', 'combo',
-    'pacote', 'oficial', 'padrao', 'standard', 'novo', 'nova',
+    'pacote', 'oficial', 'padrao', 'standard', 'novo', 'nova', 'jogo',
+    'jogos', 'edicao', 'edition', 'pre', 'venda', 'langamento',
+    'lancamento', 'importado', 'digital', 'fisico', 'fisica', 'midia',
+}
+
+# Plataformas de console — o JOGO é o mesmo em qualquer uma, então a
+# plataforma não deve diferenciar a chave (GTA 6 PS5 = GTA 6 Xbox).
+# Obs.: NÃO inclui 'switch'/'nintendo'/'playstation'/'xbox' porque também
+# são o próprio produto quando o anúncio é de console, não de jogo.
+_PLATAFORMAS = {
+    'ps5', 'ps4', 'ps3', 'series', 'one', 'steam', 'pc', 'pcgamer',
+    'epic', 'uu', 'redeem',
 }
 
 # Marcas genéricas/lojas que podem aparecer no título e não ajudam a
@@ -110,6 +121,16 @@ _PREFIXOS_LOJA = {
     'submarino', 'pontofrio', 'ponto', 'cnc', 'seller',
 }
 
+# Normalização de sinônimos comuns (chave -> termo canônico).
+# 'gta 6' e 'grand theft auto vi' viram a mesma base 'gta6'.
+_ALIASES = [
+    (r'\bgrand\s*theft\s*auto\s+(?:vi|6)\b', 'gta6'),
+    (r'\bgrand\s*theft\s*auto\s+v\b', 'gta5'),
+    (r'\bgta\s+(?:vi|6)\b', 'gta6'),
+    (r'\bgta\s+5\b', 'gta5'),
+    (r'\bgod\s+of\s+war\s+:?\s+ragnarok\b', 'gow ragnarok'),
+]
+
 
 def _chave_produto(titulo):
     """Gera uma chave estável por NOME do produto (normalizado), para agrupar
@@ -117,19 +138,28 @@ def _chave_produto(titulo):
 
     Ex.: 'Console Nintendo Switch 2 LCD 256GB Novo' e
          'Nintendo Switch 2 LCD 256GB' → mesma chave.
+         'GTA 6 Jogo Grand Theft Auto VI Edição Standard - PS5' e
+         'Jogo Grand Theft Auto VI Edição Standard - PS5' → mesma chave.
 
     Retorna '' se não sobrar nada útil.
     """
     if not titulo:
         return ''
     t = unicodedata.normalize('NFKD', titulo).encode('ascii', 'ignore').decode('ascii')
-    t = re.sub(r'[^\w\s.,!?/-]', ' ', t).lower()
+    t = re.sub(r'[^\w\s.,!?/]', ' ', t).lower()
+
+    # Aplica sinônimos ANTES de tokenizar (ex.: 'grand theft auto vi' -> 'gta6')
+    for pat, cano in _ALIASES:
+        t = re.sub(pat, cano, t)
+
     palavras = t.split()
     limpas = []
     for w in palavras:
         if w in _TOKENS_RUIDO:
             continue
         if w in _TOKENS_TIPO:
+            continue
+        if w in _PLATAFORMAS:
             continue
         if w in _PREFIXOS_LOJA:
             continue
@@ -143,11 +173,21 @@ def _chave_produto(titulo):
             continue
         if w in ('bluetooth', 'wireless', 'sem', 'fio', 'rgb'):
             continue
+        if re.fullmatch(r'\(\d+\)', w):
+            continue  # '(PRÉ-VENDA)' já vira 'pre venda' -> removido acima
         # remove pontuação isolada
         if not re.search(r'\w', w):
             continue
         limpas.append(w)
-    chave = ' '.join(limpas).strip()
+    # Remove tokens duplicados preservando a ordem (ex.: 'gta6 gta6' -> 'gta6'),
+    # que surgem quando sinônimos se sobrepõem ('GTA 6' + 'Grand Theft Auto VI').
+    vistos = set()
+    unicos = []
+    for w in limpas:
+        if w not in vistos:
+            vistos.add(w)
+            unicos.append(w)
+    chave = ' '.join(unicos).strip()
     chave = re.sub(r'\s+', ' ', chave)
     return chave
 

@@ -77,6 +77,7 @@ class Promo(models.Model):
         ('webcam', 'Webcam'),
         ('roteador', 'Roteador'),
         ('console', 'Console'),
+        ('jogo', 'Jogo'),
         ('cupom', 'Cupom'),
         ('outros', 'Outros'),
     ]

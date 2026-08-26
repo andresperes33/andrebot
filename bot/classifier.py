@@ -27,6 +27,14 @@ def _limpar_compat(texto):
 # Obs.: 'kit' não entra aqui — é tratado antes, com validação de hardware
 # (só é kit se vier placa-mãe/processador/memória junto), ver detectar_categoria.
 _REGEX_CATEGORIA = [
+    ('jogo', [
+        r'\bgta\b', r'\bgrand\s*theft\s*auto\b', r'\bjogo\b', r'\bjogos\b',
+        r'\bmídia\s*f[ií]sica\b', r'\bmidia\s*fisica\b', r'\bblu-?ray\b',
+        r'\bcodigo\b.{0,12}gta\b',
+        r'\bforza\b', r'\bgod\s*of\s*war\b', r'\bzelda\b', r'\bmario\b',
+        r'\bred\s*dead\b', r'\bdragon\s*ball\b', r'\bfifa\b', r'\bea\s*sports\b',
+        r'\bcall\s*of\s*duty\b', r'\belden\s*ring\b', r'\bcyberpunk\b',
+    ]),
     ('console', [
         r'\bnintendo\b', r'\bswitch\b', r'\bps[0-9]?\b', r'\bplaystation\b',
         r'\bxbox\b', r'\bsteam\s*deck\b', r'\bok\s*1\b', r'\banbernic\b',

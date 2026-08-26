@@ -36,6 +36,7 @@ _CATEGORIA_DESCRICOES = {
     'webcam': 'Webcams de alta resolução para reuniões, lives e streaming com boa imagem.',
     'roteador': 'Roteadores Wi-Fi 6 e mesh para internet rápida e estável em todos os cômodos da casa.',
     'console': 'Consoles de videogame e handhelds em oferta, com os melhores preços para os gamers.',
+    'jogo': 'Jogos físicos e códigos digitais para PlayStation, Xbox, Nintendo Switch e PC. Encontramos as maiores promoções dos lançamentos.',
     'cupom': 'Cupons de desconto para usar nas maiores lojas do país. Garanta um desconto a mais nas suas compras.',
     'outros': 'Ofertas de tecnologia e periféricos variados que não se encaixam nas demais categorias.',
 }
