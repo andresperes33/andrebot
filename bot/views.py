@@ -46,6 +46,7 @@ def promo_detail_view(request, pk):
     Página individual de uma promoção.
     Mostra foto, preço, cupom, texto original com links e meta tags de compartilhamento.
     """
+    import re
     from bot.services import _RODAPE_CANAIS_HTML
     promo = get_object_or_404(Promo, pk=pk)
     recentes = Promo.objects.exclude(pk=pk)[:3]
@@ -53,20 +54,40 @@ def promo_detail_view(request, pk):
     # Histórico de preços: mesmas promoções do mesmo produto (mesmo link),
     # com preço preenchido, da mais antiga para a mais recente.
     historico = []
-    if produto_chave := promo.produto_chave:
-        historico = list(
+    chart_data = []
+    if promo.produto_chave:
+        linhas = list(
             Promo.objects
             .filter(produto_chave=promo.produto_chave)
-            .exclude(pk=pk)
             .exclude(preco='')
             .order_by('criado_em')
-            .values('preco', 'criado_em')
+            .values('preco', 'criado_em', 'pk')
         )
+        # A linha atual entra no fim do gráfico (mais recente).
+        linhas = [l for l in linhas if l['pk'] != promo.pk]
+        if promo.preco:
+            linhas.append({'preco': promo.preco, 'criado_em': promo.criado_em, 'pk': promo.pk})
+
+        for item in linhas:
+            m = re.search(r'R\$\s*(\d[\d.,]*)', item['preco'])
+            if not m:
+                continue
+            valor = m.group(1).replace('.', '').replace(',', '.')
+            try:
+                valor_num = float(valor)
+            except ValueError:
+                continue
+            historico.append(item)
+            chart_data.append({
+                'data': item['criado_em'].isoformat(),
+                'valor': valor_num,
+            })
 
     return render(request, 'bot/promo_detail.html', {
         'promo': promo,
         'recentes': recentes,
         'historico': historico,
+        'chart_data': chart_data,
         'rodape_canais': _RODAPE_CANAIS_HTML,
     })
 

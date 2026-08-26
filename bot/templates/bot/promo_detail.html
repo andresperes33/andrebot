@@ -100,19 +100,17 @@
         <div class="card">
             <div class="detail-label"><i class="fas fa-chart-line" style="color:var(--primary);"></i> Histórico de preços</div>
             <div class="price-history">
+                <canvas id="priceChart" class="price-history-chart" aria-label="Evolução do preço"></canvas>
                 <div class="price-history-list">
                     {% for item in historico %}
-                    <div class="price-history-row">
+                    <div class="price-history-row{% if item.pk == promo.pk %} is-current{% endif %}">
                         <span class="price-history-date">{{ item.criado_em|date:"d/m/y" }}</span>
                         <span class="price-history-price">{{ item.preco|preco_completo }}</span>
                     </div>
                     {% endfor %}
-                    <div class="price-history-row is-current">
-                        <span class="price-history-date">Hoje ({{ promo.criado_em|date:"d/m/y" }})</span>
-                        <span class="price-history-price">{{ promo.preco|preco_completo }}</span>
-                    </div>
                 </div>
             </div>
+            {{ chart_data|json_script:"priceChartData" }}
         </div>
         {% endif %}
 
@@ -164,6 +162,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
     function copiarCupom(el, cupom) {
         navigator.clipboard.writeText(cupom).then(() => {
@@ -179,5 +178,64 @@
             }, 2000);
         });
     }
+
+    (function initPriceChart() {
+        var el = document.getElementById('priceChart');
+        var dataEl = document.getElementById('priceChartData');
+        if (!el || !dataEl) return;
+        var pontos = JSON.parse(dataEl.textContent);
+        if (!pontos.length) return;
+
+        var labels = pontos.map(function (p) {
+            return new Date(p.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        });
+        var valores = pontos.map(function (p) { return p.valor; });
+
+        new Chart(el, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Preço (R$)',
+                    data: valores,
+                    borderColor: '#76b900',
+                    backgroundColor: 'rgba(118,185,0,0.12)',
+                    fill: true,
+                    tension: 0.25,
+                    pointBackgroundColor: '#76b900',
+                    pointBorderColor: '#0d0d0d',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                return 'R$ ' + ctx.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            color: '#888',
+                            callback: function (v) { return 'R$ ' + v.toLocaleString('pt-BR'); }
+                        },
+                        grid: { color: 'rgba(255,255,255,0.06)' }
+                    },
+                    x: {
+                        ticks: { color: '#888' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    })();
 </script>
 {% endblock %}
