@@ -227,7 +227,7 @@ def _eh_anuncio_cupom(limpa):
     """True se a linha é um anúncio curto de cupom (ex.: 'Novo Cupom AMAZON'),
     distinto de uma instrução de cupom (ex.: 'use o cupom X')."""
     baixa = limpa.casefold()
-    if not re.search(r'(?<!\w)cupom(?!\w)', baixa):
+    if not re.search(r'(?<!\w)cupons?(?!\w)', baixa):
         return False
     if len(limpa) > 60:
         return False
@@ -262,7 +262,7 @@ def _linha_titulo(texto):
     exceto quando é header/loja/código/instrução.
     """
     texto = texto or ''
-    tem_cupom = 'cupom' in texto.casefold()
+    tem_cupom = 'cupom' in texto.casefold() or 'cupons' in texto.casefold()
 
     for linha in texto.split('\n'):
         limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()

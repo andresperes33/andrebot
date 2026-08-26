@@ -168,7 +168,7 @@ def detectar_categoria(texto, titulo=None):
             texto_baixo = _norm(texto)
             tem_off = re.search(r'\b\d+\s*%?\s*(?:off|de desconto)\b', texto_baixo)
             tem_limite = re.search(r'\b(?:limite|compra\s*m[ií]nima)\b', texto_baixo)
-            tem_cupom = 'cupom' in texto_baixo or 'desconto' in texto_baixo
+            tem_cupom = 'cupom' in texto_baixo or 'cupons' in texto_baixo or 'desconto' in texto_baixo
             if tem_off and (tem_limite or tem_cupom):
                 return 'cupom'
 
