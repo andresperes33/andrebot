@@ -129,7 +129,7 @@ _PREFIXOS_LOJA = {
     'aliexpress', 'mercadolivre', 'mercado', 'livre', 'amazon', 'shopee',
     'magalu', 'magazine', 'luiza', 'kabum', 'pichau', 'terabyte',
     'americanas', 'casas', 'bahia', 'walmart', 'fast', 'shop', 'renner',
-    'submarino', 'pontofrio', 'ponto', 'cnc', 'seller',
+    'submarino', 'pontofrio', 'ponto', 'cnc', 'seller', 'br',
 }
 
 # Normalização de sinônimos comuns (chave -> termo canônico).
@@ -238,6 +238,12 @@ def _preco_do_texto(texto):
         baixa = linha.casefold()
         if any(palavra in baixa for palavra in ('cupom', 'off', 'desconto', 'economize', 'use o código', 'use o codigo')):
             continue
+        # Pula linhas de teaser/parcelamento que mencionam R$ mas não são o
+        # preço do produto (ex.: 'caiu quase R$ 400,00!', 'em 9x sem juros').
+        if re.search(r'^\s*(?:caiu|quase|baixou|barateou|despencou|deixa|agarra|sobe|limite)\b', baixa):
+            continue
+        if re.search(r'\b(?:x|vezes)\s*sem\s*juros\b', baixa):
+            continue
         m = re.search(r'R\$\s*[\d.,]+', linha)
         if m:
             return m.group(0).strip()
@@ -321,6 +327,12 @@ def _eh_linha_nota(baixa):
     if bool(re.search(r'(?<!\w)dica(?!\w)', baixa)):
         return True
     if any(nota in baixa for nota in ('obs:', 'nota:', 'atencao:', 'atenção:')):
+        return True
+    # Teasers de PREÇO ('caiu quase r$ 400,00!', 'caiu de r$ 500 pra 399',
+    # 'baixou pra', 'barateou', 'quase r$ x') — não são o nome do produto.
+    if re.search(r'^\s*(?:caiu|quase|caiu\s+(?:quase|pra|para)|baixou|barateou|despencou|agarra|pega)\b.*r\s?[0-9]', baixa):
+        return True
+    if re.search(r'^\s*caiu\b', baixa) and len(baixa) < 40:
         return True
     # Chamadas de engajamento do canal (teasers) que vêm antes do produto.
     # Confere no INÍCIO da linha, com palavra inteira ('cade' não bate com
