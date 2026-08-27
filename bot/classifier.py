@@ -172,6 +172,19 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:notebook|laptop|macbook|ultrabook|chromebook|galaxy\s*book)\b', alvo_norm):
             return 'notebook'
 
+    # Bundle de CONSOLE tem prioridade sobre jogos: 'PlayStation 5 + GTA VI'
+    # é um console com jogos inclusos (bundle/pacote), não um jogo avulso.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        eh_console = re.search(r'\b(?:playstation|ps[1-5]|xbox|nintendo\s*switch|switch)\b', alvo_norm)
+        eh_bundle = re.search(r'\b(?:bundle|pacote|com\s*jogos|jogo\s*incluso|edicao\s*com)\b', alvo_norm)
+        if eh_console and eh_bundle:
+            return 'console'
+
     # Postagem só de cupom: o título é um anúncio curto com 'cupom'
     # (ex.: 'Novo Cupom AMAZON', 'CUPOM 10% OFF ...'). Nesse caso o produto não existe.
     # Se houver um produto real no texto (water cooler, SSD, etc.), o anúncio
