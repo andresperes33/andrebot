@@ -42,7 +42,37 @@
     <div class="article-content" style="font-size:16px;line-height:1.75;color:var(--body);">
         {{ artigo.conteudo|safe }}
     </div>
+
+    <div class="article-share">
+        <span class="article-share-label">Compartilhe este artigo:</span>
+        <div class="article-share-buttons">
+            <a class="share-btn whatsapp" href="https://api.whatsapp.com/send?text={{ artigo.titulo|urlencode }}%20{{ request.build_absolute_uri|urlencode }}" target="_blank" rel="noopener" aria-label="Compartilhar no WhatsApp"><i class="fab fa-whatsapp"></i></a>
+            <a class="share-btn telegram" href="https://t.me/share/url?url={{ request.build_absolute_uri|urlencode }}&text={{ artigo.titulo|urlencode }}" target="_blank" rel="noopener" aria-label="Compartilhar no Telegram"><i class="fab fa-telegram-plane"></i></a>
+            <a class="share-btn facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri|urlencode }}" target="_blank" rel="noopener" aria-label="Compartilhar no Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a class="share-btn x" href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri|urlencode }}&text={{ artigo.titulo|urlencode }}" target="_blank" rel="noopener" aria-label="Compartilhar no X"><i class="fab fa-x-twitter"></i></a>
+            <button type="button" class="share-btn copy" id="copyArticleLink" aria-label="Copiar link"><i class="fas fa-link"></i></button>
+        </div>
+    </div>
+
     <p style="margin-top:32px;font-size:13px;color:var(--mute);">Atualizado em {{ artigo.atualizado_em|date:"d/m/Y" }}</p>
 </article>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var btn = document.getElementById('copyArticleLink');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            var url = window.location.href;
+            navigator.clipboard.writeText(url).then(function () {
+                var toast = document.getElementById('toast');
+                toast.textContent = 'Link copiado!';
+                toast.classList.add('show');
+                setTimeout(function () { toast.classList.remove('show'); }, 2000);
+            });
+        });
+    })();
+</script>
 {% endblock %}

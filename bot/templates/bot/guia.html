@@ -21,7 +21,6 @@
 <div class="hero-dark" style="padding:56px 24px 48px;">
     <span class="corner-square"></span>
     <div class="hero-inner">
-        <span class="hero-eyebrow">Conteúdo original</span>
         <h1 class="hero-title">Blog</h1>
         <p class="hero-sub">Artigos práticos para escolher melhor e economizar na hora de comprar tecnologia.</p>
     </div>
@@ -29,15 +28,17 @@
 
 <div class="container" style="max-width:1000px;padding:48px 24px;">
     {% if artigos %}
-    <div class="cat-guide-grid">
+    <div class="blog-list">
         {% for artigo in artigos %}
-        <a href="{% url 'blog_artigo' artigo.slug %}" class="guide-card" style="color:inherit;text-decoration:none;">
-            <span class="corner-square"></span>
-            <div class="guide-card-body">
-                <div class="guide-card-eyebrow">Artigo</div>
-                <h3 class="guide-card-title">{{ artigo.titulo }}</h3>
-                <p class="guide-card-desc">{{ artigo.resumo|default:"" }}</p>
-                <span class="guide-card-cta">Ler artigo <i class="fas fa-arrow-right"></i></span>
+        <a href="{% url 'blog_artigo' artigo.slug %}" class="blog-card" style="color:inherit;text-decoration:none;">
+            {% if artigo.imagem %}
+            <div class="blog-card-thumb">
+                <img src="{{ artigo.imagem.url }}" alt="{{ artigo.titulo }}" loading="lazy">
+            </div>
+            {% endif %}
+            <div class="blog-card-body">
+                <h2 class="blog-card-title">{{ artigo.titulo }}</h2>
+                <span class="blog-card-date">{{ artigo.atualizado_em|date:"d/m/Y" }}</span>
             </div>
         </a>
         {% endfor %}
