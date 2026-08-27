@@ -454,6 +454,12 @@ def _eh_linha_titulo_produto(linha):
     # Código de cupom: linha sem espaço (ex.: '99TOPHIGH') não é produto.
     if ' ' not in linha.strip():
         return False
+    # Anúncio de cupom (ex.: 'novo cupom kabum', 'cupom ativo shopee') e
+    # linhas de instrução de cupom ('resgate o cupom de 20%') NÃO são produto.
+    if re.match(r'^(?:novo|novos|nova)\s+cupom', linha) or re.match(r'^cupom', linha):
+        return False
+    if re.search(r'\b(?:resgate|use|usar|aplicar|aproveite)\b.*\bcupom\b', linha):
+        return False
     tem_termo = any(t in linha for t in _TERMOS_PRODUTO)
     tem_cupom = re.search(r'\bcupoms?\b', linha)
     # Linha com 'cupom' e sem termo de produto → anúncio de cupom, não produto.
