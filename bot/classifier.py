@@ -52,15 +52,19 @@ _REGEX_CATEGORIA = [
     ]),
     ('notebook', [
         r'\bnotebook\b', r'\blaptop\b', r'\bmacbook\b', r'\bultrabook\b', r'\bchromebook\b',
+        r'\bgalaxy\s*book\s*\w*', r'\bwindows\s*11\b', r'\bwindows\s*10\b',
+        r'\btela\s*(?:ips|amoled|de\s*\d+[\.,]?\d*\s*"|de\s*\d+\s*polegadas)',
+        r'\bintel\s*core\s*ultra\b', r'\bi3-?1\d{4}\b', r'\bi5-?1\d{4}\b', r'\bi7-?1\d{4}\b',
     ]),
     ('celular', [
         r'\bcelular\b', r'\bsmartphone\b', r'\biphone\b',
         r'\bxiaomi\b', r'\bpoco\b', r'\bredmi\b', r'\brealme\b', r'\boneplus\b',
         r'\bzenfone\b', r'moto\s*g\d', r'samsung\s*s\d\d',
         # 'galaxy' virou celular, mas pega a linha de fans 'Jungle Leopard
-        # Galaxy'. Só é celular se for Samsung Galaxy ou sem contexto de fan.
-        r'\bgalaxy\b(?!\s*(?:v\d|magn|argb|\d+mm))',
-        r'\bsamsung\s*galaxy\b', r'galaxy\s+[as]\s?\d',
+        # Galaxy' e notebooks 'Samsung Galaxy Book'. Só é celular se for
+        # Samsung Galaxy (celular) ou sem contexto de fan/notebook.
+        r'\bgalaxy\b(?!\s*(?:v\d|magn|argb|\d+mm|book|chrome))',
+        r'\bsamsung\s*galaxy\b(?!\s*book)', r'galaxy\s+[as]\s?\d',
     ]),
     ('tv', [
         r'televis', r'\bsmart\s*tv\b', r'\btv\s*\d{2}\s*(pol|polegada)', r'\btv\s*\d{2}\b',
