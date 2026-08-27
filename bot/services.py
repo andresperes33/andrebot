@@ -104,6 +104,14 @@ _TOKENS_TIPO = {
     'pacote', 'oficial', 'padrao', 'standard', 'novo', 'nova', 'jogo',
     'jogos', 'edicao', 'edition', 'pre', 'venda', 'langamento',
     'lancamento', 'importado', 'digital', 'fisico', 'fisica', 'midia',
+    'cpu', 'processador', 'amd', 'nucleos', 'nucleo', 'nucleus',
+}
+
+# Termos técnicos genéricos que variam entre postagens do mesmo produto
+# e não identificam o modelo (plataforma/memória/gui do processador).
+_TOKENS_GENERICOS = {
+    'ddr3', 'ddr4', 'ddr5', 'am3', 'am4', 'am5', 'lga', 'socket',
+    'r3', 'r5', 'r7', 'r9', 'gen', 'series',
 }
 
 # Plataformas de console — o JOGO é o mesmo em qualquer uma, então a
@@ -165,6 +173,8 @@ def _chave_produto(titulo):
             continue
         if w in _TOKENS_TIPO:
             continue
+        if w in _TOKENS_GENERICOS:
+            continue
         if w in _PLATAFORMAS:
             continue
         if w in _PREFIXOS_LOJA:
@@ -175,12 +185,12 @@ def _chave_produto(titulo):
             continue
         if re.fullmatch(r'\d{2,4}hz', w):
             continue
-        if re.fullmatch(r'\d+x', w):
-            continue
+        if re.fullmatch(r'\d{1,2}x', w):
+            continue  # parcelas ('9x', '12x') — não confundir com modelo '5700x'
         if re.fullmatch(r'\d{2,4}gb', w) or re.fullmatch(r'\d{2,4}tb', w):
             continue  # capacidade de armazenamento varia ('825gb', '1tb')
-        if re.fullmatch(r'\d+', w):
-            continue  # número solto (ex.: '1 Controle', '5') não identifica o produto
+        if re.fullmatch(r'\d{1,2}', w) or w in ('1000',):
+            continue  # números soltos pequenos ('1', '5', '9') não identificam
         if w in ('bluetooth', 'wireless', 'sem', 'fio', 'rgb'):
             continue
         if re.fullmatch(r'\(\d+\)', w):
