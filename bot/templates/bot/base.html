@@ -160,9 +160,22 @@
 
 <button type="button" class="to-top" id="toTopBtn" aria-label="Voltar ao topo"><i class="fas fa-chevron-up"></i></button>
 
+<div id="cookieBanner" class="cookie-banner" role="dialog" aria-label="Consentimento de cookies">
+    <div class="cookie-banner-icon"><i class="fas fa-cookie-bite"></i></div>
+    <div class="cookie-banner-text">
+        <strong>Usamos cookies</strong>
+        <p>Usamos cookies e tecnologias semelhantes para melhorar sua experiência, analisar o tráfego e personalizar anúncios. Ao continuar navegando ou clicar em "Aceitar", você concorda com nossa <a href="{% url 'privacy' %}" target="_blank">Política de Privacidade</a>.</p>
+    </div>
+    <div class="cookie-banner-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="cookieAccept">Aceitar</button>
+        <button type="button" class="btn btn-outline-on-dark btn-sm" id="cookieReject">Recusar</button>
+    </div>
+</div>
+
 {% block scripts %}{% endblock %}
 <script src="{% static 'bot/social-proof.js' %}"></script>
 <script src="{% static 'bot/exit-popup.js' %}"></script>
+<script src="{% static 'bot/cookies.js' %}"></script>
 <script>
 var toTopBtn = document.getElementById('toTopBtn');
 if (toTopBtn) {
