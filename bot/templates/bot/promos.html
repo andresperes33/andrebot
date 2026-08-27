@@ -100,6 +100,35 @@
 {% endif %}
 </div>
 
+{% if artigos_blog %}
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-eyebrow">Blog do Nitro Tech</div>
+                <h2 class="section-title xl">Leia nossos guias</h2>
+            </div>
+            <a href="{% url 'blog' %}" class="btn-ghost">Ver todos <i class="fas fa-arrow-right arrow"></i></a>
+        </div>
+        <div class="blog-grid">
+            {% for artigo in artigos_blog %}
+            <a href="{% url 'blog_artigo' artigo.slug %}" class="blog-card" style="color:inherit;text-decoration:none;">
+                {% if artigo.imagem %}
+                <div class="blog-card-thumb">
+                    <img src="{{ artigo.imagem.url }}" alt="{{ artigo.titulo }}" loading="lazy">
+                </div>
+                {% endif %}
+                <div class="blog-card-body">
+                    <h3 class="blog-card-title">{{ artigo.titulo }}</h3>
+                    <span class="blog-card-date">{{ artigo.atualizado_em|date:"d/m/Y" }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
 {% if not categoria_ativa %}
 <section class="section" style="padding-top:0;">
     <div class="container">

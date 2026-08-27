@@ -182,6 +182,9 @@ def promos_view(request):
         if _CATEGORIA_DESCRICOES.get(slug, '')
     ]
 
+    # Artigos recentes do Blog (destaque na home, acima do guia de categorias)
+    artigos_blog = list(Artigo.objects.filter(publicado=True)[:4])
+
     return render(request, 'bot/promos.html', {
         'promos': pagina,
         'periodo': periodo,
@@ -195,6 +198,7 @@ def promos_view(request):
         'tem_mais': tem_mais,
         'LIMITE': LIMITE,
         'categorias_guia': categorias_guia,
+        'artigos_blog': artigos_blog,
     })
 
 
