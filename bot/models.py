@@ -114,7 +114,7 @@ class Artigo(models.Model):
     slug = models.SlugField(max_length=200, unique=True)
     resumo = models.CharField(max_length=300, blank=True, help_text='Breve descrição exibida na listagem e nas meta tags.')
     conteudo = models.TextField(help_text='Conteúdo em linha única (HTML) ou blocos separados por quebras. Recomenda-se usar tags básicas de HTML (<p>, <h2>, <ul>, <strong>).')
-    imagem_url = models.URLField(max_length=2000, blank=True)
+    imagem = models.ImageField(upload_to='artigos/', blank=True, help_text='Imagem de capa do artigo. Enviada em JPG/PNG e convertida automaticamente para WebP.')
     publicado = models.BooleanField(default=True)
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
@@ -126,6 +126,46 @@ class Artigo(models.Model):
 
     def __str__(self):
         return self.titulo
+
+    def save(self, *args, **kwargs):
+        # Converte a imagem enviada para WebP (otimização de carregamento/SEO).
+        if self.imagem:
+            try:
+                self.imagem = self._converter_webp(self.imagem)
+            except Exception as e:
+                print(f"[Artigo] Erro ao converter imagem para WebP: {e}")
+        super().save(*args, **kwargs)
+
+    def _converter_webp(self, imagem):
+        """
+        Converte a imagem para WebP (qualidade 82, redimensiona para o máximo
+        de 1200px de largura), preservando o formato de arquivo .webp.
+        """
+        from io import BytesIO
+        from PIL import Image
+        from django.core.files.base import ContentFile
+
+        img = Image.open(imagem)
+        img = img.convert('RGB')
+
+        mime = getattr(imagem, 'content_type', '') or ''
+        formato_orig = (imagem.name or '').lower().rsplit('.', 1)[-1] if '.' in (imagem.name or '') else 'jpg'
+
+        # Nome base do arquivo, sem a extensão antiga
+        base = (imagem.name or 'artigo').rsplit('.', 1)[0]
+
+        # Redimensiona se for muito larga
+        width, height = img.size
+        if width > 1200:
+            nova_altura = int(height * (1200 / width))
+            img = img.resize((1200, nova_altura), Image.LANCZOS)
+
+        buf = BytesIO()
+        img.save(buf, format='WEBP', quality=82, method=6)
+        buf.seek(0)
+
+        novo_nome = f"{base}.webp"
+        return ContentFile(buf.read(), name=novo_nome)
 
     def get_absolute_url(self):
         from django.urls import reverse
