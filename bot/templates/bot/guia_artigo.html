@@ -55,6 +55,36 @@
     <p style="margin-top:32px;font-size:13px;color:var(--mute);">Atualizado em {{ artigo.atualizado_em|date:"d/m/Y" }}</p>
 </article>
 
+{% if relacionados %}
+<section class="section" style="padding:0 0 48px;">
+    <div class="container" style="max-width:1000px;">
+        <div class="section-head">
+            <div>
+                <div class="section-eyebrow">Continue lendo</div>
+                <h2 class="section-title xl">Artigos relacionados</h2>
+            </div>
+            <a href="{% url 'blog' %}" class="btn-ghost">Ver todos <i class="fas fa-arrow-right arrow"></i></a>
+        </div>
+        <div class="blog-grid">
+            {% for artigo in relacionados %}
+            <a href="{% url 'blog_artigo' artigo.slug %}" class="blog-card" style="color:inherit;text-decoration:none;">
+                {% if artigo.imagem %}
+                <div class="blog-card-thumb">
+                    <img src="{{ artigo.imagem.url }}" alt="{{ artigo.titulo }}" loading="lazy">
+                </div>
+                {% endif %}
+                <div class="blog-card-body">
+                    {% if artigo.get_categoria_display %}<span class="blog-card-cat">{{ artigo.get_categoria_display }}</span>{% endif %}
+                    <h3 class="blog-card-title">{{ artigo.titulo }}</h3>
+                    <span class="blog-card-date">{{ artigo.atualizado_em|date:"d/m/Y" }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
 {% endblock %}
 
 {% block scripts %}

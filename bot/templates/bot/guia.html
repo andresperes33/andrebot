@@ -27,25 +27,85 @@
 </div>
 
 <div class="container" style="max-width:1000px;padding:48px 24px;">
-    {% if artigos %}
-    <div class="blog-grid">
-        {% for artigo in artigos %}
-        <a href="{% url 'blog_artigo' artigo.slug %}" class="blog-card" style="color:inherit;text-decoration:none;">
-            {% if artigo.imagem %}
-            <div class="blog-card-thumb">
-                <img src="{{ artigo.imagem.url }}" alt="{{ artigo.titulo }}" loading="lazy">
-            </div>
-            {% endif %}
-            <div class="blog-card-body">
-                <h2 class="blog-card-title">{{ artigo.titulo }}</h2>
-                <span class="blog-card-date">{{ artigo.atualizado_em|date:"d/m/Y" }}</span>
-            </div>
-        </a>
-        {% endfor %}
+
+    <div class="blog-toolbar">
+        <div class="blog-cats">
+            <a href="{% url 'blog' %}" class="blog-cat{% if not categoria_ativa %} is-active{% endif %}">Todos</a>
+            {% for slug, nome in categorias %}
+            <a href="{% url 'blog' %}?cat={{ slug }}" class="blog-cat{% if categoria_ativa == slug %} is-active{% endif %}" data-cat="{{ slug }}">{{ nome }}</a>
+            {% endfor %}
+        </div>
+        <div class="blog-search">
+            <form id="blogSearchForm" class="search-form" method="get" action="{% url 'blog' %}">
+                {% if categoria_ativa %}<input type="hidden" name="cat" value="{{ categoria_ativa }}">{% endif %}
+                <input class="search-input" type="text" name="q" placeholder="Buscar no blog..." value="{{ q }}" autocomplete="off">
+                <button class="btn-search" type="submit" aria-label="Buscar"><i class="fas fa-search"></i></button>
+            </form>
+        </div>
     </div>
-    {% else %}
-    <p style="font-size:16px;color:var(--mute);text-align:center;padding:40px 0;">Nossos artigos estão sendo preparados. Volte em breve!</p>
-    {% endif %}
+
+    <div id="blogGrid" class="blog-grid">
+        {% include 'bot/_blog_grid.html' %}
+    </div>
+
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const grid = document.getElementById('blogGrid');
+        if (!grid) return;
+        const form = document.getElementById('blogSearchForm');
+
+        function buscar(url) {
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.text())
+                .then(html => {
+                    grid.innerHTML = html;
+                    history.replaceState(null, '', url);
+                })
+                .catch(() => {});
+        }
+
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const dados = new URLSearchParams(new FormData(form)).toString();
+                buscar('{% url "blog" %}?' + dados);
+            });
+        }
+
+        // Busca ao vivo (com debounce) — enquanto digita
+        let lente = null;
+        if (form) {
+            const input = form.querySelector('.search-input');
+            input.addEventListener('input', function () {
+                clearTimeout(lente);
+                lente = setTimeout(function () {
+                    const dados = new URLSearchParams(new FormData(form)).toString();
+                    buscar('{% url "blog" %}?' + dados);
+                }, 400);
+            });
+        }
+
+        // Clique em categoria (AJAX)
+        document.querySelectorAll('.blog-cat').forEach(function (cat) {
+            cat.addEventListener('click', function (e) {
+                if (!cat.getAttribute('href')) return;
+                e.preventDefault();
+                document.querySelectorAll('.blog-cat').forEach(c => c.classList.remove('is-active'));
+                cat.classList.add('is-active');
+                const url = cat.getAttribute('href');
+                // reflete a categoria no form de busca
+                if (form) {
+                    const catInput = form.querySelector('input[name="cat"]');
+                    if (catInput) catInput.value = cat.getAttribute('data-cat') || '';
+                }
+                buscar(url);
+            });
+        });
+    })();
+</script>
 {% endblock %}

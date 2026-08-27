@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
+from django.db import models as _db_models
 from datetime import timedelta
 from .models import Promo, Artigo
 
@@ -233,19 +234,53 @@ def termos_view(request):
 def guia_view(request):
     """
     Lista de artigos/guias originais (conteúdo exclusivo para SEO e AdSense).
+    Suporta busca por texto e filtro por categoria (com resposta AJAX).
     """
     from .models import Artigo
+
     artigos = Artigo.objects.filter(publicado=True)
-    return render(request, 'bot/guia.html', {'artigos': artigos})
+
+    # Busca por texto (título/conteúdo)
+    q = request.GET.get('q', '').strip()
+    if q:
+        artigos = artigos.filter(
+            _db_models.Q(titulo__icontains=q) | _db_models.Q(conteudo__icontains=q)
+        )
+
+    # Filtro por categoria
+    categoria = request.GET.get('cat', '').strip()
+    if categoria:
+        artigos = artigos.filter(categoria=categoria)
+
+    artigos = artigos.order_by('-criado_em')
+
+    # Resposta AJAX (busca/filtro) — só o grid
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'bot/_blog_grid.html', {'artigos': artigos})
+
+    categorias = Artigo.CATEGORIA_CHOICES
+
+    return render(request, 'bot/guia.html', {
+        'artigos': artigos,
+        'categorias': categorias,
+        'categoria_ativa': categoria,
+        'q': q,
+    })
 
 
 def guia_artigo_view(request, slug):
     """
-    Página individual de um artigo/guiu.
+    Página individual de um artigo/guiu + artigos relacionados (mesma categoria).
     """
     from .models import Artigo
     artigo = get_object_or_404(Artigo, slug=slug, publicado=True)
-    return render(request, 'bot/guia_artigo.html', {'artigo': artigo})
+    relacionados = Artigo.objects.filter(
+        publicado=True, categoria=artigo.categoria
+    ).exclude(pk=artigo.pk)[:4]
+    return render(request, 'bot/guia_artigo.html', {
+        'artigo': artigo,
+        'relacionados': relacionados,
+    })
 
 
 from django.http import HttpResponse

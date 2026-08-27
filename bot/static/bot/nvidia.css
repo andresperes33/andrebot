@@ -1013,6 +1013,51 @@ a.price-history-row:hover {
 .article-content strong { color: var(--body); }
 
 /* ─── Lista do Blog ──────────────────────────────────────────── */
+.blog-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+.blog-cats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.blog-cat {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mute);
+    background: var(--surface-soft);
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    text-decoration: none;
+    transition: border-color .2s, color .2s, background .2s;
+}
+.blog-cat:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+.blog-cat.is-active {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.35);
+}
+.blog-search { min-width: 240px; flex: 1; max-width: 320px; }
+.blog-search .search-form { margin: 0; width: 100%; }
+.blog-card-cat {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--mute);
+}
+.blog-empty {
+    font-size: 15px;
+    color: var(--mute);
+    text-align: center;
+    padding: 40px 0;
+}
 .blog-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
