@@ -54,9 +54,13 @@ _REGEX_CATEGORIA = [
         r'\bnotebook\b', r'\blaptop\b', r'\bmacbook\b', r'\bultrabook\b', r'\bchromebook\b',
     ]),
     ('celular', [
-        r'\bcelular\b', r'\bsmartphone\b', r'\biphone\b', r'\bgalaxy\b',
+        r'\bcelular\b', r'\bsmartphone\b', r'\biphone\b',
         r'\bxiaomi\b', r'\bpoco\b', r'\bredmi\b', r'\brealme\b', r'\boneplus\b',
         r'\bzenfone\b', r'moto\s*g\d', r'samsung\s*s\d\d',
+        # 'galaxy' virou celular, mas pega a linha de fans 'Jungle Leopard
+        # Galaxy'. Só é celular se for Samsung Galaxy ou sem contexto de fan.
+        r'\bgalaxy\b(?!\s*(?:v\d|magn|argb|\d+mm))',
+        r'\bsamsung\s*galaxy\b', r'galaxy\s+[as]\s?\d',
     ]),
     ('tv', [
         r'televis', r'\bsmart\s*tv\b', r'\btv\s*\d{2}\s*(pol|polegada)', r'\btv\s*\d{2}\b',
@@ -114,7 +118,8 @@ _REGEX_CATEGORIA = [
     ]),
     ('cooler', [
         r'\bcooler\b', r'\bwater\s*cooler\b', r'\bwatercooler\b', r'\bdissipador\b',
-        r'\bventoinha\b', r'\baio\b',
+        r'\bventoinha\b', r'\baio\b', r'\bfan(s)?\b', r'\bfans?\s*magn[eé]tic',
+        r'\bargb\b', r'kit\s*\d+\s*fans?',
     ]),
     ('controle', [
         r'\bgamepad\b', r'\bjoystick\b', r'\bjoypad\b', r'\bdualsense\b', r'\bcontrole\b',
@@ -171,7 +176,7 @@ def detectar_categoria(texto, titulo=None):
             continue
         tem_kit = re.search(r'\bkit\b', limpo)
         tem_hardware = re.search(
-            r'\b(x99|x79|xeon|processador|placa[ -]?mae|memoria|ddr|c612|s2011|core\s*i[3579]|ryzen|am[45]|motherboard|gabinete|fonte|fan|ventoinha|cooler)\b',
+            r'\b(x99|x79|xeon|processador|placa[ -]?mae|memoria|ddr|c612|s2011|core\s*i[3579]|ryzen|am[45]|motherboard|gabinete|fonte)\b',
             limpo,
         )
         if tem_kit and tem_hardware:
