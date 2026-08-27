@@ -404,7 +404,7 @@ def _eh_anuncio_cupom(limpa):
     """True se a linha é um anúncio curto de cupom (ex.: 'Novo Cupom AMAZON'),
     distinto de uma instrução de cupom (ex.: 'use o cupom X')."""
     baixa = limpa.casefold()
-    if not re.search(r'(?<!\w)cupons?(?!\w)', baixa):
+    if not re.search(r'\b(?:cupom|cupons|cupoms)\b', baixa):
         return False
     if len(limpa) > 60:
         return False
