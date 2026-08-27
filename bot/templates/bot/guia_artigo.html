@@ -6,7 +6,7 @@
 
 {% block og_meta %}
 <meta property="og:type" content="article">
-<meta property="og:url" content="{{ SITE_URL }}{% url 'guia_artigo' artigo.slug %}">
+<meta property="og:url" content="{{ SITE_URL }}{% url 'blog_artigo' artigo.slug %}">
 <meta property="og:title" content="{{ artigo.titulo }}">
 <meta property="og:description" content="{{ artigo.resumo }}">
 {% if artigo.imagem_url %}<meta property="og:image" content="{{ artigo.imagem_url }}">{% endif %}
@@ -17,7 +17,7 @@
     <div class="breadcrumb-inner">
         <a href="/promos/">Início</a>
         <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
-        <a href="{% url 'guia' %}">Blog</a>
+        <a href="{% url 'blog' %}">Blog</a>
         <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
         <span class="breadcrumb-current">{{ artigo.titulo|truncatechars:40 }}</span>
     </div>

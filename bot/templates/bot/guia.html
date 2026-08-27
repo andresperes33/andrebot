@@ -31,7 +31,7 @@
     {% if artigos %}
     <div class="cat-guide-grid">
         {% for artigo in artigos %}
-        <a href="{% url 'guia_artigo' artigo.slug %}" class="guide-card" style="color:inherit;text-decoration:none;">
+        <a href="{% url 'blog_artigo' artigo.slug %}" class="guide-card" style="color:inherit;text-decoration:none;">
             <span class="corner-square"></span>
             <div class="guide-card-body">
                 <div class="guide-card-eyebrow">Artigo</div>

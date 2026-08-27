@@ -279,7 +279,7 @@ def sitemap_xml_view(request):
     base_url = request.build_absolute_uri('/').rstrip('/')
     pages = [
         {"loc": f"{base_url}/promos/", "changefreq": "always", "priority": "1.0"},
-        {"loc": f"{base_url}/guia/", "changefreq": "weekly", "priority": "0.7"},
+        {"loc": f"{base_url}/blog/", "changefreq": "weekly", "priority": "0.7"},
         {"loc": f"{base_url}/sobre/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/contato/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/termos-de-uso/", "changefreq": "monthly", "priority": "0.3"},
@@ -289,7 +289,7 @@ def sitemap_xml_view(request):
     # Artigos/Guia do site (conteúdo original indexável)
     for artigo in Artigo.objects.filter(publicado=True):
         pages.append({
-            "loc": f"{base_url}/guia/{artigo.slug}/",
+            "loc": f"{base_url}/blog/{artigo.slug}/",
             "changefreq": "monthly",
             "priority": "0.7",
         })

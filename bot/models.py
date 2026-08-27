@@ -129,4 +129,4 @@ class Artigo(models.Model):
 
     def get_absolute_url(self):
         from django.urls import reverse
-        return reverse('guia_artigo', args=[self.slug])
+        return reverse('blog_artigo', args=[self.slug])

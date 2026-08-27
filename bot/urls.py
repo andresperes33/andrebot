@@ -10,8 +10,11 @@ urlpatterns = [
     path('sobre/', views.sobre_view, name='sobre'),
     path('contato/', views.contato_view, name='contato'),
     path('termos-de-uso/', views.termos_view, name='termos'),
-    path('guia/', views.guia_view, name='guia'),
-    path('guia/<slug:slug>/', views.guia_artigo_view, name='guia_artigo'),
+    path('blog/', views.guia_view, name='blog'),
+    path('blog/<slug:slug>/', views.guia_artigo_view, name='blog_artigo'),
+    # Redireciona a antiga URL /guia/ para /blog/ (sem quebrar links antigos)
+    path('guia/', RedirectView.as_view(pattern_name='blog', permanent=False)),
+    path('guia/<slug:slug>/', RedirectView.as_view(pattern_name='blog_artigo', permanent=False)),
     path('robots.txt', views.robots_txt_view, name='robots_txt'),
     path('ads.txt', views.ads_txt_view, name='ads_txt'),
     path('sitemap.xml', views.sitemap_xml_view, name='sitemap_xml'),
