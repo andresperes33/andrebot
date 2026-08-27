@@ -1021,28 +1021,32 @@ a.price-history-row:hover {
     gap: 16px;
     margin-bottom: 28px;
 }
-.blog-cats {
+.blog-filter {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    align-items: center;
+    gap: 10px;
 }
-.blog-cat {
-    padding: 8px 16px;
+.blog-filter .filter-label {
     font-size: 13px;
     font-weight: 600;
     color: var(--mute);
-    background: var(--surface-soft);
-    border: 1px solid var(--hairline);
-    border-radius: 999px;
-    text-decoration: none;
-    transition: border-color .2s, color .2s, background .2s;
+    white-space: nowrap;
 }
-.blog-cat:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
-.blog-cat.is-active {
-    color: #fff;
-    background: rgba(255,255,255,0.1);
+.blog-filter .filter-select {
+    min-width: 200px;
+    font-size: 14px;
+    padding: 10px 14px;
+    background: var(--surface-soft);
+    color: var(--body);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    cursor: pointer;
+}
+.blog-filter .filter-select:focus {
+    outline: none;
     border-color: rgba(255,255,255,0.35);
 }
+.blog-filter .filter-select option { background: var(--surface); color: var(--body); }
 .blog-search { min-width: 240px; flex: 1; max-width: 320px; }
 .blog-search .search-form { margin: 0; width: 100%; }
 .blog-card-cat {

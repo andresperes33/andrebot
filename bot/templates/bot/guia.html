@@ -29,11 +29,14 @@
 <div class="container" style="max-width:1000px;padding:48px 24px;">
 
     <div class="blog-toolbar">
-        <div class="blog-cats">
-            <a href="{% url 'blog' %}" class="blog-cat{% if not categoria_ativa %} is-active{% endif %}">Todos</a>
-            {% for cat in categorias %}
-            <a href="{% url 'blog' %}?cat={{ cat }}" class="blog-cat{% if categoria_ativa == cat %} is-active{% endif %}" data-cat="{{ cat }}">{{ cat }}</a>
-            {% endfor %}
+        <div class="blog-filter">
+            <label class="filter-label" for="blogCatSelect">Categoria:</label>
+            <select id="blogCatSelect" class="filter-select">
+                <option value="" {% if not categoria_ativa %}selected{% endif %}>Todas</option>
+                {% for cat in categorias %}
+                <option value="{{ cat }}" {% if categoria_ativa == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
         </div>
         <div class="blog-search">
             <form id="blogSearchForm" class="search-form" method="get" action="{% url 'blog' %}">
@@ -90,22 +93,27 @@
             });
         }
 
-        // Clique em categoria (AJAX)
-        document.querySelectorAll('.blog-cat').forEach(function (cat) {
-            cat.addEventListener('click', function (e) {
-                if (!cat.getAttribute('href')) return;
-                e.preventDefault();
-                document.querySelectorAll('.blog-cat').forEach(c => c.classList.remove('is-active'));
-                cat.classList.add('is-active');
-                const url = cat.getAttribute('href');
+        // Filtro por categoria (dropdown)
+        const catSelect = document.getElementById('blogCatSelect');
+        if (catSelect) {
+            catSelect.addEventListener('change', function () {
+                const cat = catSelect.value;
                 // reflete a categoria no form de busca
-                if (form) {
-                    const catInput = form.querySelector('input[name="cat"]');
-                    if (catInput) catInput.value = cat.getAttribute('data-cat') || '';
+                let catInput = form ? form.querySelector('input[name="cat"]') : null;
+                if (!catInput && form) {
+                    catInput = document.createElement('input');
+                    catInput.type = 'hidden';
+                    catInput.name = 'cat';
+                    form.appendChild(catInput);
                 }
-                buscar(url);
+                if (catInput) catInput.value = cat;
+                const q = form ? form.querySelector('input[name="q"]').value : '';
+                const params = new URLSearchParams();
+                if (cat) params.set('cat', cat);
+                if (q) params.set('q', q);
+                buscar('{% url "blog" %}?' + params.toString());
             });
-        });
+        }
     })();
 </script>
 {% endblock %}
