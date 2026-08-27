@@ -112,7 +112,6 @@ class Artigo(models.Model):
     """
     titulo = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
-    resumo = models.CharField(max_length=300, blank=True, help_text='Breve descrição exibida na listagem e nas meta tags.')
     conteudo = models.TextField(help_text='Conteúdo em linha única (HTML) ou blocos separados por quebras. Recomenda-se usar tags básicas de HTML (<p>, <h2>, <ul>, <strong>).')
     imagem = models.ImageField(upload_to='artigos/', blank=True, help_text='Imagem de capa do artigo. Enviada em JPG/PNG e convertida automaticamente para WebP.')
     publicado = models.BooleanField(default=True)

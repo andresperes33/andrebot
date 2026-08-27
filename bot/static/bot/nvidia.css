@@ -1010,7 +1010,7 @@ a.price-history-row:hover {
     color: var(--body);
 }
 .article-content a { color: var(--link-blue); text-decoration: underline; }
-.article-content strong { color: var(--primary-dark); }
+.article-content strong { color: var(--body); }
 
 /* ─── Lista do Blog ──────────────────────────────────────────── */
 .blog-list {

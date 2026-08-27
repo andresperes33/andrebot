@@ -2,13 +2,13 @@
 {% load static %}
 
 {% block title %}{{ artigo.titulo }} | Nitro Tech{% endblock %}
-{% block description %}{{ artigo.resumo|default:artigo.titulo }}{% endblock %}
+{% block description %}{{ artigo.titulo }} — Guia e dicas de tecnologia da Nitro Tech.{% endblock %}
 
 {% block og_meta %}
 <meta property="og:type" content="article">
 <meta property="og:url" content="{{ SITE_URL }}{% url 'blog_artigo' artigo.slug %}">
 <meta property="og:title" content="{{ artigo.titulo }}">
-<meta property="og:description" content="{{ artigo.resumo }}">
+<meta property="og:description" content="{{ artigo.titulo }} — Guia e dicas de tecnologia da Nitro Tech.">
 {% if artigo.imagem %}<meta property="og:image" content="{{ SITE_URL }}{{ artigo.imagem.url }}">{% endif %}
 {% endblock %}
 
@@ -29,9 +29,7 @@
 <div class="hero-dark" style="padding:56px 24px 48px;">
     <span class="corner-square"></span>
     <div class="hero-inner">
-        <span class="hero-eyebrow">Artigo</span>
         <h1 class="hero-title">{{ artigo.titulo }}</h1>
-        {% if artigo.resumo %}<p class="hero-sub">{{ artigo.resumo }}</p>{% endif %}
     </div>
 </div>
 
