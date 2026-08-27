@@ -167,8 +167,8 @@ AWIN_API_TOKEN = os.getenv('AWIN_API_TOKEN')
 MAGALU_ID = os.getenv('MAGALU_ID', 'magazinein_1546179')
 
 # Mercado Livre Afiliados Settings
-MERCADO_LIVRE_TAG = os.getenv('MERCADO_LIVRE_TAG', 'andreindicatech')
-MERCADO_LIVRE_MATT_TOOL = os.getenv('MERCADO_LIVRE_MATT_TOOL', '13013217')
+MERCADO_LIVRE_TAG = os.getenv('MERCADO_LIVRE_TAG', 'pean3412407')
+MERCADO_LIVRE_MATT_TOOL = os.getenv('MERCADO_LIVRE_MATT_TOOL', '57756886')
 MERCADO_LIVRE_COOKIE = os.getenv('MERCADO_LIVRE_COOKIE')
 
 # Monitor Settings (Telethon)
