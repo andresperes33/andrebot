@@ -118,8 +118,8 @@ _REGEX_CATEGORIA = [
     ]),
     ('cooler', [
         r'\bcooler\b', r'\bwater\s*cooler\b', r'\bwatercooler\b', r'\bdissipador\b',
-        r'\bventoinha\b', r'\baio\b', r'\bfan(s)?\b', r'\bfans?\s*magn[eé]tic',
-        r'\bargb\b', r'kit\s*\d+\s*fans?',
+        r'\bventoinhas?\b', r'\baio\b', r'\bfan(s)?\b', r'\bfans?\s*magn[eé]tic',
+        r'\bargb\b', r'kit\s*\d+\s*fans?', r'kit\s+ventoinhas?',
     ]),
     ('controle', [
         r'\bgamepad\b', r'\bjoystick\b', r'\bjoypad\b', r'\bdualsense\b', r'\bcontrole\b',

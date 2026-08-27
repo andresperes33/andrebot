@@ -425,7 +425,7 @@ _TERMOS_PRODUTO = [
     'soundbar', 'microfone', 'webcam', 'controle', 'jogo', 'gta', 'tv', 'celular',
     'smartphone', 'cadeira', 'impressora', 'roteador', 'console', 'console',
     'pasta termica', 'pasta térmica', 'gpu', 'videogame', 'fans', 'fan',
-    'air fryer', 'batedeira', 'liquidificador', 'secador', 'aspirador',
+    'ventoinha', 'ventoinhas', 'air fryer', 'batedeira', 'liquidificador', 'secador', 'aspirador',
 ]
 
 
