@@ -113,6 +113,9 @@ _TOKENS_GENERICOS = {
     'ddr3', 'ddr4', 'ddr5', 'am3', 'am4', 'am5', 'lga', 'socket',
     'r3', 'r5', 'r7', 'r9', 'gen', 'series',
     'max', 'turbo', 'box', 'edition', 'retail', 'oem', 'pro', 'plus',
+    'mini', 'duo', 'lite', 'slim', 'ultra', 'x', 'maxx',
+    'microfone', 'lapela', 'usb', 'c', 'tipo', 'tipo-c', 'versao',
+    'original', 'lacrado', 'sem', 'fio', 'wireless', 'usbc',
 }
 
 # Plataformas de console — o JOGO é o mesmo em qualquer uma, então a
@@ -254,7 +257,9 @@ def _chave_produto(titulo):
     if modelos:
         chave = ' '.join(modelos)
     else:
-        chave = ' '.join(unicos)
+        # Ordena os tokens para que a ordem das palavras não importe
+        # ('mouse redragon invader' = 'redragon invader mouse').
+        chave = ' '.join(sorted(unicos))
     chave = re.sub(r'\s+', ' ', chave).strip()
     return chave
 
