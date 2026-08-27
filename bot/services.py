@@ -112,6 +112,7 @@ _TOKENS_TIPO = {
 _TOKENS_GENERICOS = {
     'ddr3', 'ddr4', 'ddr5', 'am3', 'am4', 'am5', 'lga', 'socket',
     'r3', 'r5', 'r7', 'r9', 'gen', 'series',
+    'max', 'turbo', 'box', 'edition', 'retail', 'oem', 'pro', 'plus',
 }
 
 # Plataformas de console — o JOGO é o mesmo em qualquer uma, então a
@@ -166,6 +167,9 @@ def _eh_codigo_modelo(w):
         return False
     if re.fullmatch(r'\d{1,4}gb', w) or re.fullmatch(r'\d{1,4}tb', w):  # 825gb
         return False
+    # medidas/specs que variam e não são modelo: '3.6ghz', '4.2gh', '16mb', '144hz'
+    if re.fullmatch(r'\d+[\.,]?\d*\s*(?:ghz|gh|hz|mhz|mb|mm|cm|mah|w|v)', w):
+        return False
     if re.fullmatch(r'\d{1,2}x', w):        # 9x (parcelas)
         return False
     # palavras comuns que têm letra+sobraram (ex.: '7.1', 'sem', 'fio', 'rgb')
@@ -212,6 +216,11 @@ def _chave_produto(titulo):
         if re.fullmatch(r'\d{2,4}w', w):
             continue
         if re.fullmatch(r'\d{2,4}hz', w):
+            continue
+        # Medidas/specs que variam entre postagens do mesmo produto e não
+        # identificam o produto: '3.6ghz', '4.2gh', '16mb', '144hz', etc.
+        # IMPORTANTE: não remover o modelo real (ex.: '5700x', '5500').
+        if re.fullmatch(r'\d+[\.,]?\d*\s*(?:ghz|gh|hz|mhz|mb|gb|tb|w|mm|cm|v|mah)', w):
             continue
         if re.fullmatch(r'\d{1,2}x', w):
             continue  # parcelas ('9x', '12x') — não confundir com modelo '5700x'
