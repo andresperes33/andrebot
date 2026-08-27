@@ -258,7 +258,13 @@ def guia_view(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render(request, 'bot/_blog_grid.html', {'artigos': artigos})
 
-    categorias = Artigo.CATEGORIA_CHOICES
+    categorias = list(
+        Artigo.objects.filter(publicado=True)
+        .exclude(categoria='')
+        .order_by('categoria')
+        .values_list('categoria', flat=True)
+        .distinct()
+    )
 
     return render(request, 'bot/guia.html', {
         'artigos': artigos,

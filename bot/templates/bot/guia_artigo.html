@@ -74,7 +74,7 @@
                 </div>
                 {% endif %}
                 <div class="blog-card-body">
-                    {% if artigo.get_categoria_display %}<span class="blog-card-cat">{{ artigo.get_categoria_display }}</span>{% endif %}
+                    {% if artigo.categoria %}<span class="blog-card-cat">{{ artigo.categoria }}</span>{% endif %}
                     <h3 class="blog-card-title">{{ artigo.titulo }}</h3>
                     <span class="blog-card-date">{{ artigo.atualizado_em|date:"d/m/Y" }}</span>
                 </div>

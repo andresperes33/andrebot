@@ -110,19 +110,9 @@ class Artigo(models.Model):
     """
     Artigo/guiu original do site (conteúdo exclusivo para SEO e AdSense).
     """
-    CATEGORIA_CHOICES = [
-        ('hardware', 'Hardware'),
-        ('perifericos', 'Periféricos'),
-        ('celular', 'Celular / Smartphone'),
-        ('console', 'Console / Games'),
-        ('guia', 'Guia de Compra'),
-        ('dicas', 'Dicas & Tutoriais'),
-        ('outros', 'Outros'),
-    ]
-
     titulo = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
-    categoria = models.CharField(max_length=30, choices=CATEGORIA_CHOICES, default='guia', db_index=True)
+    categoria = models.CharField(max_length=50, blank=True, default='', db_index=True, help_text='Categoria do artigo (ex.: Celulares, Placas de Vídeo). Você define ao criar.')
     conteudo = models.TextField(help_text='Conteúdo em linha única (HTML) ou blocos separados por quebras. Recomenda-se usar tags básicas de HTML (<p>, <h2>, <ul>, <strong>).')
     imagem = models.ImageField(upload_to='artigos/', blank=True, help_text='Imagem de capa do artigo. Enviada em JPG/PNG e convertida automaticamente para WebP.')
     publicado = models.BooleanField(default=True)

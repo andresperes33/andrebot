@@ -25,8 +25,8 @@ class PromoAdmin(admin.ModelAdmin):
 
 @admin.register(Artigo)
 class ArtigoAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'slug', 'publicado', 'criado_em')
-    list_filter = ('publicado',)
-    search_fields = ('titulo', 'conteudo')
+    list_display = ('titulo', 'categoria', 'slug', 'publicado', 'criado_em')
+    list_filter = ('publicado', 'categoria')
+    search_fields = ('titulo', 'conteudo', 'categoria')
     prepopulated_fields = {'slug': ('titulo',)}
     ordering = ('-criado_em',)

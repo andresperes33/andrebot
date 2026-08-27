@@ -31,8 +31,8 @@
     <div class="blog-toolbar">
         <div class="blog-cats">
             <a href="{% url 'blog' %}" class="blog-cat{% if not categoria_ativa %} is-active{% endif %}">Todos</a>
-            {% for slug, nome in categorias %}
-            <a href="{% url 'blog' %}?cat={{ slug }}" class="blog-cat{% if categoria_ativa == slug %} is-active{% endif %}" data-cat="{{ slug }}">{{ nome }}</a>
+            {% for cat in categorias %}
+            <a href="{% url 'blog' %}?cat={{ cat }}" class="blog-cat{% if categoria_ativa == cat %} is-active{% endif %}" data-cat="{{ cat }}">{{ cat }}</a>
             {% endfor %}
         </div>
         <div class="blog-search">
