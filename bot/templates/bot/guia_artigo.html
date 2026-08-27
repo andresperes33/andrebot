@@ -17,7 +17,7 @@
     <div class="breadcrumb-inner">
         <a href="/promos/">Início</a>
         <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
-        <a href="{% url 'guia' %}">Guia de Compras</a>
+        <a href="{% url 'guia' %}">Blog</a>
         <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
         <span class="breadcrumb-current">{{ artigo.titulo|truncatechars:40 }}</span>
     </div>
@@ -29,7 +29,7 @@
 <div class="hero-dark" style="padding:56px 24px 48px;">
     <span class="corner-square"></span>
     <div class="hero-inner">
-        <span class="hero-eyebrow">Guia de compras</span>
+        <span class="hero-eyebrow">Artigo</span>
         <h1 class="hero-title">{{ artigo.titulo }}</h1>
         {% if artigo.resumo %}<p class="hero-sub">{{ artigo.resumo }}</p>{% endif %}
     </div>
