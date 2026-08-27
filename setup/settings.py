@@ -33,6 +33,16 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
+# Origens confiáveis para proteção CSRF (obrigatório com HTTPS em produção).
+# O domínio do site precisa estar aqui, senão o login/admin retorna 403
+# ("Origin checking failed").
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.getenv(
+        'CSRF_TRUSTED_ORIGINS',
+        'https://www.nitrotech.store,https://nitrotech.store'
+    ).split(',') if o.strip()
+]
+
 
 # Application definition
 
