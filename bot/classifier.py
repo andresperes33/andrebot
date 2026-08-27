@@ -124,6 +124,10 @@ _REGEX_CATEGORIA = [
     ('controle', [
         r'\bgamepad\b', r'\bjoystick\b', r'\bjoypad\b', r'\bdualsense\b', r'\bcontrole\b',
     ]),
+    ('microfone', [
+        r'\bmicrofone\b', r'\bmicrophone\b', r'\bmic\b', r'\bmic\s*din[aâ]mic',
+        r'\bxlr\b', r'\bpodcast\s*mic', r'\bcondensador\b',
+    ]),
     ('webcam', [
         r'\bwebcam\b', r'\bweb\s*cam\b', r'\bvideocam\b',
     ]),

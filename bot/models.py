@@ -76,6 +76,7 @@ class Promo(models.Model):
         ('pasta_termica', 'Pasta Térmica'),
         ('controle', 'Controle / Gamepad'),
         ('webcam', 'Webcam'),
+        ('microfone', 'Microfone'),
         ('roteador', 'Roteador'),
         ('console', 'Console'),
         ('jogo', 'Jogo'),

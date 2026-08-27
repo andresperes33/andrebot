@@ -35,6 +35,7 @@ _CATEGORIA_DESCRICOES = {
     'pasta_termica': 'Pastas térmicas de alta condutividade para processador e placa de vídeo. Comprando em promoção, você melhora a refrigeração do seu PC.',
     'controle': 'Controles e gamepads para PC e consoles de última geração, com fio ou bluetooth.',
     'webcam': 'Webcams de alta resolução para reuniões, lives e streaming com boa imagem.',
+    'microfone': 'Microfones para streaming, podcast e gravação, dinâmicos e condensadores, com ótima captação de voz.',
     'roteador': 'Roteadores Wi-Fi 6 e mesh para internet rápida e estável em todos os cômodos da casa.',
     'console': 'Consoles de videogame e handhelds em oferta, com os melhores preços para os gamers.',
     'jogo': 'Jogos físicos e códigos digitais para PlayStation, Xbox, Nintendo Switch e PC. Encontramos as maiores promoções dos lançamentos.',
