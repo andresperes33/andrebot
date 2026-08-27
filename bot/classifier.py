@@ -62,6 +62,10 @@ _REGEX_CATEGORIA = [
         r'televis', r'\bsmart\s*tv\b', r'\btv\s*\d{2}\s*(pol|polegada)', r'\btv\s*\d{2}\b',
         r'\bqled\b', r'\bminiled\b', r'\boled\b',
     ]),
+    ('pasta_termica', [
+        r'pasta\s*t[eé]rmica', r'\bpasta\b.*\bt[eé]rmic', r'\bcomposto\s*de\s*silicone\b',
+        r'\bthermal\s*compound\b', r'\bthermal\s*paste\b', r'\btermal\b',
+    ]),
     ('placa_video', [
         r'placa\s*de\s*video', r'\bgpu\b', r'\bgeforce\b', r'\bradeon\b',
         r'\b(rtx|gtx)\s?\d{3,4}\b', r'\brx\s?\d{3,4}\b', r'\brx\s?\d{2,3}\b',

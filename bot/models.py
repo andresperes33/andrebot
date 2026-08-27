@@ -73,6 +73,7 @@ class Promo(models.Model):
         ('fonte', 'Fonte'),
         ('gabinete', 'Gabinete'),
         ('cooler', 'Cooler / Water Cooler'),
+        ('pasta_termica', 'Pasta Térmica'),
         ('controle', 'Controle / Gamepad'),
         ('webcam', 'Webcam'),
         ('roteador', 'Roteador'),
