@@ -40,9 +40,15 @@ _REGEX_CATEGORIA = [
         r'\bcopy\s*de\s*(?:cart\b|catridge)',
     ]),
     ('console', [
-        r'\bnintendo\b', r'\bswitch\b', r'\bps[0-9]?\b', r'\bplaystation\b',
-        r'\bxbox\b', r'\bsteam\s*deck\b', r'\bok\s*1\b', r'\banbernic\b',
+        r'\bswitch\b(?!\s*(?:lite|oled|2\b))',
+        r'\bplaystation\b(?![^.\n]*(?:para|compat[ií]vel|compativel|computador|pc\b|fone|headset|controle|acess[oó]rio))',
+        r'\bnintendo\b(?!\s*(?:switch\s+(?:lite|oled)))(?![^.,\n]*(?:para\b|fone|controle|acess[oó]rio))',
+        r'\bxbox\b(?![^.,\n]*(?:para\b|fone|controle|headset|acess[oó]rio|series\s*[sx]\s*compat))',
+        r'\bsteam\s*deck\b', r'\bok\s*1\b', r'\banbernic\b',
         r'\bsup\b', r'\bhandheld\b', r'\bconsole\b',
+        # 'ps5'/'ps4' sozinho (ex.: 'PS5 Slim') só é console se NÃO estiver
+        # numa lista de compatibilidade ('para ps5', 'ps5, ps4', 'ps5 pc').
+        r'\bps[0-9]\b(?!ps[0-9]|,[^.\n]*ps[0-9]|[^.\n]*\b(?:para|compat[ií]vel|compativel|computador|fone|headset|controle|ssd|disco|jogo|acess[oó]rio)\b)',
     ]),
     ('notebook', [
         r'\bnotebook\b', r'\blaptop\b', r'\bmacbook\b', r'\bultrabook\b', r'\bchromebook\b',
