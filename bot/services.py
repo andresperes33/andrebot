@@ -146,6 +146,34 @@ _ALIASES = [
 ]
 
 
+def _eh_codigo_modelo(w):
+    """True se o token parece um código de produto (mistura de letras e
+    dígitos, ex.: '75a400m', 'rtx4060', '5700x', 'bcx4601'). Esses códigos
+    são estáveis entre postagens do mesmo produto — diferentemente de
+    descritores ('uhd', 'mini led', '2026')."""
+    if not w or len(w) < 4:
+        return False
+    if not (re.search(r'\d', w) and re.search(r'[a-z]', w)):
+        return False
+    # unidades/medidas comuns que NÃO devem ser tratadas como modelo
+    if re.fullmatch(r'\d{1,4}k', w):        # 4k, 8k, 1440k
+        return False
+    if re.fullmatch(r'\d{1,4}p', w):        # 1080p, 720p
+        return False
+    if re.fullmatch(r'\d{2,4}hz', w):       # 144hz
+        return False
+    if re.fullmatch(r'\d{2,4}w', w):        # 350w
+        return False
+    if re.fullmatch(r'\d{1,4}gb', w) or re.fullmatch(r'\d{1,4}tb', w):  # 825gb
+        return False
+    if re.fullmatch(r'\d{1,2}x', w):        # 9x (parcelas)
+        return False
+    # palavras comuns que têm letra+sobraram (ex.: '7.1', 'sem', 'fio', 'rgb')
+    if w in ('sem', 'fio', 'rgb', 'com', 'por', 'para', 'uma', 'novo'):
+        return False
+    return True
+
+
 def _chave_produto(titulo):
     """Gera uma chave estável por NOME do produto (normalizado), para agrupar
     o mesmo item independente da loja/link.
@@ -207,8 +235,18 @@ def _chave_produto(titulo):
         if w not in vistos:
             vistos.add(w)
             unicos.append(w)
-    chave = ' '.join(unicos).strip()
-    chave = re.sub(r'\s+', ' ', chave)
+
+    # Prioriza o CÓDIGO DO MODELO como identificador estável. Tokens descritivos
+    # ('uhd', 'mini led', 'google', '2026', '4k', 'qd') variam entre postagens do
+    # mesmo produto; já o código (ex.: '75a400m', 'rtx4060', '5700x') não varia,
+    # e é isso que faz o histórico agrupar TVs/placas/processadores de lojas e
+    # textos diferentes. Se houver código de modelo, ele sozinho é a chave.
+    modelos = [w for w in unicos if _eh_codigo_modelo(w)]
+    if modelos:
+        chave = ' '.join(modelos)
+    else:
+        chave = ' '.join(unicos)
+    chave = re.sub(r'\s+', ' ', chave).strip()
     return chave
 
 
