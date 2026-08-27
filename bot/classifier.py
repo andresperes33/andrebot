@@ -28,12 +28,16 @@ def _limpar_compat(texto):
 # (só é kit se vier placa-mãe/processador/memória junto), ver detectar_categoria.
 _REGEX_CATEGORIA = [
     ('jogo', [
-        r'\bgta\b', r'\bgrand\s*theft\s*auto\b', r'\bjogo\b', r'\bjogos\b',
+        r'\bgta\b', r'\bgrand\s*theft\s*auto\b',
         r'\bmídia\s*f[ií]sica\b', r'\bmidia\s*fisica\b', r'\bblu-?ray\b',
         r'\bcodigo\b.{0,12}gta\b',
         r'\bforza\b', r'\bgod\s*of\s*war\b', r'\bzelda\b', r'\bmario\b',
         r'\bred\s*dead\b', r'\bdragon\s*ball\b', r'\bfifa\b', r'\bea\s*sports\b',
         r'\bcall\s*of\s*duty\b', r'\belden\s*ring\b', r'\bcyberpunk\b',
+        # Jogo claro de produto: 'Jogo X' no início da linha OU 'jogo' como
+        # rótulo do item (ex.: 'Jogo PS5 GTA'). Evita pegar 'Hifi para Jogos'.
+        r'\bjogo\s+(?:de|do|da|d[aeo]?\s+)?[a-z0-9]',
+        r'\bcopy\s*de\s*(?:cart\b|catridge)',
     ]),
     ('console', [
         r'\bnintendo\b', r'\bswitch\b', r'\bps[0-9]?\b', r'\bplaystation\b',
