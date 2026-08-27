@@ -1,0 +1,50 @@
+{% extends 'bot/base.html' %}
+{% load static %}
+
+{% block title %}Guia de Compras | Nitro Tech{% endblock %}
+{% block description %}Guias e artigos originais sobre hardware, tecnologia e como economizar nas compras: escolha de placa de vídeo, processador, notebook e muito mais.{% endblock %}
+
+{% block nav_promos %}active{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
+    <div class="breadcrumb-inner">
+        <a href="/promos/">Início</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <span class="breadcrumb-current">Guia de Compras</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="hero-dark" style="padding:56px 24px 48px;">
+    <span class="corner-square"></span>
+    <div class="hero-inner">
+        <span class="hero-eyebrow">Conteúdo original</span>
+        <h1 class="hero-title">Guia de Compras</h1>
+        <p class="hero-sub">Guias práticos para escolher melhor e economizar na hora de comprar tecnologia.</p>
+    </div>
+</div>
+
+<div class="container" style="max-width:1000px;padding:48px 24px;">
+    {% if artigos %}
+    <div class="cat-guide-grid">
+        {% for artigo in artigos %}
+        <a href="{% url 'guia_artigo' artigo.slug %}" class="guide-card" style="color:inherit;text-decoration:none;">
+            <span class="corner-square"></span>
+            <div class="guide-card-body">
+                <div class="guide-card-eyebrow">Guia</div>
+                <h3 class="guide-card-title">{{ artigo.titulo }}</h3>
+                <p class="guide-card-desc">{{ artigo.resumo|default:"" }}</p>
+                <span class="guide-card-cta">Ler artigo <i class="fas fa-arrow-right"></i></span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="font-size:16px;color:var(--mute);text-align:center;padding:40px 0;">Nossos guias estão sendo preparados. Volte em breve!</p>
+    {% endif %}
+</div>
+
+{% endblock %}

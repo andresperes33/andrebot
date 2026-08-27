@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from datetime import timedelta
-from .models import Promo
+from .models import Promo, Artigo
 
 # Lojas sempre exibidas no filtro, mesmo sem promoções no período atual.
 _LOJAS_FIXAS = [
@@ -226,6 +226,24 @@ def termos_view(request):
     return render(request, 'bot/termos.html')
 
 
+def guia_view(request):
+    """
+    Lista de artigos/guias originais (conteúdo exclusivo para SEO e AdSense).
+    """
+    from .models import Artigo
+    artigos = Artigo.objects.filter(publicado=True)
+    return render(request, 'bot/guia.html', {'artigos': artigos})
+
+
+def guia_artigo_view(request, slug):
+    """
+    Página individual de um artigo/guiu.
+    """
+    from .models import Artigo
+    artigo = get_object_or_404(Artigo, slug=slug, publicado=True)
+    return render(request, 'bot/guia_artigo.html', {'artigo': artigo})
+
+
 from django.http import HttpResponse
 
 
@@ -261,11 +279,20 @@ def sitemap_xml_view(request):
     base_url = request.build_absolute_uri('/').rstrip('/')
     pages = [
         {"loc": f"{base_url}/promos/", "changefreq": "always", "priority": "1.0"},
+        {"loc": f"{base_url}/guia/", "changefreq": "weekly", "priority": "0.7"},
         {"loc": f"{base_url}/sobre/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/contato/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/termos-de-uso/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/politica-de-privacidade/", "changefreq": "monthly", "priority": "0.3"},
     ]
+
+    # Artigos/Guia do site (conteúdo original indexável)
+    for artigo in Artigo.objects.filter(publicado=True):
+        pages.append({
+            "loc": f"{base_url}/guia/{artigo.slug}/",
+            "changefreq": "monthly",
+            "priority": "0.7",
+        })
 
     # Cada promo vira uma página individual indexável
     for promo in Promo.objects.all()[:500]:

@@ -104,3 +104,29 @@ class Promo(models.Model):
 
     def __str__(self):
         return f"{self.titulo[:60]} — {self.preco} ({self.criado_em.strftime('%d/%m %H:%M')})"
+
+
+class Artigo(models.Model):
+    """
+    Artigo/guiu original do site (conteúdo exclusivo para SEO e AdSense).
+    """
+    titulo = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, unique=True)
+    resumo = models.CharField(max_length=300, blank=True, help_text='Breve descrição exibida na listagem e nas meta tags.')
+    conteudo = models.TextField(help_text='Conteúdo em linha única (HTML) ou blocos separados por quebras. Recomenda-se usar tags básicas de HTML (<p>, <h2>, <ul>, <strong>).')
+    imagem_url = models.URLField(max_length=2000, blank=True)
+    publicado = models.BooleanField(default=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-criado_em']
+        verbose_name = 'Artigo'
+        verbose_name_plural = 'Artigos'
+
+    def __str__(self):
+        return self.titulo
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('guia_artigo', args=[self.slug])

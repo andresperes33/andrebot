@@ -1,0 +1,48 @@
+{% extends 'bot/base.html' %}
+{% load static %}
+
+{% block title %}{{ artigo.titulo }} | Nitro Tech{% endblock %}
+{% block description %}{{ artigo.resumo|default:artigo.titulo }}{% endblock %}
+
+{% block og_meta %}
+<meta property="og:type" content="article">
+<meta property="og:url" content="{{ SITE_URL }}{% url 'guia_artigo' artigo.slug %}">
+<meta property="og:title" content="{{ artigo.titulo }}">
+<meta property="og:description" content="{{ artigo.resumo }}">
+{% if artigo.imagem_url %}<meta property="og:image" content="{{ artigo.imagem_url }}">{% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
+    <div class="breadcrumb-inner">
+        <a href="/promos/">Início</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <a href="{% url 'guia' %}">Guia de Compras</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <span class="breadcrumb-current">{{ artigo.titulo|truncatechars:40 }}</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="hero-dark" style="padding:56px 24px 48px;">
+    <span class="corner-square"></span>
+    <div class="hero-inner">
+        <span class="hero-eyebrow">Guia de compras</span>
+        <h1 class="hero-title">{{ artigo.titulo }}</h1>
+        {% if artigo.resumo %}<p class="hero-sub">{{ artigo.resumo }}</p>{% endif %}
+    </div>
+</div>
+
+<article class="container" style="max-width:820px;padding:48px 24px;">
+    {% if artigo.imagem_url %}
+    <img src="{{ artigo.imagem_url }}" alt="{{ artigo.titulo }}" style="width:100%;border-radius:12px;margin-bottom:8px;">
+    {% endif %}
+    <div class="article-content" style="font-size:16px;line-height:1.75;color:var(--body);">
+        {{ artigo.conteudo|safe }}
+    </div>
+    <p style="margin-top:32px;font-size:13px;color:var(--mute);">Atualizado em {{ artigo.atualizado_em|date:"d/m/Y" }}</p>
+</article>
+
+{% endblock %}

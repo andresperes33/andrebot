@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserAlert, BotConfig, Promo
+from .models import UserAlert, BotConfig, Promo, Artigo
 
 
 @admin.register(UserAlert)
@@ -20,4 +20,13 @@ class PromoAdmin(admin.ModelAdmin):
     list_filter = ('categoria', 'fonte', 'criado_em')
     search_fields = ('titulo', 'cupom', 'texto_original')
     readonly_fields = ('criado_em', 'produto_chave')
+    ordering = ('-criado_em',)
+
+
+@admin.register(Artigo)
+class ArtigoAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'slug', 'publicado', 'criado_em')
+    list_filter = ('publicado',)
+    search_fields = ('titulo', 'resumo', 'conteudo')
+    prepopulated_fields = {'slug': ('titulo',)}
     ordering = ('-criado_em',)
