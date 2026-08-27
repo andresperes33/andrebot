@@ -416,6 +416,47 @@ def _eh_anuncio_cupom(limpa):
     return True
 
 
+# Termos fortes que indicam que a linha é o nome de um produto real
+# (não um código de cupom, rótulo de loja ou instrução).
+_TERMOS_PRODUTO = [
+    'water cooler', 'watercooler', 'cooler', 'ssd', 'nvme', 'placa de video',
+    'processador', 'ryzen', 'monitor', 'notebook', 'headset', 'fone', 'teclado',
+    'mouse', 'gabinete', 'fonte', 'memoria', 'ram', 'placa mae', 'caixa de som',
+    'soundbar', 'microfone', 'webcam', 'controle', 'jogo', 'gta', 'tv', 'celular',
+    'smartphone', 'cadeira', 'impressora', 'roteador', 'console', 'console',
+    'pasta termica', 'pasta térmica', 'gpu', 'videogame', 'fans', 'fan',
+    'air fryer', 'batedeira', 'liquidificador', 'secador', 'aspirador',
+]
+
+
+def _eh_linha_titulo_produto(linha):
+    """True se a linha normalizada parece ser o nome de um produto real.
+
+    Usado para decidir se uma mensagem com 'Cupom: X' é um PRODUTO com
+    cupom (ex.: 'Water Cooler ... cupom GAMER10') ou um anúncio só de cupom.
+    """
+    if not linha:
+        return False
+    # Código de cupom: linha sem espaço (ex.: '99TOPHIGH') não é produto.
+    if ' ' not in linha.strip():
+        return False
+    tem_termo = any(t in linha for t in _TERMOS_PRODUTO)
+    tem_cupom = re.search(r'\bcupoms?\b', linha)
+    # Linha com 'cupom' e sem termo de produto → anúncio de cupom, não produto.
+    if tem_cupom and not tem_termo:
+        return False
+    if tem_termo:
+        return True
+    # Nome de produto sem termos conhecidos: tem >= 2 palavras e uma delas
+    # parece modelo (mistura letra+digito), ex.: 'gk240', 'k688'.
+    palavras = [w for w in linha.split() if re.search(r'\w', w)]
+    if len(palavras) >= 2:
+        for w in palavras:
+            if re.search(r'\d', w) and re.search(r'[a-z]', w) and len(w) >= 3:
+                return True
+    return False
+
+
 def _limpar_cor_inicio(texto):
     """Remove uma cor que apareça no INÍCIO do título (ex.: 'PRETO Mousepad',
     '(preto) Mousepad'), já que cor não identifica o produto."""

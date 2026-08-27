@@ -158,14 +158,27 @@ def detectar_categoria(texto, titulo=None):
 
     # Postagem só de cupom: o título é um anúncio curto com 'cupom'
     # (ex.: 'Novo Cupom AMAZON', 'CUPOM 10% OFF ...'). Nesse caso o produto não existe.
-    from bot.services import _eh_anuncio_cupom
+    # Se houver um produto real no texto (water cooler, SSD, etc.), o anúncio
+    # é de PRODUTO com cupom — não deve virar 'cupom'.
+    from bot.services import _eh_anuncio_cupom, _eh_linha_titulo_produto
+    tem_produto_real = False
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        for linha in _norm(alvo).split('\n'):
+            if _eh_linha_titulo_produto(linha):
+                tem_produto_real = True
+                break
+        if tem_produto_real:
+            break
+
     for alvo in (titulo, texto,):
         if not alvo:
             continue
         primeira_linha = _norm(alvo.split('\n')[0])
         if not primeira_linha:
             continue
-        if _eh_anuncio_cupom(primeira_linha):
+        if _eh_anuncio_cupom(primeira_linha) and not tem_produto_real:
             return 'cupom'
 
     # Kit (placa-mãe + processador + memória) tem prioridade sobre qualquer
