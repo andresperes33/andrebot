@@ -40,7 +40,8 @@ _REGEX_CATEGORIA = [
         r'\bcopy\s*de\s*(?:cart\b|catridge)',
     ]),
     ('console', [
-        r'\bswitch\b(?!\s*(?:lite|oled|2\b))',
+        # 'switch' só é console (Nintendo Switch) — não é switch mecânico de teclado.
+        r'\bswitch\b(?=\s*(?:nintendo|oled|lite|2\b|\d|joy|v2))|(?<=\bnintendo\s)switch',
         r'\bplaystation\b(?![^.\n]*(?:para|compat[ií]vel|compativel|computador|pc\b|fone|headset|controle|acess[oó]rio))',
         r'\bnintendo\b(?!\s*(?:switch\s+(?:lite|oled)))(?![^.,\n]*(?:para\b|fone|controle|acess[oó]rio))',
         r'\bxbox\b(?![^.,\n]*(?:para\b|fone|controle|headset|acess[oó]rio|series\s*[sx]\s*compat))',
