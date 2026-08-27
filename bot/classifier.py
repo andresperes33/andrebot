@@ -160,6 +160,18 @@ def detectar_categoria(texto, titulo=None):
     # 'compatível com laptop/notebook' não é confundido com o produto.
     haystack = _norm(_limpar_compat(texto))
 
+    # Notebook tem prioridade sobre qualquer GPU citada no título (ex.:
+    # 'RTX 5050 Notebook Asus TUF' é um NOTEBOOK, não uma placa de vídeo).
+    # A GPU (RTX/GTX) aparece no nome do notebook, mas o produto é o note.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:notebook|laptop|macbook|ultrabook|chromebook|galaxy\s*book)\b', alvo_norm):
+            return 'notebook'
+
     # Postagem só de cupom: o título é um anúncio curto com 'cupom'
     # (ex.: 'Novo Cupom AMAZON', 'CUPOM 10% OFF ...'). Nesse caso o produto não existe.
     # Se houver um produto real no texto (water cooler, SSD, etc.), o anúncio
