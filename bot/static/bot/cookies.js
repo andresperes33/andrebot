@@ -2,7 +2,6 @@
     var banner = document.getElementById('cookieBanner');
     if (!banner) return;
     var KEY = 'nitrotech_cookie_consent';
-    var SESSION = 'noSession';
 
     function getConsent() {
         try { return localStorage.getItem(KEY); } catch (e) { return null; }
@@ -14,15 +13,17 @@
 
     function isConsentSet() {
         var v = getConsent();
-        return v === 'accepted' || v === 'rejected' || v === SESSION;
+        return v === 'accepted' || v === 'rejected';
     }
 
+    // Se o usuário já decidiu antes, não mostra o banner.
     if (isConsentSet()) {
         banner.style.display = 'none';
         return;
     }
 
-    banner.classList.add('show');
+    // Pequeno atraso para garantir que o banner seja perceptível e legível.
+    setTimeout(function () { banner.classList.add('show'); }, 400);
 
     function hide() {
         banner.classList.remove('show');
@@ -44,14 +45,4 @@
             hide();
         });
     }
-
-    // Se o usuário rolar bastante a página, tratamos como consentimento
-    // implícito (padrão de mercado) salvo apenas na sessão.
-    window.addEventListener('scroll', function () {
-        if (isConsentSet()) return;
-        if (window.scrollY > 300) {
-            setConsent(SESSION);
-            hide();
-        }
-    }, { passive: true });
 })();
