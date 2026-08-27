@@ -826,14 +826,12 @@ def convert_to_affiliate_link(url, final_url=None):
 def convert_mercado_livre_link(url):
     """
     Gera link de afiliado do Mercado Livre.
-    1. Expande o link (meli.la) e extrai a URL real do produto (MLB)
-    2. Reconstrói o link com tag + matt_tool do perfil
-    3. Encurta para meli.la via API interna (se possível)
-    4. Fallback: link social do perfil do afiliado
+    1. Expande o link (meli.la)
+    2. Extrai a URL real do produto (MLB) do HTML
+    3. Gera link afiliado com nossa tag + matt_tool
     """
     tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'pean3412407')
     matt_tool = getattr(settings, 'MERCADO_LIVRE_MATT_TOOL', '57756886')
-    perfil = getattr(settings, 'MERCADO_LIVRE_PERFIL', 'andreindicatech')
     ml_cookie = getattr(settings, 'MERCADO_LIVRE_COOKIE', None)
 
     hdrs = {
@@ -842,27 +840,21 @@ def convert_mercado_livre_link(url):
     if ml_cookie:
         hdrs["Cookie"] = ml_cookie
 
-    # Link social do perfil (fallback garantido — sempre redireciona o
-    # visitante para o produto do afiliado).
-    def _link_social():
-        return f"https://www.mercadolivre.com.br/social/{perfil}?matt_word={tag}&matt_tool={matt_tool}"
-
     try:
         # 1. Expande o link (meli.la → página que contém MLB/redirect)
         r = requests.get(url, allow_redirects=True, timeout=12, headers=hdrs)
         page_html = r.text
 
-        # 2. Extrai URL do produto real no HTML/URL final
+        # 2. Extrai URL do produto real no HTML da página
         import re as _re
-        produto_url = None
         prod_urls = _re.findall(
             r'https://www\.mercadolivre\.com\.br/[^"<>\s]+/p/MLB\d+',
             page_html,
         )
-        if prod_urls:
-            produto_url = prod_urls[0].split('?')[0].split('#')[0]
 
-        if produto_url:
+        if prod_urls:
+            # Pega o primeiro produto e limpa parâmetros extras
+            produto_url = prod_urls[0].split('?')[0].split('#')[0]
             affiliate_url = f"{produto_url}?matt_tool={matt_tool}&matt_word={tag}"
 
             # --- Encurtamento meli.la via API Interna ---
@@ -885,14 +877,20 @@ def convert_mercado_livre_link(url):
             print(f"ML Afiliado (produto): {affiliate_url[:100]}...")
             return affiliate_url
 
-        # 3. Fallback: link social do perfil (funciona sem extrair o produto)
-        social = _link_social()
-        print(f"ML Fallback (social): {social}")
-        return social
+        # Fallback: tenta pegar pelo ID MLB
+        mlb_ids = list(set(_re.findall(r'MLB\d+', page_html)))
+        if mlb_ids:
+            mlb_id = mlb_ids[0]
+            affiliate_url = f"https://www.mercadolivre.com.br/p/{mlb_id}?matt_tool={matt_tool}&matt_word={tag}"
+            print(f"ML Afiliado (MLB ID): {affiliate_url}")
+            return affiliate_url
+
+        print("ML: Nenhum produto encontrado na página.")
+        return None
 
     except Exception as e:
         print(f"ML: Erro na conversão ({e})")
-        return _link_social()
+        return None
 
 
 def convert_awin_link(url, merchant_id='17729'):

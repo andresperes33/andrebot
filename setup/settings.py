@@ -169,7 +169,6 @@ MAGALU_ID = os.getenv('MAGALU_ID', 'magazinein_1546179')
 # Mercado Livre Afiliados Settings
 MERCADO_LIVRE_TAG = os.getenv('MERCADO_LIVRE_TAG', 'pean3412407')
 MERCADO_LIVRE_MATT_TOOL = os.getenv('MERCADO_LIVRE_MATT_TOOL', '57756886')
-MERCADO_LIVRE_PERFIL = os.getenv('MERCADO_LIVRE_PERFIL', 'andreindicatech')
 MERCADO_LIVRE_COOKIE = os.getenv('MERCADO_LIVRE_COOKIE')
 
 # Monitor Settings (Telethon)
