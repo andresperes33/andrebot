@@ -180,7 +180,10 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        eh_console = re.search(r'\b(?:playstation|ps[1-5]|xbox|nintendo\s*switch|switch)\b', alvo_norm)
+        eh_console = re.search(
+            r'(?:playstation\s?[1-5]?|ps\s?[1-5]|xbox|nintendo\s*switch|switch)',
+            alvo_norm,
+        )
         eh_bundle = re.search(r'\b(?:bundle|pacote|com\s*jogos|jogo\s*incluso|edicao\s*com)\b', alvo_norm)
         if eh_console and eh_bundle:
             return 'console'
