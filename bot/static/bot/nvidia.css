@@ -825,20 +825,25 @@ a.price-history-row:hover {
     align-items: center;
     gap: 5px;
     margin-left: 6px;
-    padding: 2px 8px;
+    padding: 2px 7px;
     border-radius: 999px;
     background: #76b900;
     color: #0d0d0d;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: .03em;
+    letter-spacing: .02em;
     vertical-align: middle;
+    white-space: nowrap;
 }
 .price-history-date {
     font-size: 13px;
     color: #bcbcc4;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
 }
 .price-history-loja {
     font-size: 13px;
@@ -859,6 +864,13 @@ a.price-history-row:hover {
     margin-left: auto;
 }
 .price-history-row.is-current .price-history-price { color: #c6f39a; }
+@media (max-width: 480px) {
+    .price-history-row { padding: 12px 12px; gap: 10px; }
+    .price-history-date { font-size: 12px; }
+    .price-history-badge { font-size: 9px; padding: 2px 6px; margin-left: 0; }
+    .price-history-loja { font-size: 12px; }
+    .price-history-price { font-size: 15px; }
+}
 .detail-meta {
     display: flex;
     align-items: center;
