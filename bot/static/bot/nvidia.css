@@ -811,9 +811,15 @@ a.price-history-row:hover {
     min-width: 0;
 }
 .price-history-row.is-current {
-    border-color: rgba(118,185,0,0.5);
-    background: rgba(118,185,0,0.12);
+    border-color: rgba(118,185,0,0.6);
+    background: rgba(118,185,0,0.16);
 }
+.price-history-row.is-current .price-history-date,
+.price-history-row.is-current .price-history-loja {
+    color: #c6f39a;
+}
+.price-history-row.is-current .price-history-go { color: #d5f0ff; }
+.price-history-row.is-current .price-history-price { color: #c6f39a; }
 .price-history-date {
     font-size: 13px;
     color: #d8d8dc;
