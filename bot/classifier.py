@@ -74,7 +74,11 @@ _REGEX_CATEGORIA = [
         r'\bps[0-9]\b(?!ps[0-9]|,[^.\n]*ps[0-9]|[^.\n]*\b(?:para|compat[ií]vel|compativel|computador|fone|headset|controle|ssd|disco|jogo|acess[oó]rio)\b)',
     ]),
     ('notebook', [
-        r'\bnotebook\b', r'\blaptop\b', r'\bmacbook\b', r'\bultrabook\b', r'\bchromebook\b',
+        # Só é notebook quando é o PRODUTO, não compatibilidade
+        # ('para PC e Notebook', 'compatível com notebook', 'pc e notebook').
+        r'\bnotebook\b(?<!para )(?<!pc e )(?<!com )(?<!e )',
+        r'\blaptop\b(?<!para )(?<!pc e )(?<!com )(?<!e )',
+        r'\bmacbook\b', r'\bultrabook\b', r'\bchromebook\b',
         r'\bgalaxy\s*book\s*\w*', r'\bwindows\s*11\b', r'\bwindows\s*10\b',
         r'\btela\s*(?:ips|amoled|de\s*\d+[\.,]?\d*\s*"|de\s*\d+\s*polegadas)',
         r'\bintel\s*core\s*ultra\b', r'\bi3-?1\d{4}\b', r'\bi5-?1\d{4}\b', r'\bi7-?1\d{4}\b',
@@ -183,15 +187,36 @@ def detectar_categoria(texto, titulo=None):
     # 'compatível com laptop/notebook' não é confundido com o produto.
     haystack = _norm(_limpar_compat(texto))
 
-    # Notebook tem prioridade sobre qualquer GPU citada no título (ex.:
-    # 'RTX 5050 Notebook Asus TUF' é um NOTEBOOK, não uma placa de vídeo).
-    # A GPU (RTX/GTX) aparece no nome do notebook, mas o produto é o note.
+    # Produtos de áudio/acessórios têm prioridade sobre "notebook" quando a
+    # palavra 'notebook' é só compatibilidade ('caixa de som para notebook').
     for alvo in (titulo, texto,):
         if not alvo:
             continue
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
+        if re.search(r'\b(?:caixa\s*de\s*som|soundbar|caixa\s*som|microfone|headset|fone\s*de\s*ouvido)\b', alvo_norm) and \
+           re.search(r'\b(?:pc|notebook|laptop)\b', alvo_norm):
+            # É um produto de áudio, e 'notebook' aparece só como compatibilidade
+            if re.search(r'caixa\s*de\s*som|soundbar|caixa\s*som', alvo_norm):
+                return 'caixa_som'
+            if re.search(r'\bmicrofone\b', alvo_norm):
+                return 'microfone'
+            if re.search(r'\b(?:headset|fone\s*de\s*ouvido)\b', alvo_norm):
+                return 'headset'
+
+    # Notebook tem prioridade sobre qualquer GPU citada no título (ex.:
+    # 'RTX 5050 Notebook Asus TUF' é um NOTEBOOK, não uma placa de vídeo).
+    # Mas "notebook" como COMPATIBILIDADE ('para PC e Notebook', 'compatível
+    # com notebook') NÃO torna o produto um notebook (ex.: caixa de som).
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:para|compat[ií]vel|com|pc\s*e|pc\b|no\s*pc)\s*(?:pc\s*e\s*)?(?:notebook|laptop)\b', alvo_norm):
+            continue  # é compatibilidade, não anúncio de notebook
         if re.search(r'\b(?:notebook|laptop|macbook|ultrabook|chromebook|galaxy\s*book)\b', alvo_norm):
             return 'notebook'
 
