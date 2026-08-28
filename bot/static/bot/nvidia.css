@@ -798,11 +798,13 @@ button, input { font-family: inherit; }
     border-radius: var(--radius-sm);
     color: inherit;
     text-decoration: none;
-    transition: border-color .2s, background .2s;
+    transition: border-color .2s, background .2s, transform .2s, box-shadow .2s;
 }
 a.price-history-row:hover {
-    border-color: rgba(118,185,0,0.45);
+    border-color: #76b900;
     background: #1c1c24;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
 }
 .price-history-info {
     display: flex;
