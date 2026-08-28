@@ -157,6 +157,12 @@ def _eh_codigo_modelo(w):
     descritores ('uhd', 'mini led', '2026')."""
     if not w or len(w) < 4:
         return False
+    # Número puro de 3-4 dígitos: modelo de GPU/CPU (5060, 4060, 580, 5700).
+    # Evita anos ('2026', '2025') e capacidades/medidas já filtradas.
+    if re.fullmatch(r'\d{3,4}', w):
+        if re.fullmatch(r'20[2-9]\d', w):   # '2025', '2026' — é ano, não modelo
+            return False
+        return True
     if not (re.search(r'\d', w) and re.search(r'[a-z]', w)):
         return False
     # unidades/medidas comuns que NÃO devem ser tratadas como modelo
@@ -172,6 +178,9 @@ def _eh_codigo_modelo(w):
         return False
     # medidas/specs que variam e não são modelo: '3.6ghz', '4.2gh', '16mb', '144hz'
     if re.fullmatch(r'\d+[\.,]?\d*\s*(?:ghz|gh|hz|mhz|mb|mm|cm|mah|w|v)', w):
+        return False
+    # tipo de memória (gddr7, ddr4, ddr5) não é modelo
+    if re.fullmatch(r'(?:g?ddr|g?ddr\d)[0-9]?', w) or re.fullmatch(r'g?ddr\d+', w):
         return False
     if re.fullmatch(r'\d{1,2}x', w):        # 9x (parcelas)
         return False
@@ -200,6 +209,10 @@ def _chave_produto(titulo):
     # Aplica sinônimos ANTES de tokenizar (ex.: 'grand theft auto vi' -> 'gta6')
     for pat, cano in _ALIASES:
         t = re.sub(pat, cano, t)
+
+    # Junta sufixo de modelo ao número anterior, para distinguir
+    # '5060 ti' (rtx5060ti) de '5060' (rtx5060), '4060 super', etc.
+    t = re.sub(r'(\b\d{3,4})\s+(ti|super|sup|s|x|ultra)\b', r'\1\2', t)
 
     palavras = t.split()
     limpas = []
