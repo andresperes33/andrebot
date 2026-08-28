@@ -6,8 +6,30 @@ def sem_acento(texto):
     return unicodedata.normalize('NFKD', texto or '').encode('ascii', 'ignore').decode('ascii')
 
 
+# Remove emojis, pictogramas, símbolos e caracteres invisíveis/unicode não-ASCII.
+# Esses caracteres atrapalham regex como '^cupom'/'^novo cupom' e não ajudam a
+# identificar o produto. Mantém letras, números, acentos (via sem_acento) e
+# pontuação básica.
+_RE_EMOJI = re.compile(
+    r'[\U0001F000-\U0001FAFF]'      # Emojis e pictogramas
+    r'|[\u2600-\u27BF]'             # Símbolos diversos (⭐, ★, ♥, etc.)
+    r'|[\u2190-\u21FF]'             # Setas (⬇, ➡)
+    r'|[\u2B00-\u2BFF]'             # Símbolos/moeda (💰, ⁉)
+    r'|\u00a9|\u00ae|\u2122|\u00a0',  # ©, ®, ™, espaço inseparável
+)
+
+
+def sem_simbolo(texto):
+    """Remove emojis/símbolos e colapsa espaços, preservando o texto útil."""
+    t = _RE_EMOJI.sub(' ', texto or '')
+    t = re.sub(r'\s+', ' ', t)
+    return t.strip()
+
+
 def _norm(texto):
-    return re.sub(r'\s+', ' ', sem_acento(texto or '')).lower()
+    base = sem_acento(texto or '')
+    base = _RE_EMOJI.sub(' ', base)
+    return re.sub(r'\s+', ' ', base).lower().strip()
 
 
 def _limpar_compat(texto):
