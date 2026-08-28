@@ -319,6 +319,10 @@ _TERMOS_CABECALHO = [
     'pega essa', 'pega esse', 'pipoca do caos', 'anon esbarrou',
     'voltou', 'voltei', 'de volta', 'de novo', 'aconteceu denovo',
     'parcelado', 'parcelado em', 'em até', 'sem juros', 'com cupom',
+    'para primeira compra', 'primeira compra na', 'conta prime',
+    'para primeira', 'na amazon e conta', 'na shopee e conta',
+    'use o cupom', 'usar o cupom', 'aplique o cupom',
+    'valido em selecionados', 'válido em selecionados', 'selecionados na lista',
 ]
 _LOJAS = [
     'aliexpress', 'mercadolivre', 'mercado livre', 'amazon', 'shopee',
