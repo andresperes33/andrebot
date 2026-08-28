@@ -824,18 +824,18 @@ a.price-history-row:hover {
     color: var(--body);
     display: flex;
     align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    flex-wrap: wrap;
+    gap: 4px 6px;
 }
-.price-history-loja i { color: var(--primary); font-size: 11px; }
-.price-history-go { color: var(--link-blue); }
+.price-history-loja i { color: var(--primary); font-size: 11px; flex-shrink: 0; }
+.price-history-go { color: var(--link-blue); white-space: nowrap; }
 .price-history-price {
     font-size: 16px;
     font-weight: 700;
     color: var(--primary-dark);
     white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: auto;
 }
 .detail-meta {
     display: flex;
