@@ -107,7 +107,7 @@
                     {% for item in historico %}
                     <a class="price-history-row{% if item.pk == promo.pk %} is-current{% endif %}" {% if item.pk == promo.pk %}href="{% url 'promo_detail' promo.pk %}"{% elif item.pk %}href="{% url 'promo_detail' item.pk %}"{% elif item.link_afiliado %}href="{{ item.link_afiliado }}" target="_blank" rel="nofollow sponsored"{% endif %}>
                         <div class="price-history-info">
-                            <div class="price-history-date">{{ item.criado_em|date:"d/m/y \à\s H:i" }}</div>
+                            <div class="price-history-date">{{ item.criado_em|date:"d/m/y \à\s H:i" }} {% if item.pk == promo.pk %}<span class="price-history-badge"><i class="fas fa-location-arrow"></i> Você está aqui</span>{% endif %}</div>
                             {% if item.link_afiliado or item.pk %}
                             <div class="price-history-loja"><i class="fas fa-store"></i> {{ item.loja|default:"Loja" }} <span class="price-history-go">· ver oferta</span></div>
                             {% endif %}

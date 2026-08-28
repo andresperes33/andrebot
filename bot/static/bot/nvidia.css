@@ -814,11 +814,26 @@ a.price-history-row:hover {
 }
 .price-history-row.is-current {
     border-color: #76b900;
-    background: #16161c;
+    background: #171b12;
     box-shadow: inset 0 0 0 1px #76b900;
 }
 .price-history-row.is-current .price-history-date {
     color: #ffffff;
+}
+.price-history-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #76b900;
+    color: #0d0d0d;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    vertical-align: middle;
 }
 .price-history-date {
     font-size: 13px;
