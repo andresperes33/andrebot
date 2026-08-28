@@ -454,11 +454,14 @@ def _eh_linha_titulo_produto(linha):
     # Código de cupom: linha sem espaço (ex.: '99TOPHIGH') não é produto.
     if ' ' not in linha.strip():
         return False
+    # Remove emojis/símbolos do início ('🔥 Novo Cupom...' -> 'novo cupom...')
+    # para que a detecção de anúncio de cupom funcione mesmo com emoji na frente.
+    linha_sem_emoji = re.sub(r'^[^\w\s]+', '', linha).strip()
     # Anúncio de cupom (ex.: 'novo cupom kabum', 'cupom ativo shopee') e
     # linhas de instrução de cupom ('resgate o cupom de 20%') NÃO são produto.
-    if re.match(r'^(?:novo|novos|nova)\s+cupom', linha) or re.match(r'^cupom', linha):
+    if re.match(r'^(?:novo|novos|nova)\s+cupom\b', linha_sem_emoji) or re.match(r'^cupom\b', linha_sem_emoji):
         return False
-    if re.search(r'\b(?:resgate|use|usar|aplicar|aproveite)\b.*\bcupom\b', linha):
+    if re.search(r'\b(?:resgate|use|usar|aplicar|aproveite)\b.*\bcupom\b', linha_sem_emoji):
         return False
     tem_termo = any(t in linha for t in _TERMOS_PRODUTO)
     tem_cupom = re.search(r'\bcupoms?\b', linha)
