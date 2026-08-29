@@ -86,7 +86,7 @@ _REGEX_CATEGORIA = [
     ('celular', [
         r'\bcelular\b', r'\bsmartphone\b', r'\biphone\b',
         r'\bxiaomi\b', r'\bpoco\b', r'\bredmi\b', r'\brealme\b', r'\boneplus\b',
-        r'\bzenfone\b', r'moto\s*g\d', r'samsung\s*s\d\d',
+        r'\bzenfone\b', r'moto\s*g\d', r'samsung\s*s\d\d', r'\binfinix\b', r'\bpositivo\b',
         r'\bmotorola\b', r'\bmoto\s*edges?\b', r'\bedge\s*\d{2}\s*(?:fusion|ultra|pro|neo)\b', r'\bmoto\b',
         # 'galaxy' virou celular, mas pega a linha de fans 'Jungle Leopard
         # Galaxy' e notebooks 'Samsung Galaxy Book'. Só é celular se for
@@ -309,9 +309,10 @@ def detectar_categoria(texto, titulo=None):
     alvo_titulo = titulo or texto
     if alvo_titulo:
         t_limpo = _norm(_limpar_compat(alvo_titulo))
-        primeira = t_limpo.split('\n')[0]
+        # Verifica se o texto (não só a primeira linha) é um produto real.
+        # Assim 'Positivo Infinix ... 15% OFF' não vira cupom.
         eh_produto = any(
-            re.match(p, primeira) or re.search(p, primeira)
+            re.search(p, t_limpo)
             for _, padroes in _REGEX_CATEGORIA
             for p in padroes
         )
