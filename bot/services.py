@@ -436,14 +436,18 @@ def _eh_linha_nota(baixa):
 
 
 def _eh_linha_quantidade(baixa):
-    """True se a linha indica apenas a quantidade de itens da oferta
-    (ex.: '2 Peças!', 'Kit 2 peças', '1 Peça'), não o nome do produto.
-    Essas linhas costumam vir antes do título real da oferta."""
+    """True se a linha indica apenas a quantidade de itens/estoque da oferta
+    (ex.: '2 Peças!', 'Kit 2 peças', '1 Peça', '1 Pç no estoque'),
+    não o nome do produto. Essas linhas costumam vir antes do título real."""
     if not baixa:
         return False
-    if re.search(r'^\d{1,3}\s+(?:(?:peca|peça|pecas|peças|unidade|unidades|item|itens)(?:s)?)[!.]?$', baixa):
+    # 'N peça/peças/pç/un/unidade/item/itens' (+ opcional 'no estoque'/'estoque')
+    if re.search(r'^\d{1,3}\s+(?:(?:peca|peça|pecas|peças|p[cç]s?|un|unidade|unidades|item|itens)(?:s)?)[!.]?\s*(?:no\s+estoque|estoque|dispon[íi]veis?|restantes?)?[!.]?$', baixa):
         return True
-    if re.search(r'^kit\s+\d{1,3}\s+(?:(?:peca|peça|pecas|peças|unidade|unidades|item|itens)(?:s)?)[!.]?$', baixa):
+    if re.search(r'^kit\s+\d{1,3}\s+(?:(?:peca|peça|pecas|peças|p[cç]s?|un|unidade|unidades|item|itens)(?:s)?)[!.]?\s*(?:no\s+estoque|estoque)?[!.]?$', baixa):
+        return True
+    # 'X no estoque' / 'X unidades restantes' (só número + estoque)
+    if re.search(r'^\d{1,3}\s+(?:em\s+)?(?:no\s+)?estoque\s*(?:tem|sobrou|resta)?[!.]?$', baixa):
         return True
     return False
 
