@@ -118,6 +118,11 @@ _TOKENS_GENERICOS = {
     'original', 'lacrado', 'sem', 'fio', 'wireless', 'usbc',
     'lga', 'lga1851', 'lga1700', 'lga1200', 'lga1151', 'lga2066', 'lga2011',
     '1851', '1700', '1200', '1151', '1150', '2011', '2066', '1366', '775',
+    # descritores de celular que não identificam o modelo
+    'amoled', 'camara', 'camera', 'super', 'tela', 'polegadas', 'tripla',
+    'smartphone', 'galaxy', 'samsung', 'motorola', '4g', '5g', 'fusion',
+    'lcd', 'ips', 'hd', 'full', 'nfc', 'oled', 'led', 'mp', 'pixel',
+    'ram', 'gb', 'tb', 'rom', 'edge', 'moto',
 }
 
 # Plataformas de console — o JOGO é o mesmo em qualquer uma, então a
@@ -157,8 +162,11 @@ def _eh_codigo_modelo(w):
     dígitos, ex.: '75a400m', 'rtx4060', '5700x', 'bcx4601'). Esses códigos
     são estáveis entre postagens do mesmo produto — diferentemente de
     descritores ('uhd', 'mini led', '2026')."""
-    if not w or len(w) < 4:
+    if not w or len(w) < 3:
         return False
+    # Padrões de modelo: 'a17', 'g17', 'edge70', 'rx580' (letra(s) + 2+ dígitos).
+    if re.fullmatch(r'[a-z]{1,3}\d{2,4}', w):
+        return True
     # Número puro de 3-4 dígitos: modelo de GPU/CPU (5060, 4060, 580, 5700).
     # Evita anos ('2026', '2025') e capacidades/medidas já filtradas.
     if re.fullmatch(r'\d{3,4}', w):
@@ -171,6 +179,9 @@ def _eh_codigo_modelo(w):
     if re.fullmatch(r'\d{1,4}k', w):        # 4k, 8k, 1440k
         return False
     if re.fullmatch(r'\d{1,4}p', w):        # 1080p, 720p
+        return False
+    # megapixels da câmera ('50mp', '108mp') não é modelo de produto
+    if re.fullmatch(r'\d{1,4}mp', w):
         return False
     if re.fullmatch(r'\d{2,4}hz', w):       # 144hz
         return False
@@ -215,6 +226,8 @@ def _chave_produto(titulo):
     # Junta sufixo de modelo ao número anterior, para distinguir
     # '5060 ti' (rtx5060ti) de '5060' (rtx5060), '4060 super', etc.
     t = re.sub(r'(\b\d{3,4})\s+(ti|super|sup|s|x|ultra)\b', r'\1\2', t)
+    # Junta marca/linha ao número de modelo: 'edge 70' -> 'edge70', 'g 17' -> 'g17'
+    t = re.sub(r'\b(edge|galaxy|g|moto|redmi|poco|note|s)\s+(\d{2})\b', r'\1\2', t)
 
     palavras = t.split()
     limpas = []
@@ -244,6 +257,8 @@ def _chave_produto(titulo):
             continue  # parcelas ('9x', '12x') — não confundir com modelo '5700x'
         if re.fullmatch(r'\d{2,4}gb', w) or re.fullmatch(r'\d{2,4}tb', w):
             continue  # capacidade de armazenamento varia ('825gb', '1tb')
+        if re.fullmatch(r'\d{1,4}mp', w):
+            continue  # megapixels da câmera ('50mp', '108mp') não identifica o produto
         if re.fullmatch(r'\d{1,2}', w) or w in ('1000',):
             continue  # números soltos pequenos ('1', '5', '9') não identificam
         if w in ('bluetooth', 'wireless', 'sem', 'fio', 'rgb'):
