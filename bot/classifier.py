@@ -87,6 +87,7 @@ _REGEX_CATEGORIA = [
         r'\bcelular\b', r'\bsmartphone\b', r'\biphone\b',
         r'\bxiaomi\b', r'\bpoco\b', r'\bredmi\b', r'\brealme\b', r'\boneplus\b',
         r'\bzenfone\b', r'moto\s*g\d', r'samsung\s*s\d\d',
+        r'\bmotorola\b', r'\bmoto\s*edges?\b', r'\bedge\s*\d{2}\s*(?:fusion|ultra|pro|neo)\b', r'\bmoto\b',
         # 'galaxy' virou celular, mas pega a linha de fans 'Jungle Leopard
         # Galaxy' e notebooks 'Samsung Galaxy Book'. Só é celular se for
         # Samsung Galaxy (celular) ou sem contexto de fan/notebook.
