@@ -116,6 +116,8 @@ _TOKENS_GENERICOS = {
     'mini', 'duo', 'lite', 'slim', 'ultra', 'x', 'maxx',
     'microfone', 'lapela', 'usb', 'c', 'tipo', 'tipo-c', 'versao',
     'original', 'lacrado', 'sem', 'fio', 'wireless', 'usbc',
+    'lga', 'lga1851', 'lga1700', 'lga1200', 'lga1151', 'lga2066', 'lga2011',
+    '1851', '1700', '1200', '1151', '1150', '2011', '2066', '1366', '775',
 }
 
 # Plataformas de console — o JOGO é o mesmo em qualquer uma, então a

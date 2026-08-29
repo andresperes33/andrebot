@@ -187,6 +187,17 @@ def detectar_categoria(texto, titulo=None):
     # 'compatível com laptop/notebook' não é confundido com o produto.
     haystack = _norm(_limpar_compat(texto))
 
+    # Placa-mãe explícita tem prioridade sobre qualquer processador/notebook
+    # citado ('MSI Placa-mãe PRO ... suporta Intel Core Ultra' é uma PLACA-MÃE).
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:placa[ -]?mae|motherboard|mainboard)\b', alvo_norm):
+            return 'placa_mae'
+
     # Produtos de áudio/acessórios têm prioridade sobre "notebook" quando a
     # palavra 'notebook' é só compatibilidade ('caixa de som para notebook').
     for alvo in (titulo, texto,):
