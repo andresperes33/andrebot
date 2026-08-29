@@ -44,7 +44,7 @@ def send_alerts_site(offer_text: str, photo_path=None):
                 f"📲 Confira mais ofertas: {site_link}"
             )
 
-            ok = send_whatsapp_to_user(numero, mensagem)
+            ok = send_whatsapp_to_user(numero, mensagem, image_path=photo_path)
             if ok:
                 alerta.last_sent_at = timezone.now()
                 alerta.save(update_fields=['last_sent_at'])

@@ -1290,6 +1290,37 @@ def send_whatsapp_to_user(numero, text, image_path=None):
     }
 
     try:
+        if image_path and (isinstance(image_path, str) and image_path.startswith('http')):
+            # Envio via URL pública da imagem
+            endpoint = f"{url_base}/send/media"
+            payload = {
+                "number": number,
+                "caption": text,
+                "type": "image",
+                "mimetype": "image/jpeg",
+                "url": image_path
+            }
+            response = requests.post(endpoint, headers=headers, json=payload, timeout=40)
+            print(f"WhatsApp usuário {number} (url) Status: {response.status_code} - {response.text[:120]}")
+            return response.status_code in [200, 201]
+
+        if image_path and os.path.exists(image_path):
+            # Envio via base64 (arquivo local)
+            endpoint = f"{url_base}/send/media"
+            with open(image_path, "rb") as img_file:
+                b64 = base64.b64encode(img_file.read()).decode('utf-8')
+            payload = {
+                "number": number,
+                "caption": text,
+                "type": "image",
+                "mimetype": "image/jpeg",
+                "url": b64
+            }
+            response = requests.post(endpoint, headers=headers, json=payload, timeout=40)
+            print(f"WhatsApp usuário {number} (imagem) Status: {response.status_code} - {response.text[:120]}")
+            return response.status_code in [200, 201]
+
+        # Apenas texto
         endpoint = f"{url_base}/send/text"
         payload = {
             "number": number,
