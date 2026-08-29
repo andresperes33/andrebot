@@ -292,6 +292,41 @@ def guia_artigo_view(request, slug):
 from django.http import HttpResponse
 
 
+def nitroalerta_view(request):
+    """
+    Página do NITRO ALERTA: cadastro de alerta de produto por WhatsApp.
+    GET mostra o formulário + explicação; POST cadastra o alerta.
+    """
+    from .models import AlertaSite
+    from .services import normalizar_whatsapp
+
+    sucesso = None
+    erro = None
+
+    if request.method == 'POST':
+        nome = request.POST.get('nome', '').strip()
+        numero = request.POST.get('whatsapp', '').strip()
+        keyword = request.POST.get('keyword', '').strip()
+
+        if not numero:
+            erro = 'Digite seu número de WhatsApp (DDD + número).'
+        elif not keyword:
+            erro = 'Digite qual produto você quer acompanhar.'
+        else:
+            wa = normalizar_whatsapp(numero)
+            if len(wa) < 13:
+                erro = 'Número inválido. Digite no formato: 38 999821883 (DDD + número).'
+            else:
+                AlertaSite.objects.create(
+                    nome=nome,
+                    whatsapp=wa,
+                    keyword=keyword,
+                )
+                sucesso = f'Pronto, {nome or "cara"}! Vamos te avisar quando aparecer oferta de "{keyword}".'
+
+    return render(request, 'bot/nitroalerta.html', {'sucesso': sucesso, 'erro': erro})
+
+
 def robots_txt_view(request):
     """
     Gera o robots.txt dinamicamente.
@@ -325,6 +360,7 @@ def sitemap_xml_view(request):
     pages = [
         {"loc": f"{base_url}/promos/", "changefreq": "always", "priority": "1.0"},
         {"loc": f"{base_url}/blog/", "changefreq": "weekly", "priority": "0.7"},
+        {"loc": f"{base_url}/nitro-alerta/", "changefreq": "monthly", "priority": "0.5"},
         {"loc": f"{base_url}/sobre/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/contato/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/termos-de-uso/", "changefreq": "monthly", "priority": "0.3"},

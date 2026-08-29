@@ -355,6 +355,14 @@ class Command(BaseCommand):
                 except Exception as alert_err:
                     logger.error(f"❌ Erro ao enviar alertas: {alert_err}")
 
+                # ─── Dispara alertas do NITRO ALERTA (site → WhatsApp) ──────
+                try:
+                    from bot.alert_site import send_alerts_site
+                    await asyncio.to_thread(send_alerts_site, modified_text, photo_path)
+                    logger.info("🔔 Nitro Alerta (WhatsApp) verificado/enviado")
+                except Exception as site_err:
+                    logger.error(f"❌ Erro no Nitro Alerta: {site_err}")
+
                 # ─── Salva a promo no banco para a página web ─────────────────
                 promo_id = None
                 try:

@@ -20,6 +20,28 @@ class UserAlert(models.Model):
         return f"{self.telegram_first_name} ({self.telegram_user_id}) → {self.keyword}"
 
 
+class AlertaSite(models.Model):
+    """
+    Alerta de produto por WhatsApp cadastrado no site (Nitro Alerta).
+    Quando uma oferta que casa com a palavra-chave aparece, o site envia
+    para o WhatsApp do usuário.
+    """
+    nome = models.CharField(max_length=100, blank=True, default='')
+    whatsapp = models.CharField(max_length=20, db_index=True, help_text='Formato +55DDDNUMERO (gerado automaticamente).')
+    keyword = models.CharField(max_length=200)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_sent_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Alerta do Site'
+        verbose_name_plural = 'Alertas do Site'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.nome or self.whatsapp} → {self.keyword}"
+
+
 class BotConfig(models.Model):
     """
     Armazena configurações persistentes do bot no banco de dados.

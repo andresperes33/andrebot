@@ -1234,6 +1234,60 @@ def send_whatsapp_message(text, image_path=None):
         return False
 
 
+def normalizar_whatsapp(numero):
+    """
+    Normaliza um número de WhatsApp para o formato internacional +55DDDNUMERO.
+    Remove símbolos/espaços e garante o prefixo +55 (o usuário digita só DDD+número,
+    ex.: '38 999821883' -> '+5538999821883').
+    """
+    if not numero:
+        return ''
+    digitos = re.sub(r'\D', '', str(numero))
+    if digitos.startswith('55') and len(digitos) >= 12:
+        return '+' + digitos
+    return '+55' + digitos
+
+
+def send_whatsapp_to_user(numero, text, image_path=None):
+    """
+    Envia mensagem de WhatsApp para um NÚMERO específico (conta individual),
+    via Evolution API. Difere do send_whatsapp_message (que envia para o grupo).
+    """
+    import os
+    import base64
+
+    url_base = getattr(settings, 'EVOLUTION_API_URL', '').strip('/')
+    instance = getattr(settings, 'EVOLUTION_API_INSTANCE', '')
+    token = getattr(settings, 'EVOLUTION_API_TOKEN', '')
+
+    if not all([url_base, instance, token]):
+        print("WhatsApp: credenciais não configuradas.")
+        return False
+
+    number = normalizar_whatsapp(numero)
+    if not number:
+        print("WhatsApp: número inválido.")
+        return False
+
+    headers = {
+        "apikey": token,
+        "Content-Type": "application/json"
+    }
+
+    try:
+        endpoint = f"{url_base}/send/text"
+        payload = {
+            "number": number,
+            "text": text
+        }
+        response = requests.post(endpoint, headers=headers, json=payload, timeout=30)
+        print(f"WhatsApp usuário {number} Status: {response.status_code} - {response.text[:120]}")
+        return response.status_code in [200, 201]
+    except Exception as e:
+        print(f"Erro ao enviar WhatsApp individual: {e}")
+        return False
+
+
 def extract_links(text):
     return re.findall(r'(https?://\S+)', text)
 

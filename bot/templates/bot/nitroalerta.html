@@ -1,0 +1,79 @@
+{% extends 'bot/base.html' %}
+{% load static %}
+
+{% block title %}Nitro Alerta | Nitro Tech{% endblock %}
+{% block description %}Cadastre seu WhatsApp e receba alertas de ofertas de produtos que você quer, direto no seu número. Nitro Alerta.{% endblock %}
+
+{% block nav_promos %}active{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
+    <div class="breadcrumb-inner">
+        <a href="/promos/">Início</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <span class="breadcrumb-current">Nitro Alerta</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="hero-dark" style="padding:56px 24px 48px;">
+    <span class="corner-square"></span>
+    <div class="hero-inner">
+        <span class="hero-eyebrow">Alertas por WhatsApp</span>
+        <h1 class="hero-title">Nitro Alerta</h1>
+        <p class="hero-sub">Cadastre seu nome e WhatsApp, digite o produto que você quer. Quando uma oferta dele aparecer aqui no site, a gente te avisa na hora.</p>
+    </div>
+</div>
+
+<div class="container" style="max-width:640px;padding:48px 24px;">
+
+    {% if sucesso %}
+    <div style="background:rgba(118,185,0,0.12);border:1px solid rgba(118,185,0,0.5);border-radius:12px;padding:18px 20px;margin-bottom:24px;">
+        <strong style="color:#b7f27e;">✅ Cadastro realizado!</strong>
+        <p style="margin:8px 0 0;color:var(--body);">{{ sucesso }}</p>
+    </div>
+    {% endif %}
+
+    {% if erro %}
+    <div style="background:rgba(255,90,90,0.12);border:1px solid rgba(255,90,90,0.5);border-radius:12px;padding:18px 20px;margin-bottom:24px;">
+        <strong style="color:#ff8a8a;">⚠️</strong>
+        <p style="margin:8px 0 0;color:var(--body);">{{ erro }}</p>
+    </div>
+    {% endif %}
+
+    <div class="card" style="padding:28px 24px;">
+        <h2 style="font-family:var(--font-promo);font-size:22px;color:var(--body);margin:0 0 20px;">Como funciona</h2>
+        <ol style="color:var(--mute);line-height:1.7;padding-left:20px;margin:0 0 28px;">
+            <li>Preencha seu nome e o número do seu WhatsApp (só DDD + número).</li>
+            <li>Digite o produto que você quer acompanhar (ex: <em>placa de vídeo rx 580</em>, <em>notebook gamer</em>).</li>
+            <li>Quando uma oferta desse produto aparecer no site, enviamos para o seu WhatsApp. Pode ser mais de uma vez por dia.</li>
+        </ol>
+
+        <form method="post" action="{% url 'nitroalerta' %}">
+            {% csrf_token %}
+            <div style="margin-bottom:18px;">
+                <label style="font-size:13px;font-weight:600;color:var(--mute);display:block;margin-bottom:6px;">Seu nome (opcional)</label>
+                <input type="text" name="nome" placeholder="Fulano" value="{{ request.POST.nome }}" style="width:100%;padding:12px 14px;background:var(--surface-soft);border:1px solid var(--hairline);border-radius:8px;color:var(--body);font-size:15px;">
+            </div>
+            <div style="margin-bottom:18px;">
+                <label style="font-size:13px;font-weight:600;color:var(--mute);display:block;margin-bottom:6px;">WhatsApp (DDD + número)</label>
+                <div style="display:flex;align-items:stretch;">
+                    <span style="padding:12px 14px;background:rgba(118,185,0,0.12);border:1px solid var(--hairline);border-right:0;border-radius:8px 0 0 8px;color:#b7f27e;font-weight:700;font-size:15px;white-space:nowrap;">+55</span>
+                    <input type="tel" name="whatsapp" placeholder="38 999821883" value="{{ request.POST.whatsapp }}" required style="flex:1;padding:12px 14px;background:var(--surface-soft);border:1px solid var(--hairline);border-radius:0 8px 8px 0;color:var(--body);font-size:15px;">
+                </div>
+                <p style="font-size:12px;color:var(--mute);margin:6px 0 0;">Digite só o DDD + número. O +55 fica salvo automaticamente.</p>
+            </div>
+            <div style="margin-bottom:24px;">
+                <label style="font-size:13px;font-weight:600;color:var(--mute);display:block;margin-bottom:6px;">Produto que você quer acompanhar</label>
+                <input type="text" name="keyword" placeholder="ex: placa de vídeo rx 580" value="{{ request.POST.keyword }}" required style="width:100%;padding:12px 14px;background:var(--surface-soft);border:1px solid var(--hairline);border-radius:8px;color:var(--body);font-size:15px;">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">Ativar Nitro Alerta <i class="fas fa-bell"></i></button>
+        </form>
+    </div>
+
+    <p style="text-align:center;font-size:13px;color:var(--mute);margin-top:20px;">Ao se cadastrar, você concorda em receber mensagens de ofertas pelo WhatsApp. Sem spam. Cancele quando quiser.</p>
+</div>
+
+{% endblock %}
