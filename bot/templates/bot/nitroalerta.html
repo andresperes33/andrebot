@@ -54,14 +54,14 @@
         <form method="post" action="{% url 'nitroalerta' %}">
             {% csrf_token %}
             <div style="margin-bottom:18px;">
-                <label style="font-size:13px;font-weight:600;color:var(--mute);display:block;margin-bottom:6px;">Seu nome (opcional)</label>
-                <input type="text" name="nome" placeholder="Fulano" value="{{ request.POST.nome }}" style="width:100%;padding:12px 14px;background:var(--surface-soft);border:1px solid var(--hairline);border-radius:8px;color:var(--body);font-size:15px;">
+                <label style="font-size:13px;font-weight:600;color:var(--mute);display:block;margin-bottom:6px;">Seu nome</label>
+                <input type="text" name="nome" placeholder="Seu nome" value="{{ request.POST.nome }}" required style="width:100%;padding:12px 14px;background:var(--surface-soft);border:1px solid var(--hairline);border-radius:8px;color:var(--body);font-size:15px;">
             </div>
             <div style="margin-bottom:18px;">
                 <label style="font-size:13px;font-weight:600;color:var(--mute);display:block;margin-bottom:6px;">WhatsApp (DDD + número)</label>
                 <div style="display:flex;align-items:stretch;">
                     <span style="padding:12px 14px;background:rgba(118,185,0,0.12);border:1px solid var(--hairline);border-right:0;border-radius:8px 0 0 8px;color:#b7f27e;font-weight:700;font-size:15px;white-space:nowrap;">+55</span>
-                    <input type="tel" name="whatsapp" placeholder="38 999821883" value="{{ request.POST.whatsapp }}" required style="flex:1;padding:12px 14px;background:var(--surface-soft);border:1px solid var(--hairline);border-radius:0 8px 8px 0;color:var(--body);font-size:15px;">
+                    <input type="tel" name="whatsapp" placeholder="x x x x x x x x x x x" value="{{ request.POST.whatsapp }}" required style="flex:1;padding:12px 14px;background:var(--surface-soft);border:1px solid var(--hairline);border-radius:0 8px 8px 0;color:var(--body);font-size:15px;">
                 </div>
                 <p style="font-size:12px;color:var(--mute);margin:6px 0 0;">Digite só o DDD + número. O +55 fica salvo automaticamente.</p>
             </div>

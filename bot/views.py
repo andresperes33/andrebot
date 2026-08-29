@@ -308,7 +308,9 @@ def nitroalerta_view(request):
         numero = request.POST.get('whatsapp', '').strip()
         keyword = request.POST.get('keyword', '').strip()
 
-        if not numero:
+        if not nome:
+            erro = 'Digite seu nome.'
+        elif not numero:
             erro = 'Digite seu número de WhatsApp (DDD + número).'
         elif not keyword:
             erro = 'Digite qual produto você quer acompanhar.'

@@ -35,11 +35,13 @@ def send_alerts_site(offer_text: str, photo_path=None):
                 continue
 
             mensagem = (
-                f"🔔 *Nitro Alerta*\n"
+                f"🔔 *Nitro Tech Alerta*\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
-                f"Apareceu uma oferta que combina com *{alerta.keyword}*!\n\n"
+                f"{alerta.nome or 'Olá'}, o Nitro Tech Alerta acabou de encontrar o seu produto "
+                f"*{alerta.keyword}*!\n\n"
+                f"*Aqui está a oferta:*\n\n"
                 f"{offer_text}\n\n"
-                f"📲 Mais ofertas: {site_link}"
+                f"📲 Confira mais ofertas: {site_link}"
             )
 
             ok = send_whatsapp_to_user(numero, mensagem)
