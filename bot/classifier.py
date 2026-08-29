@@ -188,6 +188,17 @@ def detectar_categoria(texto, titulo=None):
     # 'compatível com laptop/notebook' não é confundido com o produto.
     haystack = _norm(_limpar_compat(texto))
 
+    # Cooler/air cooler/water cooler tem prioridade — 'torre' do cooler
+    # (torre de dissipação) não deve virar gabinete.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:air\s*cooler|water\s*cooler|watercooler|dissipador|cooler\b.*torre|torre\b.*cooler|ventoinha)\b', alvo_norm):
+            return 'cooler'
+
     # Placa-mãe explícita tem prioridade sobre qualquer processador/notebook
     # citado ('MSI Placa-mãe PRO ... suporta Intel Core Ultra' é uma PLACA-MÃE).
     for alvo in (titulo, texto,):
