@@ -41,7 +41,9 @@ def send_alerts_site(offer_text: str, photo_path=None):
                 f"*{alerta.keyword}*!\n\n"
                 f"*Aqui está a oferta:*\n\n"
                 f"{offer_text}\n\n"
-                f"📲 Confira mais ofertas: {site_link}"
+                f"📲 Confira mais ofertas: {site_link}\n"
+                f"────────────────\n"
+                f"🔕 Para parar de receber, clique aqui: {site_link}/nitro-alerta/cancelar/{alerta.token}"
             )
 
             ok = send_whatsapp_to_user(numero, mensagem, image_path=photo_path)

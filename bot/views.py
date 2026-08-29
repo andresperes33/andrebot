@@ -319,14 +319,35 @@ def nitroalerta_view(request):
             if len(wa) < 13:
                 erro = 'Número inválido. Digite no formato: 38 999821883 (DDD + número).'
             else:
+                import secrets
                 AlertaSite.objects.create(
                     nome=nome,
                     whatsapp=wa,
                     keyword=keyword,
+                    token=secrets.token_urlsafe(32),
                 )
-                sucesso = f'Pronto, {nome or "cara"}! Vamos te avisar quando aparecer oferta de "{keyword}".'
+                sucesso = f'Pronto, {nome} ! Vamos te avisar quando aparecer oferta de "{keyword}".'
 
     return render(request, 'bot/nitroalerta.html', {'sucesso': sucesso, 'erro': erro})
+
+
+def nitroalerta_cancelar_view(request, token):
+    """
+    Página de cancelamento do NITRO ALERTA (link enviado na mensagem).
+    Desativa o alerta correspondente ao token.
+    """
+    from .models import AlertaSite
+
+    alerta = AlertaSite.objects.filter(token=token).first()
+    if not alerta:
+        return render(request, 'bot/nitroalerta_cancelar.html', {'ok': False, 'ja_inativo': False})
+
+    if not alerta.is_active:
+        return render(request, 'bot/nitroalerta_cancelar.html', {'ok': False, 'ja_inativo': True})
+
+    alerta.is_active = False
+    alerta.save(update_fields=['is_active'])
+    return render(request, 'bot/nitroalerta_cancelar.html', {'ok': True, 'ja_inativo': False})
 
 
 def robots_txt_view(request):

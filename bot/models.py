@@ -29,6 +29,7 @@ class AlertaSite(models.Model):
     nome = models.CharField(max_length=100, blank=True, default='')
     whatsapp = models.CharField(max_length=20, db_index=True, help_text='Formato +55DDDNUMERO (gerado automaticamente).')
     keyword = models.CharField(max_length=200)
+    token = models.CharField(max_length=64, blank=True, default='', db_index=True, help_text='Token único para cancelar o alerta pelo link.')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_sent_at = models.DateTimeField(blank=True, null=True)

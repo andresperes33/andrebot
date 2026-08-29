@@ -1,0 +1,47 @@
+{% extends 'bot/base.html' %}
+{% load static %}
+
+{% block title %}Cancelar Nitro Alerta | Nitro Tech{% endblock %}
+{% block description %}Cancele seu alerta de ofertas por WhatsApp do Nitro Tech.{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
+    <div class="breadcrumb-inner">
+        <a href="/promos/">Início</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <span class="breadcrumb-current">Cancelar Nitro Alerta</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="hero-dark" style="padding:56px 24px 48px;">
+    <span class="corner-square"></span>
+    <div class="hero-inner">
+        <h1 class="hero-title">Cancelar Nitro Alerta</h1>
+    </div>
+</div>
+
+<div class="container" style="max-width:640px;padding:48px 24px;">
+    <div class="card" style="padding:28px 24px;text-align:center;">
+        {% if ok %}
+        <div style="font-size:56px;margin-bottom:16px;">🔕</div>
+        <h2 style="font-family:var(--font-promo);font-size:22px;color:var(--body);margin:0 0 12px;">Alerta cancelado!</h2>
+        <p style="color:var(--mute);line-height:1.7;margin:0 0 20px;">Você não vai mais receber ofertas desse produto no WhatsApp. Se mudar de ideia, é só se cadastrar de novo.</p>
+        <a href="{% url 'nitroalerta' %}" class="btn btn-primary btn-lg">Cadastrar de novo</a>
+        {% elif ja_inativo %}
+        <div style="font-size:56px;margin-bottom:16px;">✅</div>
+        <h2 style="font-family:var(--font-promo);font-size:22px;color:var(--body);margin:0 0 12px;">Este alerta já estava desativado</h2>
+        <p style="color:var(--mute);line-height:1.7;margin:0 0 20px;">Nada a fazer. Você não recebe mais alertas desse produto.</p>
+        <a href="{% url 'nitroalerta' %}" class="btn btn-primary btn-lg">Ver Nitro Alerta</a>
+        {% else %}
+        <div style="font-size:56px;margin-bottom:16px;">❌</div>
+        <h2 style="font-family:var(--font-promo);font-size:22px;color:var(--body);margin:0 0 12px;">Link inválido</h2>
+        <p style="color:var(--mute);line-height:1.7;margin:0 0 20px;">Este link de cancelamento não é válido ou expirou.</p>
+        <a href="{% url 'nitroalerta' %}" class="btn btn-primary btn-lg">Ir para o Nitro Alerta</a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
