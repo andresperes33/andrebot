@@ -344,6 +344,8 @@ _TERMOS_CABECALHO = [
     'oferta do dia', 'compra garantida', 'nota fiscal',
     'enviamos para todo brasil', 'produto no brasil', 'produto original',
     'disponivel', 'disponível', 'estoque limitado', 'ultimas unidades',
+    'poucas unidades', 'últimas unidades', 'ultima chance', 'última chance',
+    'corre que ainda', 'corre que', 'saiu rapidinho', 'está acabando', 'ta acabando',
     'alerta para', 'alerta pra', 'precinho', 'precinho d+', 'aproveite',
     'super precinho', 'imperdivel', 'imperdível', 'olha que', 'olha só',
     'pega essa', 'pega esse', 'pipoca do caos', 'anon esbarrou',
