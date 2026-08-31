@@ -113,7 +113,7 @@ class Promo(models.Model):
     link_afiliado = models.CharField(max_length=2000)
     url_chave = models.CharField(max_length=1000, blank=True, db_index=True)
     produto_chave = models.CharField(max_length=1000, blank=True, db_index=True, help_text='Link normalizado (sem preço) que identifica o mesmo produto ao longo do tempo — usado no histórico de preços.')
-    imagem_url = models.URLField(max_length=2000, blank=True)
+    imagem_url = models.CharField(max_length=2000, blank=True)
     categoria = models.CharField(max_length=50, choices=CATEGORIA_CHOICES, default='outros')
     loja = models.CharField(max_length=50, blank=True, default='')
     fonte = models.CharField(max_length=100, default='zFinnY')
