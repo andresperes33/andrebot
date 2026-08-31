@@ -189,8 +189,8 @@ def _eh_codigo_modelo(w):
         return False
     if re.fullmatch(r'\d{1,4}gb', w) or re.fullmatch(r'\d{1,4}tb', w):  # 825gb
         return False
-    # medidas/specs que variam e não são modelo: '3.6ghz', '4.2gh', '16mb', '144hz'
-    if re.fullmatch(r'\d+[\.,]?\d*\s*(?:ghz|gh|hz|mhz|mb|mm|cm|mah|w|v)', w):
+    # medidas/specs que variam e não são modelo: '3.6ghz', '4.2gh', '16mb', '144hz', '1ms'
+    if re.fullmatch(r'\d+[\.,]?\d*\s*(?:ghz|gh|hz|mhz|mb|mm|cm|mah|w|v|ms)', w):
         return False
     # tipo de memória (gddr7, ddr4, ddr5) não é modelo
     if re.fullmatch(r'(?:g?ddr|g?ddr\d)[0-9]?', w) or re.fullmatch(r'g?ddr\d+', w):
@@ -251,7 +251,7 @@ def _chave_produto(titulo):
         # Medidas/specs que variam entre postagens do mesmo produto e não
         # identificam o produto: '3.6ghz', '4.2gh', '16mb', '144hz', etc.
         # IMPORTANTE: não remover o modelo real (ex.: '5700x', '5500').
-        if re.fullmatch(r'\d+[\.,]?\d*\s*(?:ghz|gh|hz|mhz|mb|gb|tb|w|mm|cm|v|mah)', w):
+        if re.fullmatch(r'\d+[\.,]?\d*\s*(?:ghz|gh|hz|mhz|mb|gb|tb|w|mm|cm|v|mah|ms)', w):
             continue
         if re.fullmatch(r'\d{1,2}x', w):
             continue  # parcelas ('9x', '12x') — não confundir com modelo '5700x'

@@ -260,10 +260,21 @@ def detectar_categoria(texto, titulo=None):
             return 'console'
 
     # Postagem só de cupom: o título é um anúncio curto com 'cupom'
-    # (ex.: 'Novo Cupom AMAZON', 'CUPOM 10% OFF ...'). Nesse caso o produto não existe.
-    # Se houver um produto real no texto (water cooler, SSD, etc.), o anúncio
-    # é de PRODUTO com cupom — não deve virar 'cupom'.
+    # (ex.: 'Novo Cupom AMAZON', 'Novos Cupons Shopee LIVE').
+    # Se a PRIMEIRA linha é claramente um anúncio de cupom, é cupom direto —
+    # mesmo que o resto do texto (normalizado) pareça ter produto.
     from bot.services import _eh_anuncio_cupom, _eh_linha_titulo_produto
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        primeira_linha = _norm(alvo.split('\n')[0])
+        if not primeira_linha:
+            continue
+        if _eh_anuncio_cupom(primeira_linha):
+            return 'cupom'
+
+    # Senão, verifica se há um produto real no texto (ex.: 'Water Cooler ...
+    # cupom GAMER10' é um produto com cupom, não um cupom).
     tem_produto_real = False
     for alvo in (titulo, texto,):
         if not alvo:
@@ -274,15 +285,9 @@ def detectar_categoria(texto, titulo=None):
                 break
         if tem_produto_real:
             break
-
-    for alvo in (titulo, texto,):
-        if not alvo:
-            continue
-        primeira_linha = _norm(alvo.split('\n')[0])
-        if not primeira_linha:
-            continue
-        if _eh_anuncio_cupom(primeira_linha) and not tem_produto_real:
-            return 'cupom'
+    if tem_produto_real:
+        # Não é cupom puro — segue para a classificação normal de produto.
+        pass
 
     # Kit (placa-mãe + processador + memória) tem prioridade sobre qualquer
     # componente individual: 'Processador Kit X99 ...' é um kit, não um
