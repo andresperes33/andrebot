@@ -123,6 +123,8 @@ _TOKENS_GENERICOS = {
     'smartphone', 'galaxy', 'samsung', 'motorola', '4g', '5g', 'fusion',
     'lcd', 'ips', 'hd', 'full', 'nfc', 'oled', 'led', 'mp', 'pixel',
     'ram', 'gb', 'tb', 'rom', 'edge', 'moto',
+    'apple', 'iphone', 'ultramarino', 'titanio', 'titanio', 'preto', 'branco',
+    '128', '256', '512', '1tb', '2tb', '1000', '1024', '2048',
 }
 
 # Plataformas de console — o JOGO é o mesmo em qualquer uma, então a
@@ -227,7 +229,7 @@ def _chave_produto(titulo):
     # '5060 ti' (rtx5060ti) de '5060' (rtx5060), '4060 super', etc.
     t = re.sub(r'(\b\d{3,4})\s+(ti|super|sup|s|x|ultra)\b', r'\1\2', t)
     # Junta marca/linha ao número de modelo: 'edge 70' -> 'edge70', 'g 17' -> 'g17'
-    t = re.sub(r'\b(edge|galaxy|g|moto|redmi|poco|note|s)\s+(\d{2})\b', r'\1\2', t)
+    t = re.sub(r'\b(edge|galaxy|g|moto|redmi|poco|note|s|iphone)\s+(\d{2})\b', r'\1\2', t)
 
     palavras = t.split()
     limpas = []
