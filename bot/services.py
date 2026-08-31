@@ -457,13 +457,19 @@ def _eh_linha_quantidade(baixa):
 
 
 def _eh_anuncio_cupom(limpa):
-    """True se a linha é um anúncio curto de cupom (ex.: 'Novo Cupom AMAZON'),
-    distinto de uma instrução de cupom (ex.: 'use o cupom X')."""
+    """True se a linha é um anúncio curto de cupom (ex.: 'Novo Cupom AMAZON',
+    'CUPONS ATIVOS SHOPEE - Resgate no link'),
+    distinto de uma instrução de cupom QUE NÃO começa por cupom
+    (ex.: 'use o cupom X')."""
     baixa = limpa.casefold()
     if not re.search(r'\b(?:cupom|cupons|cupoms)\b', baixa):
         return False
     if len(limpa) > 60:
         return False
+    # Se começa com 'cupom(s)', é um ANÚNCIO de cupom — mesmo que tenha
+    # uma instrução de resgate depois (ex.: 'CUPONS ATIVOS SHOPEE - Resgate...').
+    if re.match(r'^\s*(?:novo|novos|nova|novos)?\s*(?:cupom|cupons|cupoms)\b', baixa):
+        return True
     for termo in ('use ', 'usem', 'usem o', 'usar', 'usar o', 'usa ', 'usa o',
                   'siga', 'resgate', 'clique', 'pega', 'atraves',
                   'no app', 'válido', 'valido', 'ativar'):
