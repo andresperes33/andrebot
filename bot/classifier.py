@@ -193,6 +193,18 @@ def detectar_categoria(texto, titulo=None):
     # 'compatível com laptop/notebook' não é confundido com o produto.
     haystack = _norm(_limpar_compat(texto))
 
+    # Fonte tem prioridade — 'Fonte 850W ... com Cabo' é uma fonte, não um cabo.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\bfonte\b', alvo_norm) and re.search(r'\b\d{2,4}\s*w\b', alvo_norm):
+            return 'fonte'
+        if re.search(r'\b(?:fonte|psu)\b', alvo_norm):
+            return 'fonte'
+
     # SSD/armazenamento tem prioridade — 'PS5'/'PC' em 'SSD ... PS5 e PC'
     # é só compatibilidade, não console.
     for alvo in (titulo, texto,):
