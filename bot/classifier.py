@@ -73,6 +73,11 @@ _REGEX_CATEGORIA = [
         # numa lista de compatibilidade ('para ps5', 'ps5, ps4', 'ps5 pc').
         r'\bps[0-9]\b(?!ps[0-9]|,[^.\n]*ps[0-9]|[^.\n]*\b(?:para|compat[ií]vel|compativel|computador|fone|headset|controle|ssd|disco|jogo|acess[oó]rio)\b)',
     ]),
+    ('cabo', [
+        r'\bcabo\b', r'\bcabos\b', r'\busb\s*cabe\b', r'\bcable\b',
+        r'\bcarregador\b', r'\badaptador\s*de\s*energia\b', r'\bpd\s*60w\b',
+        r'\busb\s*c\b.*\bcabo\b', r'\btipo[- ]c?\s*cabo\b',
+    ]),
     ('notebook', [
         # Só é notebook quando é o PRODUTO, não compatibilidade
         # ('para PC e Notebook', 'compatível com notebook', 'pc e notebook').
@@ -196,7 +201,7 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        if re.search(r'\b(?:ssd|nvme|m\.2|m2\b|hard\s*disk|disco\s*rigido|armazenamento|sata)\b', alvo_norm):
+        if re.search(r'\b(?:ssd|nvme|m\.2|hard\s*disk|disco\s*rigido|armazenamento|sata)\b', alvo_norm):
             return 'ssd'
 
     # Cooler/air cooler/water cooler tem prioridade — 'torre' do cooler
@@ -251,6 +256,8 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
+        if re.search(r'\b(?:cabo|cabos|usb\s*c|cable|carregador|adaptador)\b', alvo_norm):
+            continue  # cabo/carregador; 'macbook/iphone' é só compatibilidade
         if re.search(r'\b(?:para|compat[ií]vel|com|pc\s*e|pc\b|no\s*pc)\s*(?:pc\s*e\s*)?(?:notebook|laptop)\b', alvo_norm):
             continue  # é compatibilidade, não anúncio de notebook
         if re.search(r'\b(?:notebook|laptop|macbook|ultrabook|chromebook|galaxy\s*book)\b', alvo_norm):
