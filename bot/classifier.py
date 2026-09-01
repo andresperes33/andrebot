@@ -134,8 +134,9 @@ _REGEX_CATEGORIA = [
         r'\b(144|165|240|280|360)hz\b', r'\b1440p\b',
     ]),
     ('headset', [
-        r'\bheadset\b', r'\bheadphone\b', r'\bfone\b', r'\bfone\s*de\s*ouvido\b',
-        r'\bauricular\b', r'\bearbuds?\b',
+        r'\bheadset\b', r'\bheadphone\b', r'\bfone\b', r'\bfones\b',
+        r'\bfone\s*de\s*ouvido\b', r'\bfones\s*de\s*ouvido\b',
+        r'\bauricular\b', r'\bearbuds?\b', r'\btws\b', r'\bin[- ]ear\b',
     ]),
     ('teclado', [
         r'\bteclado\b', r'\bkeyboard\b', r'\bteclado\s*mecanico\b', r'\bswitch\s*(red|blue|brown|mechanical)\b',
