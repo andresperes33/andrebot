@@ -15,7 +15,7 @@
         {% if promo.texto_original|card_text %}
         <div class="card-desc">{{ promo.texto_original|card_text|truncatechars:500|preco_completo|destacar_valores }}</div>
         {% else %}
-        <h3 class="card-title">{{ promo.titulo|truncatechars:80 }}</h3>
+        <h3 class="card-title">{{ promo.titulo|truncatechars:100 }}</h3>
         {% endif %}
         <div class="card-footer">
             {% if promo.loja %}<span class="card-loja"><i class="fas fa-store"></i> {{ promo.loja }}</span>{% endif %}
