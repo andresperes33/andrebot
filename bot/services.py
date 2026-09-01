@@ -16,7 +16,8 @@ _RODAPE_CANAIS_TEXTO = (
     "💬 WhatsApp: https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD\n"
     "🤖 Bot: https://t.me/alertas_andre_bot\n"
     "🌐 Site: https://www.nitrotech.store\n"
-    "📸 Instagram: https://www.instagram.com/nitro_tech_brasil/"
+    "📸 Instagram: https://www.instagram.com/nitro_tech_brasil/\n"
+    "🎵 TikTok: https://www.tiktok.com/@nitrotech.store"
 )
 
 # Mesmo rodapé em HTML, com links clicáveis (usado na página do produto).
@@ -28,6 +29,7 @@ _RODAPE_CANAIS_HTML = """
     <a href="https://t.me/alertas_andre_bot" target="_blank" rel="noopener">🤖 Bot Nitro Tech</a>
     <a href="https://www.nitrotech.store" target="_blank" rel="noopener">🌐 Site / App</a>
     <a href="https://www.instagram.com/nitro_tech_brasil/" target="_blank" rel="noopener">📸 Instagram</a>
+    <a href="https://www.tiktok.com/@nitrotech.store" target="_blank" rel="noopener">🎵 TikTok</a>
 </div>
 """
 

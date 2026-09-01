@@ -1287,6 +1287,7 @@ a.price-history-row:hover {
     .utility-link.telegram i { color: #2aabee; }
     .utility-link.whatsapp i { color: #25d366; }
     .utility-link.instagram i { color: #e4405f; }
+    .utility-link.tiktok i { color: #ffffff; }
     .utility-label { display: none; }
 }
 
