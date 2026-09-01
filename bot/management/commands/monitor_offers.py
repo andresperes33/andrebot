@@ -380,31 +380,21 @@ class Command(BaseCommand):
                     from bot.instagram_stories import post_instagram_story
                     from bot.story_gate import pode_publicar_story, registrar_publicacao
 
-                    # Cupons não vão para o Instagram — somente produtos.
+                    # Link da página do produto no site (sticker clicável no Story)
+                    pagina_url = ''
                     if promo_id:
-                        categoria = await asyncio.to_thread(
-                            lambda: Promo.objects.filter(pk=promo_id).values_list('categoria', flat=True).first()
-                        )
-                    else:
-                        categoria = None
-                    if categoria == 'cupom':
-                        logger.info("⏸️ Cupom não vai para o Instagram (somente produtos).")
-                    else:
-                        # Link da página do produto no site (sticker clicável no Story)
-                        pagina_url = ''
-                        if promo_id:
-                            base_site = (getattr(settings, 'SITE_URL', '') or '').rstrip('/')
-                            if base_site:
-                                pagina_url = f"{base_site}/promos/{promo_id}/"
+                        base_site = (getattr(settings, 'SITE_URL', '') or '').rstrip('/')
+                        if base_site:
+                            pagina_url = f"{base_site}/promos/{promo_id}/"
 
-                        permitido, motivo = await asyncio.to_thread(pode_publicar_story)
-                        if not permitido:
-                            logger.info(f"⏸️ Story adiado ({motivo}). Promo segue salva no banco e no Telegram.")
-                        else:
-                            publicou = await asyncio.to_thread(post_instagram_story, modified_text, photo_path, pagina_url)
-                            if publicou:
-                                await asyncio.to_thread(registrar_publicacao)
-                                logger.info("📸 Story publicado no Instagram (dentro da janela/cooldown).")
+                    permitido, motivo = await asyncio.to_thread(pode_publicar_story)
+                    if not permitido:
+                        logger.info(f"⏸️ Story adiado ({motivo}). Promo segue salva no banco e no Telegram.")
+                    else:
+                        publicou = await asyncio.to_thread(post_instagram_story, modified_text, photo_path, pagina_url)
+                        if publicou:
+                            await asyncio.to_thread(registrar_publicacao)
+                            logger.info("📸 Story publicado no Instagram (dentro da janela/cooldown).")
                 except Exception as ig_err:
                     logger.error(f"❌ Erro Instagram: {ig_err}")
 
