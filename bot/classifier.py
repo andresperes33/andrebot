@@ -188,6 +188,17 @@ def detectar_categoria(texto, titulo=None):
     # 'compatível com laptop/notebook' não é confundido com o produto.
     haystack = _norm(_limpar_compat(texto))
 
+    # SSD/armazenamento tem prioridade — 'PS5'/'PC' em 'SSD ... PS5 e PC'
+    # é só compatibilidade, não console.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:ssd|nvme|m\.2|m2\b|hard\s*disk|disco\s*rigido|armazenamento|sata)\b', alvo_norm):
+            return 'ssd'
+
     # Cooler/air cooler/water cooler tem prioridade — 'torre' do cooler
     # (torre de dissipação) não deve virar gabinete.
     for alvo in (titulo, texto,):
