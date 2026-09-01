@@ -186,23 +186,6 @@
         });
     }
 
-    // Transforma códigos de cupom encontrados no texto em elementos clicáveis.
-    (function tornarCuponsClicaveis() {
-        var texto = document.querySelector('.detail-text');
-        if (!texto) return;
-        // Código de cupom: 4+ caracteres (com pelo menos 1 dígito) em MAIÚSCULO.
-        // Evita pegar siglas como APP/HDMI/USB. Ex.: BRFS2, GRANDE1, NOVA2.
-        var re = /(?:^|\s|\/)(?=[A-Z0-9]{4,18}(?:\s|$|,|;|\+))([A-Z0-9]*\d[A-Z0-9]*)/g;
-        var html = texto.innerHTML;
-        var visto = {};
-        var novo = html.replace(re, function (m, cod) {
-            if (visto[cod]) return m;
-            visto[cod] = true;
-            return m.replace(cod, '<button type="button" class="cupom-copy" data-cupom="' + cod + '" onclick="copiarCupom(this,\'' + cod + '\')" title="Copiar cupom">' + cod + '</button>');
-        });
-        texto.innerHTML = novo;
-    })();
-
     (function initPriceChart() {
         var el = document.getElementById('priceChart');
         var dataEl = document.getElementById('priceChartData');

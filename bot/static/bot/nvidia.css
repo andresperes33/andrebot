@@ -753,36 +753,6 @@ button, input { font-family: inherit; }
     word-break: break-word;
 }
 .detail-text strong { color: var(--primary-dark); font-weight: 700; }
-/* Cupom clicável detectado no texto da postagem */
-.cupom-copy {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 1px 8px;
-    margin: 0 2px;
-    border: 1px dashed rgba(118,185,0,0.6);
-    border-radius: 6px;
-    background: rgba(118,185,0,0.1);
-    color: #b7f27e;
-    font-family: monospace;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    vertical-align: baseline;
-    transition: background .2s, border-color .2s;
-}
-.cupom-copy:hover {
-    background: rgba(118,185,0,0.2);
-    border-color: #76b900;
-}
-.cupom-copy::after {
-    content: '\f328'; /* ícone de copiar */
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
-    font-size: 11px;
-    opacity: 0.85;
-}
 .detail-channels {
     margin-top: 18px;
     padding-top: 16px;
