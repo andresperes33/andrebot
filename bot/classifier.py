@@ -223,6 +223,21 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:notebook|laptop|macbook|ultrabook|chromebook)\b', alvo_norm):
             return 'notebook'
 
+    # Placa-mãe explícita tem prioridade sobre qualquer processador/SSD
+    # citado ('Asus Prime A520M-R ... Ddr4 M.2 Chipset A520' é uma PLACA-MÃE).
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:placa[ -]?mae|motherboard|mainboard|chipset|quad\s*channel)\b', alvo_norm):
+            return 'placa_mae'
+        if re.search(r'\b(?:x99|x79|x58|c612|s2011|matx|atx|micro\s*atx)\b', alvo_norm):
+            return 'placa_mae'
+        if re.search(r'\b(?:a520|a620|b450|b550|b650|b660|b760|x570|x670|z690|z790|h610|h770)\b', alvo_norm):
+            return 'placa_mae'
+
     # SSD/armazenamento tem prioridade — 'PS5'/'PC' em 'SSD ... PS5 e PC'
     # é só compatibilidade, não console.
     for alvo in (titulo, texto,):
@@ -244,19 +259,6 @@ def detectar_categoria(texto, titulo=None):
             continue
         if re.search(r'\b(?:air\s*cooler|water\s*cooler|watercooler|dissipador|cooler\b.*torre|torre\b.*cooler|ventoinha)\b', alvo_norm):
             return 'cooler'
-
-    # Placa-mãe explícita tem prioridade sobre qualquer processador/notebook
-    # citado ('MSI Placa-mãe PRO ... suporta Intel Core Ultra' é uma PLACA-MÃE).
-    for alvo in (titulo, texto,):
-        if not alvo:
-            continue
-        alvo_norm = _norm(_limpar_compat(alvo))
-        if not alvo_norm:
-            continue
-        if re.search(r'\b(?:placa[ -]?mae|motherboard|mainboard|chipset|quad\s*channel)\b', alvo_norm):
-            return 'placa_mae'
-        if re.search(r'\b(?:x99|x79|x58|c612|s2011|matx|atx|micro\s*atx)\b', alvo_norm):
-            return 'placa_mae'
 
     # Produtos de áudio/acessórios têm prioridade sobre "notebook" quando a
     # palavra 'notebook' é só compatibilidade ('caixa de som para notebook').
