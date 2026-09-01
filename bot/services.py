@@ -595,7 +595,7 @@ def _linha_marcador_link(linha):
         # Evita cortar em linhas que apenas mencionam 'link' (ex.: '3 Modelos no link').
         if re.match(r'^[^\w]*\blink\b', baixa) or baixa.rstrip().endswith(':'):
             return True
-    if re.search(r'\bno pc\b|\bpara pc\b|\bcom moedas\b|\bcommoedas\b', baixa):
+    if re.search(r'\bno pc\b|\bpara pc\b|\bcom moedas\b|\bcommoedas\b', baixa) and len(linha) < 40:
         return True
     return False
 
