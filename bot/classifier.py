@@ -74,9 +74,12 @@ _REGEX_CATEGORIA = [
         r'\bps[0-9]\b(?!ps[0-9]|,[^.\n]*ps[0-9]|[^.\n]*\b(?:para|compat[ií]vel|compativel|computador|fone|headset|controle|ssd|disco|jogo|acess[oó]rio)\b)',
     ]),
     ('cabo', [
-        r'\bcabo\b', r'\bcabos\b', r'\busb\s*cabe\b', r'\bcable\b',
+        r'\busb\s*cabe\b', r'\bcable\b',
         r'\bcarregador\b', r'\badaptador\s*de\s*energia\b', r'\bpd\s*60w\b',
         r'\busb\s*c\b.*\bcabo\b', r'\btipo[- ]c?\s*cabo\b',
+        r'\bhdmi\b.*\bcabo\b', r'\bcabo\b.*\bhdmi\b',
+        r'\bcabo\b.*\busb\b', r'\busb\b.*\bcabo\b',
+        r'\bcabo\b.*(?:energia|carregador|alimenta)',
     ]),
     ('notebook', [
         # Só é notebook quando é o PRODUTO, não compatibilidade
@@ -268,7 +271,8 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        if re.search(r'\b(?:cabo|cabos|usb\s*c|cable|carregador|adaptador)\b', alvo_norm):
+        if re.search(r'\b(?:carregador|adaptador|usb\s*c|cable)\b', alvo_norm) or \
+           re.search(r'\bcabo\b.*\b(?:usb|hdmi|energia|carregador|tipo)\b', alvo_norm):
             continue  # cabo/carregador; 'macbook/iphone' é só compatibilidade
         if re.search(r'\b(?:para|compat[ií]vel|com|pc\s*e|pc\b|no\s*pc)\s*(?:pc\s*e\s*)?(?:notebook|laptop)\b', alvo_norm):
             continue  # é compatibilidade, não anúncio de notebook
