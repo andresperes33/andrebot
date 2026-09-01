@@ -209,6 +209,17 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:fonte|psu)\b', alvo_norm):
             return 'fonte'
 
+    # Controle/gamepad tem prioridade — 'Controle GameSir ... iPhone/Android'
+    # é um controle para celular, não um celular.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:controle|gamepad|joystick|joypad|gamepad\s*controller)\b', alvo_norm):
+            return 'controle'
+
     # Notebook tem prioridade sobre GPU/SSD citados no título
     # ('RTX5060 Notebook ASUS TUF ... 512GB SSD' é um NOTEBOOK, não um SSD).
     # 'notebook' de compatibilidade ('para notebook') NÃO conta aqui.
