@@ -218,7 +218,9 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        if re.search(r'\b(?:placa[ -]?mae|motherboard|mainboard)\b', alvo_norm):
+        if re.search(r'\b(?:placa[ -]?mae|motherboard|mainboard|chipset|quad\s*channel)\b', alvo_norm):
+            return 'placa_mae'
+        if re.search(r'\b(?:x99|x79|x58|c612|s2011|matx|atx|micro\s*atx)\b', alvo_norm):
             return 'placa_mae'
 
     # Produtos de áudio/acessórios têm prioridade sobre "notebook" quando a
