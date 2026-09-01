@@ -95,7 +95,7 @@ class Promo(models.Model):
         ('impressora', 'Impressora'),
         ('fonte', 'Fonte'),
         ('gabinete', 'Gabinete'),
-        ('cooler', 'Cooler / Water Cooler'),
+        ('cooler', 'Cooler / Water Cooler / Fan'),
         ('pasta_termica', 'Pasta Térmica'),
         ('controle', 'Controle / Gamepad'),
         ('webcam', 'Webcam'),

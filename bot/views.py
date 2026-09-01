@@ -32,7 +32,7 @@ _CATEGORIA_DESCRICOES = {
     'impressora': 'Impressoras e multifuncionais com toner e tinta em promoção para uso doméstico e de escritório.',
     'fonte': 'Fontes de alimentação com certificação e wattagem para PC. Eficiência e estabilidade para seu hardware.',
     'gabinete': 'Gabinetes e torres com boa ventilação, vidro temperado e espaços para o seu setup crescer.',
-    'cooler': 'Coolers e water coolers para manter seu processador refrigerado com silêncio e eficiência.',
+    'cooler': 'Coolers, water coolers e fans (ventoinhas) para manter seu PC refrigerado com silêncio e eficiência.',
     'pasta_termica': 'Pastas térmicas de alta condutividade para processador e placa de vídeo. Comprando em promoção, você melhora a refrigeração do seu PC.',
     'controle': 'Controles e gamepads para PC e consoles de última geração, com fio ou bluetooth.',
     'webcam': 'Webcams de alta resolução para reuniões, lives e streaming com boa imagem.',
