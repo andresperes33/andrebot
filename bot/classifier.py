@@ -223,6 +223,17 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:notebook|laptop|macbook|ultrabook|chromebook)\b', alvo_norm):
             return 'notebook'
 
+    # Processador tem prioridade sobre a plataforma/placa citada
+    # ('Xeon E5 ... x99 Processador CPU' é um PROCESSADOR, não uma placa-mãe).
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:processador|cpu|xeon|ryzen|intel\s*core|core\s*i[3579]|athlon|threadripper)\b', alvo_norm):
+            return 'processador'
+
     # Placa-mãe explícita tem prioridade sobre qualquer processador/SSD
     # citado ('Asus Prime A520M-R ... Ddr4 M.2 Chipset A520' é uma PLACA-MÃE).
     for alvo in (titulo, texto,):
