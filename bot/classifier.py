@@ -84,8 +84,10 @@ _REGEX_CATEGORIA = [
     ('notebook', [
         # Só é notebook quando é o PRODUTO, não compatibilidade
         # ('para PC e Notebook', 'compatível com notebook', 'pc e notebook').
-        r'\bnotebook\b(?<!para )(?<!pc e )(?<!com )(?<!e )',
-        r'\blaptop\b(?<!para )(?<!pc e )(?<!com )(?<!e )',
+        # Obs.: lookbehind negativo precisa vir ANTES da palavra (depois não
+        # funciona e 'para notebook' viraria notebook erroneamente).
+        r'(?<!para )(?<!pc e )(?<!com )(?<!e )\bnotebook\b',
+        r'(?<!para )(?<!pc e )(?<!com )(?<!e )\blaptop\b',
         r'\bmacbook\b', r'\bultrabook\b', r'\bchromebook\b',
         r'\bgalaxy\s*book\s*\w*', r'\bwindows\s*11\b', r'\bwindows\s*10\b',
         r'\btela\s*(?:ips|amoled|de\s*\d+[\.,]?\d*\s*"|de\s*\d+\s*polegadas)',
