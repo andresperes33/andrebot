@@ -355,8 +355,7 @@ def _preco_do_texto(texto):
 _TERMOS_CABECALHO = [
     'postagem original', 'postagem',
     'canal oficial', 'repostagem', 'repost', 'promo do dia',
-    'oferta do dia', 'compra garantida', 'nota fiscal',
-    'enviamos para todo brasil', 'produto no brasil', 'produto original',
+    'oferta do dia', 'compra garantida',
     'disponivel', 'disponível', 'estoque limitado', 'ultimas unidades',
     'poucas unidades', 'últimas unidades', 'ultima chance', 'última chance',
     'corre que ainda', 'corre que', 'saiu rapidinho', 'está acabando', 'ta acabando',
@@ -432,9 +431,22 @@ def _eh_linha_nota(baixa):
         return True
     if any(nota in baixa for nota in ('obs:', 'nota:', 'atencao:', 'atenção:')):
         return True
+    # Linha que é só um cabeçalho de garantia ('compra garantida',
+    # 'nota fiscal', 'enviamos para todo brasil') — descarta se a linha é só
+    # isso ou começa com o termo; mas NÃO descarta quando 'nota fiscal' é só
+    # parte do título do produto ('iPhone ... com Nota Fiscal').
+    if re.match(r'^\s*(?:compra\s+garantida|nota\s+fiscal|enviamos\s+para\s+todo\s+brasil|produto\s+no\s+brasil|produto\s+original)\b.*$', baixa):
+        return True
     # Teasers de PREÇO ('caiu quase r$ 400,00!', 'caiu de r$ 500 pra 399',
     # 'baixou pra', 'barateou', 'quase r$ x') — não são o nome do produto.
     if re.search(r'^\s*(?:caiu|quase|caiu\s+(?:quase|pra|para)|baixou|barateou|despencou|agarra|pega)\b.*r\s?[0-9]', baixa):
+        return True
+    # Rótulo de preço (ex.: 'Valor R$ 4.837,09', 'Preço: R$ 999,00') — não é
+    # o nome do produto; o título real vem logo depois.
+    if re.match(r'^\s*(?:valor|preco|preço)\b[^a-z]{0,3}(?:r\s?[\$\$]?)?\b', baixa) and \
+       re.search(r'[\d.,]+', baixa):
+        return True
+    if re.match(r'^\s*(?:valor|preco|preço)\s*[:]?\s*r\s?[\$\$]\s*[\d.,]+', baixa):
         return True
     if re.search(r'^\s*caiu\b', baixa) and len(baixa) < 40:
         return True
@@ -594,6 +606,14 @@ def _linha_titulo(texto):
         if any(loja in baixa for loja in _LOJAS) and len(limpa) < 30:
             continue
         return _limpar_cor_inicio(limpa)
+
+    # Fallback: texto curto é só uma instrução/cupom ('Resgate o cupom de
+    # R$200 OFF') e não há outra linha — usa a própria linha, pra não deixar
+    # o card sem título.
+    for linha in texto.split('\n'):
+        limpa = re.sub(r'[^\w\s.,!?%-]', '', linha).strip()
+        if len(limpa) > 6 and re.search(r'\s', limpa):
+            return limpa
     return ''
 
 
