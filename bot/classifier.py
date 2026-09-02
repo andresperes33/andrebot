@@ -297,12 +297,18 @@ def detectar_categoria(texto, titulo=None):
 
     # Processador tem prioridade sobre a plataforma/placa citada
     # ('Xeon E5 ... x99 Processador CPU' é um PROCESSADOR, não uma placa-mãe).
+    # Mas 'Cooler para Processador'/'Dissipador para CPU' é um COOLER, não um
+    # processador — 'processador' ali é só a compatibilidade do cooler.
     for alvo in (titulo, texto,):
         if not alvo:
             continue
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
+        eh_cooler = re.search(r'\b(?:cooler|dissipador|ventoinha|water\s*cooler|air\s*cooler|watercooler)\b', alvo_norm)
+        proc_como_compat = re.search(r'\b(?:para|pra|compat[ií]vel\s*com|com)\s*(?:processador|cpu)\b', alvo_norm)
+        if eh_cooler and proc_como_compat:
+            return 'cooler'
         if re.search(r'\b(?:processador|cpu|xeon|ryzen|intel\s*core|core\s*i[3579]|athlon|threadripper)\b', alvo_norm):
             return 'processador'
 
@@ -340,7 +346,7 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        if re.search(r'\b(?:air\s*cooler|water\s*cooler|watercooler|dissipador|cooler\b.*torre|torre\b.*cooler|ventoinha)\b', alvo_norm):
+        if re.search(r'\b(?:air\s*cooler|water\s*cooler|watercooler|dissipador|cooler\b.*torre|torre\b.*cooler|ventoinha|cooler\b.*ventilador|ventilador\b.*cooler|cooler\s*para\s*processador|processador\s*cooler)\b', alvo_norm):
             return 'cooler'
 
     # Produtos de áudio/acessórios têm prioridade sobre "notebook" quando a
