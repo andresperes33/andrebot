@@ -17,6 +17,7 @@ SYNONYM_GROUPS = [
     {'memoria ram', 'ram', 'memória ram', 'memoria', 'memória', 'ddr4', 'ddr5'},
     {'notebook', 'laptop', 'computador portatil', 'computador portátil', 'macbook'},
     {'celular', 'smartphone', 'telefone', 'phone', 'iphone', 'galaxy'},
+    {'tablet', 'tablete', 'ipad', 'galaxy tab'},
     {'televisao', 'tv', 'smart tv', 'televisão', 'monitor tv'},
     {'geladeira', 'refrigerador', 'frigorifico'},
     {'airfryer', 'air fryer', 'fritadeira eletrica', 'fritadeira elétrica'},

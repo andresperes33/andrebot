@@ -99,7 +99,7 @@ _REGEX_CATEGORIA = [
         # 'galaxy' virou celular, mas pega a linha de fans 'Jungle Leopard
         # Galaxy' e notebooks 'Samsung Galaxy Book'. Só é celular se for
         # Samsung Galaxy (celular) ou sem contexto de fan/notebook.
-        r'\bgalaxy\b(?!\s*(?:v\d|magn|argb|\d+mm|book|chrome))',
+        r'\bgalaxy\b(?!\s*(?:v\d|magn|argb|\d+mm|book|chrome|tab))',
         r'\bsamsung\s*galaxy\b(?!\s*book)', r'galaxy\s+[as]\s?\d',
     ]),
     ('tv', [
@@ -222,6 +222,23 @@ def detectar_categoria(texto, titulo=None):
             for linha in _norm(alvo).split('\n'):
                 if _eh_anuncio_cupom(linha):
                     return 'cupom'
+
+    # Tablet tem prioridade — 'Galaxy Tab S10 Lite ... Tela 10.9"' é um tablet,
+    # não um celular (mesmo vindo 'Galaxy'/'Samsung').
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:tablet|tablete)\b', alvo_norm):
+            return 'tablet'
+        if re.search(r'\bipad\b', alvo_norm):
+            return 'tablet'
+        if re.search(r'\bgalaxy\s*tab\b', alvo_norm):
+            return 'tablet'
+        if re.search(r'\btab\s+[sa]\s?\d', alvo_norm):
+            return 'tablet'
 
     # Fonte tem prioridade — 'Fonte 850W ... com Cabo' é uma fonte, não um cabo.
     for alvo in (titulo, texto,):

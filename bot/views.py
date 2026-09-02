@@ -22,6 +22,7 @@ _CATEGORIA_DESCRICOES = {
     'notebook': 'Notebooks e laptops para estudo, trabalho e jogos. Ultrabooks, gamer e convencionais com as melhores ofertas.',
     'monitor': 'Monitores com taxas de atualização de 144Hz, 165Hz, 240Hz e mais. Full HD, QHD e ultrawide para melhorar sua experiência.',
     'celular': 'Celulares e smartphones Android com o menor preço: Xiaomi, Samsung, Motorola e mais. Confira antes de comprar.',
+    'tablet': 'Tablets Android e iPad para estudar, ler, assistir e trabalhar. Ofertas de Samsung Galaxy Tab, iPad e mais com os menores preços.',
     'tv': 'Smart TVs e televisores 4K, QLED e OLED com preços imperdíveis para assistir seus conteúdos com a melhor imagem.',
     'caixa_som': 'Caixas de som e soundbars Bluetooth com potência para sua música, casa e festas. Encontramos os melhores preços em caixas de som.',
     'headset': 'Headsets e fones de ouvido para jogos e música, com ou sem fio, microfone e cancelamento de ruído.',
