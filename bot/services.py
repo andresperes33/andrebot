@@ -502,6 +502,8 @@ _TERMOS_PRODUTO = [
     'smartphone', 'cadeira', 'impressora', 'roteador', 'console', 'console',
     'pasta termica', 'pasta térmica', 'gpu', 'videogame', 'fans', 'fan',
     'ventoinha', 'ventoinhas', 'air fryer', 'batedeira', 'liquidificador', 'secador', 'aspirador',
+    'iphone', 'xiaomi', 'redmi', 'poco', 'realme', 'samsung', 'galaxy', 'motorola',
+    'tablet', 'ipad', 'ar condicionado', 'condicionador', 'smart tv', 'qled', 'oled',
 ]
 
 
@@ -521,7 +523,11 @@ def _eh_linha_titulo_produto(linha):
     # linhas de instrução de cupom ('resgate o cupom de 20%') NÃO são produto.
     if re.match(r'^(?:novo|novos|nova)\s+cupom\b', linha_c) or re.match(r'^cupom\b', linha_c):
         return False
-    if re.search(r'\b(?:resgate|use|usar|aplicar|aproveite)\b.*\bcupom\b', linha_c):
+    # Linha que começa pela instrução de resgate/uso de cupom (ex.: 'resgate o
+    # cupom de 20%') é anúncio de cupom. Mas se a linha traz um produto ANTES
+    # ('iPhone 17 ... Resgate o cupom de R$220'), é produto com cupom.
+    if re.match(r'^(?:resgate|use|usar|aplicar|aproveite|clique|siga)\b', linha_c) and \
+       re.search(r'\bcupom\b', linha_c):
         return False
     tem_termo = any(t in linha for t in _TERMOS_PRODUTO)
     tem_cupom = re.search(r'\bcupoms?\b', linha)
