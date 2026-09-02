@@ -354,6 +354,8 @@ _TERMOS_CABECALHO = [
     'super precinho', 'imperdivel', 'imperdível', 'olha que', 'olha só',
     'pega essa', 'pega esse', 'pipoca do caos', 'anon esbarrou',
     'voltou', 'voltei', 'de volta', 'de novo', 'aconteceu denovo',
+    'ativou para quem', 'ativou ontem', 'para quem resgatou', 'quem resgatou',
+    'resgatou ontem', 'resgataram ontem', 'quem pegou ontem', 'pegou ontem',
     'parcelado', 'parcelado em', 'em até', 'sem juros', 'com cupom',
     'para primeira compra', 'primeira compra na', 'conta prime',
     'para primeira', 'na amazon e conta', 'na shopee e conta',
