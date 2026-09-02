@@ -431,7 +431,16 @@ def detectar_categoria(texto, titulo=None):
             tem_off = re.search(r'\b\d+\s*%?\s*(?:off|de desconto)\b', texto_baixo)
             tem_limite = re.search(r'\b(?:limite|compra\s*m[ií]nima)\b', texto_baixo)
             tem_cupom = 'cupom' in texto_baixo or 'cupons' in texto_baixo or 'desconto' in texto_baixo
+            # Anúncio de cupom que fala de resgate de cupons (sem % OFF no texto):
+            # 'Teremos vários cupons no Mercado Livre hoje...', 'cupons sairão
+            # nos horários', 'ative a notificação e resgate' → é um cupom.
+            eh_anuncio_cupom_env = re.search(
+                r'cupons?\b.{0,80}\b(?:mercado livre|hoje|sair[aá]o|horari|notifica|resgate|dispon[ií]vel|ativo)',
+                texto_baixo,
+            )
             if tem_off and (tem_limite or tem_cupom):
+                return 'cupom'
+            if tem_cupom and eh_anuncio_cupom_env:
                 return 'cupom'
 
     # Se houver título do produto, busca nele primeiro. A primeira palavra
