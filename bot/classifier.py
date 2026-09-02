@@ -255,13 +255,18 @@ def detectar_categoria(texto, titulo=None):
             return 'fonte'
 
     # Controle/gamepad tem prioridade — 'Controle GameSir ... iPhone/Android'
-    # é um controle para celular, não um celular.
+    # é um controle para celular, não um celular. Mas se o anúncio é de uma TV
+    # ('Smart TV ... Controle AI Magic'), o 'controle' é o controle remoto
+    # incluso na TV, não um gamepad avulso.
     for alvo in (titulo, texto,):
         if not alvo:
             continue
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
+        if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|qled|oled|miniled|neo\s*qled)\b', alvo_norm) and \
+           re.search(r'\bcontrole\b', alvo_norm):
+            continue  # é TV; 'controle' é o controle remoto incluso
         if re.search(r'\b(?:controle|gamepad|joystick|joypad|gamepad\s*controller)\b', alvo_norm):
             return 'controle'
 
