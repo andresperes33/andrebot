@@ -148,7 +148,8 @@ _REGEX_CATEGORIA = [
         r'\bmouse\b',
     ]),
     ('caixa_som', [
-        r'caixa\s*de\s*som', r'\bsoundbar\b', r'\bcaixa\s*som\b',
+        r'caixa\s*de\s*som', r'caixinha\s*de\s*som', r'\bsoundbar\b', r'\bcaixa\s*som\b',
+        r'\balto[- ]falante\b', r'\baltofalante\b', r'\bspeaker\b', r'\bmini\s*caixa\b',
         r'\bcx\s*\d{3,4}\b', r'\bbritania\b',
     ]),
     ('fonte', [
