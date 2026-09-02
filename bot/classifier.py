@@ -273,6 +273,10 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|qled|oled|miniled|neo\s*qled)\b', alvo_norm) and \
            re.search(r'\bcontrole\b', alvo_norm):
             continue  # é TV; 'controle' é o controle remoto incluso
+        # Microfone com controle de volume RGB ('Microfone FIFINE ... Controle
+        # RGB') — o 'controle' é um botão do microfone, não um gamepad avulso.
+        if re.search(r'\bmicrofone\b', alvo_norm) and re.search(r'\bcontrole\b', alvo_norm):
+            continue
         if re.search(r'\b(?:controle|gamepad|joystick|joypad|gamepad\s*controller)\b', alvo_norm):
             return 'controle'
 
@@ -376,6 +380,23 @@ def detectar_categoria(texto, titulo=None):
             continue
         if re.search(r'\b(?:air\s*cooler|water\s*cooler|watercooler|dissipador|cooler\b.*torre|torre\b.*cooler|ventoinha|cooler\b.*ventilador|ventilador\b.*cooler|cooler\s*para\s*processador|processador\s*cooler)\b', alvo_norm):
             return 'cooler'
+
+    # Microfone tem prioridade sobre 'headset'/'fone de ouvido' citados como
+    # recurso ('Microfone FIFINE ... Fone de Ouvido, Microfone USB Condensador'
+    # é um MICROFONE, não um headset). Mas 'Headset ... com Microfone' é um
+    # headset com microfone embutido, não um microfone avulso.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        eh_headset = re.search(r'\b(?:headset|headphone|fone\s*de\s*ouvido|fone\b|fones\b|auricular|earbuds?)\b', alvo_norm)
+        if eh_headset and not re.search(r'\bmicrofone\s*(?:de|dedicado|avulso|usb|condensador|gamer)\b', alvo_norm):
+            continue  # é headset/fone com microfone embutido
+        if re.search(r'\bmicrofone\b', alvo_norm) and \
+           re.search(r'\b(?:microfone|usb|condensador|gamer|streaming|gravac|fifine|modmic|de\s*lapela)\b', alvo_norm):
+            return 'microfone'
 
     # Produtos de áudio/acessórios têm prioridade sobre "notebook" quando a
     # palavra 'notebook' é só compatibilidade ('caixa de som para notebook').
