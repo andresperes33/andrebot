@@ -396,6 +396,18 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:notebook|laptop|macbook|ultrabook|chromebook|galaxy\s*book)\b', alvo_norm):
             return 'notebook'
 
+    # TV tem prioridade sobre 'jogo'/'sports'/'controle'/'processador' citados:
+    # 'Smart TV ... Modo Jogo Pro', 'TV ... Modo Esportes', 'Smart TV ...
+    # Controle AI Magic', 'TV ... Processador a7' — tudo é atributo da TV.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|qled|oled|miniled|neo\s*qled)\b', alvo_norm):
+            return 'tv'
+
     # Bundle de CONSOLE tem prioridade sobre jogos: 'PlayStation 5 + GTA VI'
     # é um console com jogos inclusos (bundle/pacote), não um jogo avulso.
     for alvo in (titulo, texto,):
