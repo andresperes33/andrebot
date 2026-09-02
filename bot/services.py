@@ -127,6 +127,9 @@ _TOKENS_GENERICOS = {
     'ram', 'gb', 'tb', 'rom', 'edge', 'moto',
     'apple', 'iphone', 'ultramarino', 'titanio', 'titanio', 'preto', 'branco',
     '128', '256', '512', '1tb', '2tb', '1000', '1024', '2048',
+    # specs de monitor/tela que variam entre anúncios e não identificam o modelo
+    'hdr', 'hdr10', 'hdr400', 'hdr600', 'hdr1000', 'freesync', 'gsync',
+    'g-sync', 'fhd', 'qhd', 'uhd', 'wqhd', 'freesyncpremium', 'mbr',
 }
 
 # Plataformas de console — o JOGO é o mesmo em qualquer uma, então a
@@ -236,6 +239,13 @@ def _chave_produto(titulo):
     palavras = t.split()
     limpas = []
     for w in palavras:
+        # Remove pontuação colada ('144hz,' -> '144hz', 'hdr10,' -> 'hdr10').
+        # Sem isso, as regex de descarte de specs acima falham e tokens como
+        # '144hz,'/'hdr10,' viram 'código de modelo', poluindo a chave e
+        # fazendo o histórico de preços não agrupar o mesmo produto.
+        w = re.sub(r'[.,()!?/]+$', '', w).strip('.,()!?/')
+        if not w:
+            continue
         if w in _TOKENS_RUIDO:
             continue
         if w in _TOKENS_TIPO:
