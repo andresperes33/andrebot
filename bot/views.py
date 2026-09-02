@@ -43,6 +43,7 @@ _CATEGORIA_DESCRICOES = {
     'console': 'Consoles de videogame e handhelds em oferta, com os melhores preços para os gamers.',
     'jogo': 'Jogos físicos e códigos digitais para PlayStation, Xbox, Nintendo Switch e PC. Encontramos as maiores promoções dos lançamentos.',
     'cupom': 'Cupons de desconto para usar nas maiores lojas do país. Garanta um desconto a mais nas suas compras.',
+    'ar_condicionado': 'Ar condicionados split hi wall e inverter para climatizar sua casa. Ofertas de 9.000, 12.000, 18.000 e 24.000 BTUs com os menores preços.',
     'outros': 'Ofertas de tecnologia e periféricos variados que não se encaixam nas demais categorias.',
 }
 

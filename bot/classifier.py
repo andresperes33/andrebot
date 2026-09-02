@@ -73,6 +73,12 @@ _REGEX_CATEGORIA = [
         # numa lista de compatibilidade ('para ps5', 'ps5, ps4', 'ps5 pc').
         r'\bps[0-9]\b(?!ps[0-9]|,[^.\n]*ps[0-9]|[^.\n]*\b(?:para|compat[ií]vel|compativel|computador|fone|headset|controle|ssd|disco|jogo|acess[oó]rio)\b)',
     ]),
+    ('ar_condicionado', [
+        r'\bar\s*condicionado\b', r'\bcondicionador\b', r'\bair\s*conditioner\b',
+        r'\barcel\b', r'\bsplit\s*hi\s*wall\b', r'\bhi\s*wall\b',
+        r'\b12\.000\s*btus\b', r'\b9\.000\s*btus\b', r'\b18\.000\s*btus\b',
+        r'\b24\.000\s*btus\b', r'\binverter\b(?=.*\b(?:\btu|frio|quente|condicionado|ar\b|wall)\b)',
+    ]),
     ('cabo', [
         r'\busb\s*cabe\b', r'\bcable\b',
         r'\bcarregador\b', r'\badaptador\s*de\s*energia\b', r'\bpd\s*60w\b',
@@ -269,6 +275,17 @@ def detectar_categoria(texto, titulo=None):
             continue  # é TV; 'controle' é o controle remoto incluso
         if re.search(r'\b(?:controle|gamepad|joystick|joypad|gamepad\s*controller)\b', alvo_norm):
             return 'controle'
+
+    # Ar condicionado tem prioridade — 'Ar Condicionado Inverter Hi Wall' é um
+    # ar-condicionado, não um 'inverter' genérico nem outro componente.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:ar\s*condicionado|condicionador|air\s*conditioner|split\s*hi\s*wall|hi\s*wall)\b', alvo_norm):
+            return 'ar_condicionado'
 
     # Notebook tem prioridade sobre GPU/SSD citados no título
     # ('RTX5060 Notebook ASUS TUF ... 512GB SSD' é um NOTEBOOK, não um SSD).

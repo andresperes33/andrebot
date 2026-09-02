@@ -106,6 +106,7 @@ class Promo(models.Model):
         ('console', 'Console'),
         ('jogo', 'Jogo'),
         ('cupom', 'Cupom'),
+        ('ar_condicionado', 'Ar Condicionado'),
         ('outros', 'Outros'),
     ]
 
