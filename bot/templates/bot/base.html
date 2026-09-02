@@ -152,20 +152,6 @@
     </div>
 </div>
 
-<div id="exitPopup" class="exit-popup-overlay" role="dialog" aria-modal="true" aria-labelledby="exitPopupTitle">
-    <div class="exit-popup">
-        <button type="button" class="exit-popup-close" id="exitPopupClose" aria-label="Fechar">&times;</button>
-        <div class="exit-popup-icon"><i class="fab fa-telegram-plane"></i></div>
-        <h2 id="exitPopupTitle">Espere! Não perca as melhores ofertas</h2>
-        <p>Receba alertas de promoções de tecnologia em tempo real direto no seu Telegram.</p>
-        <div class="exit-popup-actions">
-            <a href="https://t.me/Nitro_Tech_1" target="_blank" class="btn btn-primary btn-lg"><i class="fab fa-telegram-plane"></i> Entrar no Canal</a>
-            <a href="{% url 'nitroalerta' %}" class="btn btn-outline-on-dark btn-lg"><i class="fas fa-bell"></i> Nitro Alerta</a>
-        </div>
-        <button type="button" class="exit-popup-dismiss" id="exitPopupDismiss">Não, obrigado</button>
-    </div>
-</div>
-
 <button type="button" class="to-top" id="toTopBtn" aria-label="Voltar ao topo"><i class="fas fa-chevron-up"></i></button>
 
 <div id="cookieBanner" class="cookie-banner" role="dialog" aria-label="Consentimento de cookies">
@@ -182,7 +168,6 @@
 
 {% block scripts %}{% endblock %}
 <script src="{% static 'bot/social-proof.js' %}"></script>
-<script src="{% static 'bot/exit-popup.js' %}"></script>
 <script src="{% static 'bot/cookies.js' %}"></script>
 <script>
 var toTopBtn = document.getElementById('toTopBtn');
