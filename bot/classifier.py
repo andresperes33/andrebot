@@ -198,6 +198,31 @@ def detectar_categoria(texto, titulo=None):
     # 'compatível com laptop/notebook' não é confundido com o produto.
     haystack = _norm(_limpar_compat(texto))
 
+    # Detecta se o texto tem um PRODUTO real (ex.: 'Water Cooler').
+    # Se tiver, um 'Cupom: X' presente é só cupom do produto → não é cupom puro.
+    from bot.services import _eh_anuncio_cupom, _eh_linha_titulo_produto
+    tem_produto_real = False
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        for linha in _norm(alvo).split('\n'):
+            if _eh_linha_titulo_produto(linha):
+                tem_produto_real = True
+                break
+        if tem_produto_real:
+            break
+
+    # Postagem só de cupom: QUALQUER linha que seja claramente um anúncio
+    # curto de cupom (ex.: 'NOVO Cupom Mercado Livre') torna o anúncio cupom.
+    # Só quando NÃO há um produto real (senão 'Cooler + Cupom' viraria cupom).
+    if not tem_produto_real:
+        for alvo in (titulo, texto,):
+            if not alvo:
+                continue
+            for linha in _norm(alvo).split('\n'):
+                if _eh_anuncio_cupom(linha):
+                    return 'cupom'
+
     # Fonte tem prioridade — 'Fonte 850W ... com Cabo' é uma fonte, não um cabo.
     for alvo in (titulo, texto,):
         if not alvo:
@@ -352,36 +377,6 @@ def detectar_categoria(texto, titulo=None):
         eh_bundle = re.search(r'\b(?:bundle|pacote|com\s*jogos|jogo\s*incluso|edicao\s*com)\b', alvo_norm)
         if eh_console and eh_bundle:
             return 'console'
-
-    # Postagem só de cupom: o título é um anúncio curto com 'cupom'
-    # (ex.: 'Novo Cupom AMAZON', 'Novos Cupons Shopee LIVE').
-    # Se a PRIMEIRA linha é claramente um anúncio de cupom, é cupom direto —
-    # mesmo que o resto do texto (normalizado) pareça ter produto.
-    from bot.services import _eh_anuncio_cupom, _eh_linha_titulo_produto
-    for alvo in (titulo, texto,):
-        if not alvo:
-            continue
-        primeira_linha = _norm(alvo.split('\n')[0])
-        if not primeira_linha:
-            continue
-        if _eh_anuncio_cupom(primeira_linha):
-            return 'cupom'
-
-    # Senão, verifica se há um produto real no texto (ex.: 'Water Cooler ...
-    # cupom GAMER10' é um produto com cupom, não um cupom).
-    tem_produto_real = False
-    for alvo in (titulo, texto,):
-        if not alvo:
-            continue
-        for linha in _norm(alvo).split('\n'):
-            if _eh_linha_titulo_produto(linha):
-                tem_produto_real = True
-                break
-        if tem_produto_real:
-            break
-    if tem_produto_real:
-        # Não é cupom puro — segue para a classificação normal de produto.
-        pass
 
     # Cupom genérico SEM a palavra 'cupom' no título (ex.: 'AUMENTOU O
     # LIMITE!!', '10% OFF', 'Limite de R$ 200,00 OFF', 'Compra mínima').
