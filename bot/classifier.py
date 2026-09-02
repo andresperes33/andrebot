@@ -316,6 +316,10 @@ def detectar_categoria(texto, titulo=None):
         proc_como_compat = re.search(r'\b(?:para|pra|compat[ií]vel\s*com|com)\s*(?:processador|cpu)\b', alvo_norm)
         if eh_cooler and proc_como_compat:
             return 'cooler'
+        # 'Smart TV ... Processador AI a7 Gen8' — o 'processador' é o chip
+        # embarcado da TV, não um CPU avulso.
+        if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|qled|oled|miniled|neo\s*qled)\b', alvo_norm):
+            continue
         if re.search(r'\b(?:processador|cpu|xeon|ryzen|intel\s*core|core\s*i[3579]|athlon|threadripper)\b', alvo_norm):
             return 'processador'
 
