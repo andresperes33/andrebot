@@ -235,6 +235,24 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:notebook|laptop|macbook|ultrabook|chromebook)\b', alvo_norm):
             return 'notebook'
 
+    # Kit (placa-mãe + processador + memória) tem prioridade sobre qualquer
+    # componente individual: 'Kit X99 ... Xeon ... DDR3' é um kit, não um
+    # processador. Só considera kit quando há hardware de PC junto, para
+    # não pegar 'kit de limpeza', 'kit de 2 peças', etc.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        limpo = _norm(_limpar_compat(alvo))
+        if not limpo:
+            continue
+        tem_kit = re.search(r'\bkit\b', limpo)
+        tem_hardware = re.search(
+            r'\b(x99|x79|xeon|processador|placa[ -]?mae|memoria|ddr|c612|s2011|core\s*i[3579]|ryzen|am[45]|motherboard|gabinete|fonte)\b',
+            limpo,
+        )
+        if tem_kit and tem_hardware:
+            return 'kit'
+
     # Processador tem prioridade sobre a plataforma/placa citada
     # ('Xeon E5 ... x99 Processador CPU' é um PROCESSADOR, não uma placa-mãe).
     for alvo in (titulo, texto,):
@@ -364,24 +382,6 @@ def detectar_categoria(texto, titulo=None):
     if tem_produto_real:
         # Não é cupom puro — segue para a classificação normal de produto.
         pass
-
-    # Kit (placa-mãe + processador + memória) tem prioridade sobre qualquer
-    # componente individual: 'Processador Kit X99 ...' é um kit, não um
-    # processador. Só considera kit quando há hardware de PC junto, para
-    # não pegar 'kit de limpeza', 'kit de 2 peças', etc.
-    for alvo in (titulo, texto,):
-        if not alvo:
-            continue
-        limpo = _norm(_limpar_compat(alvo))
-        if not limpo:
-            continue
-        tem_kit = re.search(r'\bkit\b', limpo)
-        tem_hardware = re.search(
-            r'\b(x99|x79|xeon|processador|placa[ -]?mae|memoria|ddr|c612|s2011|core\s*i[3579]|ryzen|am[45]|motherboard|gabinete|fonte)\b',
-            limpo,
-        )
-        if tem_kit and tem_hardware:
-            return 'kit'
 
     # Cupom genérico SEM a palavra 'cupom' no título (ex.: 'AUMENTOU O
     # LIMITE!!', '10% OFF', 'Limite de R$ 200,00 OFF', 'Compra mínima').
