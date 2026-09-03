@@ -88,6 +88,49 @@ def _primeiro_link_produto(texto):
     return ''
 
 
+def _link_produto_compra(texto):
+    """Extrai o link do PRODUTO (para o botão 'Comprar com desconto'),
+    distinguindo-o do link do cupom, quando ambos aparecem.
+
+    O canal costuma publicar dois links: o do cupom (ex.: 'Resgate o cupom
+    R$ 90 OFF: https://...') e o do produto (ex.: 'Link do produto:
+    https://...'). O link do produto é o que deve ir no botão de compra.
+    """
+    if not texto:
+        return ''
+    # Coleta todos os links com o texto que os precede (rótulo), para
+    # identificar qual é marcado como produto.
+    itens = []  # (rotulo, link)
+    for m in re.finditer(r'([^\n:]{0,80}?):?\s*(https?://\S+)', texto):
+        rotulo = (m.group(1) or '').strip().casefold()
+        link = m.group(2).rstrip('.,;|)')
+        if any(d in link for d in ['t.me/', 'linktr.ee', 'youtube', 'youtu.be', 'tecnan.com.br', 'links.andreindica']):
+            continue
+        itens.append((rotulo, link))
+
+    if not itens:
+        return _primeiro_link_produto(texto)
+
+    # Rótulos que marcavam o link do produto.
+    for rotulo, link in itens:
+        if any(marc in rotulo for marc in ('produto', 'comprar', 'compre', 'link da', 'link para', 'este link')):
+            return link
+
+    # Se o primeiro link tem rótulo de cupom e há outro link depois, usa o
+    # segundo (o do produto). Ex.: 'Resgate o cupom: L1' / 'Link: L2'.
+    primeiro_rotulo = itens[0][0]
+    if 'cupom' in primeiro_rotulo and len(itens) > 1:
+        return itens[1][1]
+
+    # Caso geral: prefere o link que NÃO aparece junto a um rótulo de cupom.
+    if len(itens) > 1:
+        for rotulo, link in itens[1:]:
+            if 'cupom' not in rotulo:
+                return link
+
+    return itens[0][1]
+
+
 # Palavras genéricas ruído ao normalizar o nome do produto para a chave
 # (repetem entre todas as ofertas e não identificam o produto).
 _TOKENS_RUIDO = {
@@ -755,11 +798,9 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     from bot.classifier import detectar_categoria
     categoria = detectar_categoria(texto, titulo=titulo)
 
-    # Brute force link extraction for field legacy
-    link_afiliado = ''
-    links = re.findall(r'(https?://\S+)', texto)
-    if links:
-        link_afiliado = links[0].rstrip(')')
+    # Link do produto (para o botão de compra) — prioriza o link marcado como
+    # 'Link do produto' em vez do link do cupom, quando ambos aparecem.
+    link_afiliado = _link_produto_compra(texto)
 
     # Loja detectada pelo domínio do link de compra
     from bot.classifier import detectar_loja
