@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import re
+import time
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from bot.models import Promo
@@ -310,8 +311,30 @@ class Command(BaseCommand):
                         photo_path = os.path.abspath(photo_path)
                         logger.info(f"📸 Foto baixada: {photo_path}")
 
+                # ─── Cupom ML: usa a imagem padrão em tudo (Telegram/Zap/Stories) ──
+                # Quando o anúncio é um cupom do Mercado Livre, substitui a foto
+                # original pela imagem fixa (media/cupom/cupom_mercado_livre.jpg),
+                # mantendo o texto completo. Vale para Telegram, WhatsApp, Stories
+                # e alertas (todos usam a mesma photo_path abaixo).
+                cupom_ml_imagem = False
+                try:
+                    from bot.services import eh_cupom_mercado_livre, caminho_imagem_cupom_ml
+                    if eh_cupom_mercado_livre(modified_text):
+                        img_cupom = caminho_imagem_cupom_ml()
+                        if os.path.exists(img_cupom):
+                            temp_dir = os.path.join(os.getcwd(), 'tmp_photos')
+                            os.makedirs(temp_dir, exist_ok=True)
+                            cupom_tmp = os.path.join(temp_dir, f"cupom_ml_{int(time.time())}.jpg")
+                            import shutil
+                            shutil.copy2(img_cupom, cupom_tmp)
+                            photo_path = os.path.abspath(cupom_tmp)
+                            cupom_ml_imagem = True
+                            logger.info(f"🎫 Cupom ML: imagem padrão aplicada em todos os envios -> {photo_path}")
+                except Exception as cupom_img_err:
+                    logger.warning(f"⚠️ Erro ao aplicar imagem padrão do cupom ML: {cupom_img_err}")
+
                 # ─── Corta o rodapé da imagem (crédito da postagem) ──────────
-                if photo_path and os.path.exists(photo_path):
+                if photo_path and os.path.exists(photo_path) and not cupom_ml_imagem:
                     try:
                         from bot.services import cortar_rodape_imagem
                         photo_path = await asyncio.to_thread(

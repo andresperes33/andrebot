@@ -703,6 +703,29 @@ def promo_ja_postada(texto):
         return False
 
 
+def eh_cupom_mercado_livre(texto):
+    """True se o anúncio é um cupom do Mercado Livre (categoria 'cupom' + loja
+    'Mercado Livre' ou o texto mencionando 'mercado livre')."""
+    if not texto:
+        return False
+    from bot.classifier import detectar_categoria, detectar_loja
+    titulo = _linha_titulo(texto)[:250]
+    categoria = detectar_categoria(texto, titulo=titulo)
+    if categoria != 'cupom':
+        return False
+    link_afiliado = ''
+    links = re.findall(r'(https?://\S+)', texto)
+    if links:
+        link_afiliado = links[0].rstrip(')')
+    loja = detectar_loja(link_afiliado)
+    return loja == 'Mercado Livre' or 'mercado livre' in texto.casefold()
+
+
+def caminho_imagem_cupom_ml():
+    """Caminho da imagem fixa padrão de cupom do Mercado Livre."""
+    return os.path.join(settings.MEDIA_ROOT, 'cupom', 'cupom_mercado_livre.jpg')
+
+
 def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     """
     Salva a promoção no banco de dados para exibição na página web.
@@ -748,15 +771,12 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     # Imagem padrão de CUPOM do Mercado Livre: quando o anúncio é um cupom
     # da loja, o site usa uma imagem fixa (media/cupom/cupom_mercado_livre.jpg)
     # em vez da foto do Telegram. Texto continua o mesmo.
-    eh_cupom_ml = (
-        categoria == 'cupom'
-        and (loja == 'Mercado Livre' or 'mercado livre' in (texto or '').casefold())
-    )
+    eh_cupom_ml = eh_cupom_mercado_livre(texto)
 
     # Processa imagem
     imagem_url = ''
     if eh_cupom_ml:
-        img_cupom = os.path.join(settings.MEDIA_ROOT, 'cupom', 'cupom_mercado_livre.jpg')
+        img_cupom = caminho_imagem_cupom_ml()
         if os.path.exists(img_cupom):
             try:
                 import shutil
