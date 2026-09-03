@@ -746,7 +746,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     preco = _preco_do_texto(texto)
 
     # Imagem padrão de CUPOM do Mercado Livre: quando o anúncio é um cupom
-    # da loja, o site usa uma imagem fixa (media/cupom/cupom mercado livre.jpg)
+    # da loja, o site usa uma imagem fixa (media/cupom/cupom_mercado_livre.jpg)
     # em vez da foto do Telegram. Texto continua o mesmo.
     eh_cupom_ml = (
         categoria == 'cupom'
@@ -756,7 +756,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     # Processa imagem
     imagem_url = ''
     if eh_cupom_ml:
-        img_cupom = os.path.join(settings.MEDIA_ROOT, 'cupom', 'cupom mercado livre.jpg')
+        img_cupom = os.path.join(settings.MEDIA_ROOT, 'cupom', 'cupom_mercado_livre.jpg')
         if os.path.exists(img_cupom):
             try:
                 import shutil
