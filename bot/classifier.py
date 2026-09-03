@@ -442,14 +442,30 @@ def detectar_categoria(texto, titulo=None):
     # TV tem prioridade sobre 'jogo'/'sports'/'controle'/'processador' citados:
     # 'Smart TV ... Modo Jogo Pro', 'TV ... Modo Esportes', 'Smart TV ...
     # Controle AI Magic', 'TV ... Processador a7' — tudo é atributo da TV.
+    # Mas 'Monitor Odyssey OLED G5' é um MONITOR, não uma TV (OLED/QLED aqui é
+    # do painel do monitor).
     for alvo in (titulo, texto,):
         if not alvo:
             continue
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
+        eh_monitor = re.search(r'\bmonitor\b', alvo_norm)
+        if eh_monitor and re.search(r'\b(?:monitor|144hz|165hz|180hz|240hz|280hz|360hz|0\.[0-9]*ms|dp\b|displayport|freesync|gsync)\b', alvo_norm):
+            continue  # é monitor; 'oled'/'qled' é o painel, não uma TV
         if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|qled|oled|miniled|neo\s*qled)\b', alvo_norm):
             return 'tv'
+
+    # Monitor tem prioridade — 'Monitor Odyssey OLED G5' é um monitor mesmo
+    # com 'oled'/'qled' no título (que viraria 'tv' no loop de categorias).
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\bmonitor\b', alvo_norm):
+            return 'monitor'
 
     # Bundle de CONSOLE tem prioridade sobre jogos: 'PlayStation 5 + GTA VI'
     # é um console com jogos inclusos (bundle/pacote), não um jogo avulso.
