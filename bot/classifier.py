@@ -233,12 +233,17 @@ def detectar_categoria(texto, titulo=None):
 
     # Tablet tem prioridade — 'Galaxy Tab S10 Lite ... Tela 10.9"' é um tablet,
     # não um celular (mesmo vindo 'Galaxy'/'Samsung').
+    # Mas 'Carregador ... para macbook, tablet, telefone, iphone' é um
+    # CARREGADOR; 'tablet'/'macbook'/'iphone' ali são só compatibilidade.
     for alvo in (titulo, texto,):
         if not alvo:
             continue
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
+        if re.search(r'\b(?:carregador|cabo|adaptador|fonte)\b', alvo_norm) and \
+           re.search(r'\b(?:tablet|tablete|ipad|macbook|iphone|notebook|laptop|telefone|celular)\b', alvo_norm):
+            continue  # é carregador/cabo; aparelho citado é só compatibilidade
         if re.search(r'\b(?:tablet|tablete)\b', alvo_norm):
             return 'tablet'
         if re.search(r'\bipad\b', alvo_norm):
