@@ -745,11 +745,33 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     # Preço básico para filtro
     preco = _preco_do_texto(texto)
 
+    # Imagem padrão de CUPOM do Mercado Livre: quando o anúncio é um cupom
+    # da loja, o site usa uma imagem fixa (media/cupom/cupom mercado livre.jpg)
+    # em vez da foto do Telegram. Texto continua o mesmo.
+    eh_cupom_ml = (
+        categoria == 'cupom'
+        and (loja == 'Mercado Livre' or 'mercado livre' in (texto or '').casefold())
+    )
+
     # Processa imagem
     imagem_url = ''
-    if photo_path and isinstance(photo_path, str) and photo_path.startswith('http'):
+    if eh_cupom_ml:
+        img_cupom = os.path.join(settings.MEDIA_ROOT, 'cupom', 'cupom mercado livre.jpg')
+        if os.path.exists(img_cupom):
+            try:
+                import shutil
+                media_promos_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
+                os.makedirs(media_promos_dir, exist_ok=True)
+                filename = f"cupom_ml_{int(time.time())}.jpg"
+                new_path = os.path.join(media_promos_dir, filename)
+                shutil.copy2(img_cupom, new_path)
+                imagem_url = f"{settings.MEDIA_URL}promos/{filename}"
+                print(f"🎫 Cupom ML: imagem fixa aplicada -> {imagem_url}")
+            except Exception as cupom_img_err:
+                print(f"Erro ao aplicar imagem fixa do cupom ML: {cupom_img_err}")
+    if not imagem_url and photo_path and isinstance(photo_path, str) and photo_path.startswith('http'):
         imagem_url = photo_path
-    elif photo_path and os.path.exists(photo_path):
+    elif not imagem_url and photo_path and os.path.exists(photo_path):
         try:
             import shutil
             media_promos_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
