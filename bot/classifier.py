@@ -112,6 +112,8 @@ _REGEX_CATEGORIA = [
     ]),
     ('tv', [
         r'televis', r'\bsmart\s*tv\b', r'\btv\s*\d{2}\s*(pol|polegada)', r'\btv\s*\d{2}\b',
+        r'\btv\b.{0,40}?\b\d{2}\s*(?:pol|polegadas|polegada)',
+        r'\btv\b(?!\s*box).{0,40}?\b\d{2}\b',
         r'\bqled\b', r'\bminiled\b', r'\boled\b',
     ]),
     ('pasta_termica', [
@@ -458,7 +460,7 @@ def detectar_categoria(texto, titulo=None):
         eh_monitor = re.search(r'\bmonitor\b', alvo_norm)
         if eh_monitor and re.search(r'\b(?:monitor|144hz|165hz|180hz|240hz|280hz|360hz|0\.[0-9]*ms|dp\b|displayport|freesync|gsync)\b', alvo_norm):
             continue  # é monitor; 'oled'/'qled' é o painel, não uma TV
-        if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|qled|oled|miniled|neo\s*qled)\b', alvo_norm):
+        if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|tv\b.{0,40}?\b\d{2}\s*(?:pol|polegadas|polegada)|tv\b(?!\s*box).{0,40}?\b\d{2}\b|qled|oled|miniled|neo\s*qled)\b', alvo_norm):
             return 'tv'
 
     # Monitor tem prioridade — 'Monitor Odyssey OLED G5' é um monitor mesmo
