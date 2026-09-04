@@ -14,6 +14,8 @@ urlpatterns = [
     path('nitro-alerta/cancelar/<str:token>/', views.nitroalerta_cancelar_view, name='nitroalerta_cancelar'),
     path('blog/', views.guia_view, name='blog'),
     path('blog/<slug:slug>/', views.guia_artigo_view, name='blog_artigo'),
+    path('avisos/', views.avisos_view, name='avisos'),
+    path('avisos/<slug:slug>/', views.aviso_detail_view, name='aviso_detail'),
     # Redireciona a antiga URL /guia/ para /blog/ (sem quebrar links antigos)
     path('guia/', RedirectView.as_view(pattern_name='blog', permanent=False)),
     path('guia/<slug:slug>/', RedirectView.as_view(pattern_name='blog_artigo', permanent=False)),

@@ -1,0 +1,70 @@
+{% extends 'bot/base.html' %}
+{% load static %}
+
+{% block title %}{{ aviso.titulo }} | Nitro Tech{% endblock %}
+{% block description %}{{ aviso.titulo }} — Avisos e promoções em destaque da Nitro Tech.{% endblock %}
+
+{% block nav_promos %}active{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
+    <div class="breadcrumb-inner">
+        <a href="/promos/">Início</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <a href="{% url 'avisos' %}">Quadro de Avisos</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <span class="breadcrumb-current">{{ aviso.titulo|truncatechars:40 }}</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="hero-dark" style="padding:56px 24px 48px;">
+    <span class="corner-square"></span>
+    <div class="hero-inner">
+        <h1 class="hero-title">{{ aviso.titulo }}</h1>
+    </div>
+</div>
+
+<article class="container" style="max-width:820px;padding:48px 24px;">
+    {% if aviso.imagem %}
+    <img src="{{ aviso.imagem.url }}" alt="{{ aviso.titulo }}" style="width:100%;border-radius:12px;margin-bottom:24px;">
+    {% endif %}
+    <div class="article-content" style="font-size:16px;line-height:1.75;color:var(--body);">
+        {{ aviso.conteudo|safe }}
+    </div>
+    <p style="margin-top:32px;font-size:13px;color:var(--mute);">Atualizado em {{ aviso.atualizado_em|date:"d/m/Y" }}</p>
+</article>
+
+{% if outros %}
+<section class="section" style="padding:0 0 48px;">
+    <div class="container" style="max-width:1000px;">
+        <div class="section-head">
+            <div>
+                <div class="section-eyebrow">Continue lendo</div>
+                <h2 class="section-title xl">Outros avisos</h2>
+            </div>
+            <a href="{% url 'avisos' %}" class="btn-ghost">Ver todos <i class="fas fa-arrow-right arrow"></i></a>
+        </div>
+        <div class="aviso-grid">
+            {% for aviso in outros %}
+            <a href="{% url 'aviso_detail' aviso.slug %}" class="aviso-card" style="color:inherit;text-decoration:none;">
+                {% if aviso.imagem %}
+                <div class="aviso-card-thumb">
+                    <img src="{{ aviso.imagem.url }}" alt="{{ aviso.titulo }}" loading="lazy">
+                </div>
+                {% endif %}
+                <div class="aviso-card-body">
+                    <span class="blog-card-cat">Aviso</span>
+                    <h3 class="blog-card-title">{{ aviso.titulo }}</h3>
+                    <span class="blog-card-date">{{ aviso.atualizado_em|date:"d/m/Y" }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}

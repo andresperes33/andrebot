@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserAlert, BotConfig, Promo, Artigo, AlertaSite
+from .models import UserAlert, BotConfig, Promo, Artigo, AlertaSite, Aviso
 
 
 
@@ -39,3 +39,13 @@ class AlertaSiteAdmin(admin.ModelAdmin):
     list_filter = ('is_active',)
     search_fields = ('nome', 'whatsapp', 'keyword')
     ordering = ('-created_at',)
+
+
+@admin.register(Aviso)
+class AvisoAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'publicado', 'destaque', 'criado_em')
+    list_filter = ('publicado', 'destaque')
+    search_fields = ('titulo', 'conteudo')
+    prepopulated_fields = {'slug': ('titulo',)}
+    ordering = ('-criado_em',)
+    list_editable = ('publicado', 'destaque')

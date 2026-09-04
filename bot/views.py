@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.db import models as _db_models
 from datetime import timedelta
-from .models import Promo, Artigo
+from .models import Promo, Artigo, Aviso
 
 # Lojas sempre exibidas no filtro, mesmo sem promoções no período atual.
 _LOJAS_FIXAS = [
@@ -189,6 +189,9 @@ def promos_view(request):
     # Artigos recentes do Blog (destaque na home, acima do guia de categorias)
     artigos_blog = list(Artigo.objects.filter(publicado=True)[:4])
 
+    # Avisos em destaque (Quadro de Avisos) — publicados e com 'destaque' ativo
+    avisos_destaque = list(Aviso.objects.filter(publicado=True, destaque=True)[:3])
+
     return render(request, 'bot/promos.html', {
         'promos': pagina,
         'periodo': periodo,
@@ -203,6 +206,7 @@ def promos_view(request):
         'LIMITE': LIMITE,
         'categorias_guia': categorias_guia,
         'artigos_blog': artigos_blog,
+        'avisos_destaque': avisos_destaque,
     })
 
 
@@ -420,3 +424,25 @@ def sitemap_xml_view(request):
     xml.append('</urlset>')
     
     return HttpResponse("\n".join(xml), content_type="application/xml")
+
+
+def avisos_view(request):
+    """
+    Página do Quadro de Avisos — lista todos os avisos publicados.
+    """
+    avisos = Aviso.objects.filter(publicado=True)
+    return render(request, 'bot/avisos.html', {
+        'avisos': avisos,
+    })
+
+
+def aviso_detail_view(request, slug):
+    """
+    Página individual de um aviso do Quadro.
+    """
+    aviso = get_object_or_404(Aviso, slug=slug, publicado=True)
+    outros = Aviso.objects.filter(publicado=True).exclude(pk=aviso.pk)[:4]
+    return render(request, 'bot/aviso_detail.html', {
+        'aviso': aviso,
+        'outros': outros,
+    })
