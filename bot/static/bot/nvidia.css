@@ -70,7 +70,7 @@ button, input { font-family: inherit; }
     padding: 0 24px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 24px;
 }
 .utility-left {
@@ -83,18 +83,6 @@ button, input { font-family: inherit; }
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
-.utility-right { display: flex; align-items: center; gap: 20px; }
-.utility-link {
-    color: var(--on-dark-mute);
-    font-size: 12px;
-    font-weight: 400;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: color 0.15s;
-}
-.utility-link:hover { color: var(--primary); }
-.utility-link i { font-size: 13px; }
 
 /* ─── Primary Nav (dark, 64px) ───────────────────────────────── */
 .primary-nav {
@@ -1350,7 +1338,6 @@ a.price-history-row:hover {
 @media (max-width: 768px) {
     .nav-links { display: none; }
     .nav-burger { display: flex; }
-    .utility-bar { display: none; }
     .nav-actions .btn { display: none; }
     .footer-inner { grid-template-columns: 1fr 1fr; }
     .hero-dark { padding: 48px 24px 40px; }
