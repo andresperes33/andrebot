@@ -59,6 +59,14 @@ _VALOR_RE = re.compile(
     r'|\d+x)',
 )
 
+# Mesmo padrão, mas que não casa dentro de uma tag HTML (não destaca
+# atributos/URLs como 'https://...' nem quebra uma <a href="...">).
+_VALOR_RE_TAG_SAFE = re.compile(
+    r'(?<![=\w])(R\$\s?\d[\d.,]*(?:[ \t]*-[ \t]*\d[\d.,]*)?'
+    r'|\d+(?:[.,]\d+)?\s*%'
+    r'|\d+x)(?!["\'</])',
+)
+
 
 @register.filter(is_safe=True)
 def destacar_valores(value):
@@ -68,6 +76,44 @@ def destacar_valores(value):
     texto = conditional_escape(value)
     texto = _VALOR_RE.sub(r'<strong>\1</strong>', texto)
     return mark_safe(texto)
+
+
+@register.filter(is_safe=True)
+def aviso_html(value):
+    """Processa o conteúdo do Quadro de Avisos mantendo o HTML, convertendo
+    URLs em links clicáveis e destacando valores (R$, %, x).
+
+    O autor pode colar texto com quebras de linha e emojis (ex.:
+    '🔴 #AliExpress - Promoção…\\n\\nLink da Promo:\\nhttps://…\\n\\n💠 Cupons:
+    R$ 12 off acima de R$ 90: BRFS1') e o aviso renderiza como na imagem:
+    emojis preservados, quebras de linha, link clicável e valores em negrito.
+    Campo aceita HTML (conteúdo de admin confiável), então não é escapado.
+    """
+    if not value:
+        return ''
+    html = value
+    # Preserva quebras de linha como <br> (conteúdo pode ser texto simples).
+    html = html.replace('\n', '<br>')
+
+    # Protege links <a ...>...</a> já existentes para não converter URLs que
+    # estejam dentro de um href/texto de link já marcado (evita link duplo).
+    _ANCHOR_OPEN = '\x00ANCHOR_OPEN\x00'
+    _ANCHOR_CLOSE = '\x00ANCHOR_CLOSE\x00'
+    anchors = []
+    def _guardar(m):
+        anchors.append(m.group(0))
+        return f'{_ANCHOR_OPEN}{len(anchors) - 1}{_ANCHOR_CLOSE}'
+    html = re.sub(r'(?is)<a\b[^>]*>.*?</a>', _guardar, html)
+
+    # Converte URLs para links clicáveis (abrem em nova aba).
+    html = _URL_RE.sub(lambda m: f'<a href="{m.group(1)}"{_ATRS}>{m.group(1)}</a>', html)
+
+    # Destaca valores (R$, %, x) em <strong>, sem tocar em tags/URLs.
+    html = _VALOR_RE_TAG_SAFE.sub(r'<strong>\1</strong>', html)
+
+    # Restaura os links <a> previamente guardados.
+    html = re.sub(rf'{_ANCHOR_OPEN}(\d+){_ANCHOR_CLOSE}', lambda m: anchors[int(m.group(1))], html)
+    return mark_safe(html)
 
 
 # Normaliza preços do tipo 'R$ 344' para 'R$ 344,00', 'R$ 344,9' para

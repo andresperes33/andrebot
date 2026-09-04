@@ -1,5 +1,6 @@
 {% extends 'bot/base.html' %}
 {% load static %}
+{% load urlize_blank %}
 
 {% block title %}{{ aviso.titulo }} | Nitro Tech{% endblock %}
 {% block description %}{{ aviso.titulo }} — Avisos e promoções em destaque da Nitro Tech.{% endblock %}
@@ -32,7 +33,7 @@
     <img src="{{ aviso.imagem.url }}" alt="{{ aviso.titulo }}" style="width:100%;border-radius:12px;margin-bottom:24px;">
     {% endif %}
     <div class="article-content" style="font-size:16px;line-height:1.75;color:var(--body);">
-        {{ aviso.conteudo|safe }}
+        {{ aviso.conteudo|aviso_html }}
     </div>
     <p style="margin-top:32px;font-size:13px;color:var(--mute);">Atualizado em {{ aviso.atualizado_em|date:"d/m/Y" }}</p>
 </article>
