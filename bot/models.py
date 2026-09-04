@@ -198,15 +198,15 @@ class Artigo(models.Model):
         return reverse('blog_artigo', args=[self.slug])
 
 
-class Aviso(models.Model):
+class Evento(models.Model):
     """
-    Quadro de Avisos: promoções/produtos em destaque que o usuário quer
+    Quadro de Eventos: promoções/produtos em destaque que o usuário quer
     publicar em local estratégico do site. Tem imagem, título e conteúdo.
     """
     titulo = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
-    conteudo = models.TextField(help_text='Conteúdo do aviso (HTML). Recomenda-se usar tags básicas (<p>, <h2>, <ul>, <strong>).')
-    imagem = models.ImageField(upload_to='avisos/', blank=True, help_text='Imagem do aviso. Enviada em JPG/PNG e convertida automaticamente para WebP.')
+    conteudo = models.TextField(help_text='Conteúdo do evento (HTML). Recomenda-se usar tags básicas (<p>, <h2>, <ul>, <strong>).')
+    imagem = models.ImageField(upload_to='eventos/', blank=True, help_text='Imagem do evento. Enviada em JPG/PNG e convertida automaticamente para WebP.')
     publicado = models.BooleanField(default=True)
     destaque = models.BooleanField(default=False, help_text='Se marcado, aparece em destaque no topo da página de Promoções.')
     criado_em = models.DateTimeField(auto_now_add=True)
@@ -214,8 +214,8 @@ class Aviso(models.Model):
 
     class Meta:
         ordering = ['-criado_em']
-        verbose_name = 'Aviso'
-        verbose_name_plural = 'Quadro de Avisos'
+        verbose_name = 'Evento'
+        verbose_name_plural = 'Quadro de Eventos'
 
     def __str__(self):
         return self.titulo
@@ -226,7 +226,7 @@ class Aviso(models.Model):
             try:
                 self.imagem = self._converter_webp(self.imagem)
             except Exception as e:
-                print(f"[Aviso] Erro ao converter imagem para WebP: {e}")
+                print(f"[Evento] Erro ao converter imagem para WebP: {e}")
         super().save(*args, **kwargs)
 
     def _converter_webp(self, imagem):
@@ -238,7 +238,7 @@ class Aviso(models.Model):
 
         img = Image.open(imagem)
         img = img.convert('RGB')
-        base = (imagem.name or 'aviso').rsplit('.', 1)[0]
+        base = (imagem.name or 'evento').rsplit('.', 1)[0]
 
         width, height = img.size
         if width > 1200:
@@ -254,4 +254,4 @@ class Aviso(models.Model):
 
     def get_absolute_url(self):
         from django.urls import reverse
-        return reverse('aviso_detail', args=[self.slug])
+        return reverse('evento_detail', args=[self.slug])

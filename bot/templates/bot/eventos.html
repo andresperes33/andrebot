@@ -1,0 +1,52 @@
+{% extends 'bot/base.html' %}
+{% load static %}
+
+{% block title %}Quadro de Eventos | Nitro Tech{% endblock %}
+{% block description %}Eventos e promoções em destaque escolhidos a dedo pela Nitro Tech. Fique por dentro das melhores ofertas de tecnologia aqui.{% endblock %}
+
+{% block nav_promos %}active{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
+    <div class="breadcrumb-inner">
+        <a href="/promos/">Início</a>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+        <span class="breadcrumb-current">Quadro de Eventos</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="hero-dark" style="padding:56px 24px 48px;">
+    <span class="corner-square"></span>
+    <div class="hero-inner">
+        <h1 class="hero-title">Quadro de Eventos</h1>
+        <p class="hero-sub">Promoções em destaque escolhidas a dedo. Acompanhe os eventos antes que acabem.</p>
+    </div>
+</div>
+
+<div class="container" style="max-width:1000px;padding:48px 24px;">
+    {% if eventos %}
+    <div class="blog-grid">
+        {% for evento in eventos %}
+        <a href="{% url 'evento_detail' evento.slug %}" class="blog-card" style="color:inherit;text-decoration:none;">
+            {% if evento.imagem %}
+            <div class="blog-card-thumb">
+                <img src="{{ evento.imagem.url }}" alt="{{ evento.titulo }}" loading="lazy">
+            </div>
+            {% endif %}
+            <div class="blog-card-body">
+                <span class="blog-card-cat">Evento</span>
+                <h2 class="blog-card-title">{{ evento.titulo }}</h2>
+                <span class="blog-card-date">{{ evento.atualizado_em|date:"d/m/Y" }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="blog-empty">Nenhum evento publicado no momento. Volte em breve!</div>
+    {% endif %}
+</div>
+
+{% endblock %}

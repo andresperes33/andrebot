@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserAlert, BotConfig, Promo, Artigo, AlertaSite, Aviso
+from .models import UserAlert, BotConfig, Promo, Artigo, AlertaSite, Evento
 
 
 
@@ -41,8 +41,8 @@ class AlertaSiteAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
 
 
-@admin.register(Aviso)
-class AvisoAdmin(admin.ModelAdmin):
+@admin.register(Evento)
+class EventoAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'publicado', 'destaque', 'criado_em')
     list_filter = ('publicado', 'destaque')
     search_fields = ('titulo', 'conteudo')

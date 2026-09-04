@@ -79,13 +79,13 @@ def destacar_valores(value):
 
 
 @register.filter(is_safe=True)
-def aviso_html(value):
-    """Processa o conteúdo do Quadro de Avisos mantendo o HTML, convertendo
+def evento_html(value):
+    """Processa o conteúdo do Quadro de Eventos mantendo o HTML, convertendo
     URLs em links clicáveis e destacando valores (R$, %, x).
 
     O autor pode colar texto com quebras de linha e emojis (ex.:
     '🔴 #AliExpress - Promoção…\\n\\nLink da Promo:\\nhttps://…\\n\\n💠 Cupons:
-    R$ 12 off acima de R$ 90: BRFS1') e o aviso renderiza como na imagem:
+    R$ 12 off acima de R$ 90: BRFS1') e o evento renderiza como na imagem:
     emojis preservados, quebras de linha, link clicável e valores em negrito.
     Campo aceita HTML (conteúdo de admin confiável), então não é escapado.
     """

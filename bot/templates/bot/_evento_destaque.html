@@ -1,0 +1,29 @@
+{% if eventos_destaque %}
+<section class="section aviso-destaque-section" id="avisos">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-eyebrow">Quadro de Eventos</div>
+                <h2 class="section-title xl">Atenção para essas promoções</h2>
+            </div>
+            <a href="{% url 'eventos' %}" class="btn-ghost">Ver todos <i class="fas fa-arrow-right arrow"></i></a>
+        </div>
+        <div class="blog-grid">
+            {% for evento in eventos_destaque %}
+            <a href="{% url 'evento_detail' evento.slug %}" class="blog-card" style="color:inherit;text-decoration:none;">
+                {% if evento.imagem %}
+                <div class="blog-card-thumb">
+                    <img src="{{ evento.imagem.url }}" alt="{{ evento.titulo }}" loading="lazy">
+                </div>
+                {% endif %}
+                <div class="blog-card-body">
+                    <span class="blog-card-cat">Evento</span>
+                    <h3 class="blog-card-title">{{ evento.titulo }}</h3>
+                    <span class="blog-card-date">{{ evento.atualizado_em|date:"d/m/Y" }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
