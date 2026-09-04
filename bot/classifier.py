@@ -41,7 +41,18 @@ def _limpar_compat(texto):
     # Normaliza para o regex (evita 'compatível' com acento não casar).
     base = sem_acento(texto or '')
     # Apaga desde 'compatível' até o fim da cláusula (vírgula, ponto ou fim).
-    return re.sub(r'\s+compativel\s*(com\b|para\b|:|\s)*[^,;.]*', ' ', base, flags=re.I)
+    base = re.sub(r'\s+compativel\s*(com\b|para\b|:|\s)*[^,;.]*', ' ', base, flags=re.I)
+    # Apaga 'para <aparelho>' quando o aparelho citado é só compatibilidade
+    # (ex.: 'Carregador ... para macbook, tablet, iphone, notebook' é um
+    # carregador, não um notebook/tablet). Preserva 'para' de produtos reais.
+    base = re.sub(
+        r'\s+para\s+(?:o\s+|a\s+)?(?:macbook|notebook|laptop|tablet|tablete|ipad|'
+        r'iphone|telefone|celular|smartphone|pc\b|windows|android|ios|computador)\b[^,;.]*',
+        ' ',
+        base,
+        flags=re.I,
+    )
+    return base
 
 
 # Padrões por categoria, em ordem de prioridade (mais específica primeiro).
@@ -246,6 +257,11 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:carregador|cabo|adaptador|fonte)\b', alvo_norm) and \
            re.search(r'\b(?:tablet|tablete|ipad|macbook|iphone|notebook|laptop|telefone|celular)\b', alvo_norm):
             continue  # é carregador/cabo; aparelho citado é só compatibilidade
+        # 'Kit Teclado e Mouse ... Tablet Celular' — o produto é um teclado
+        # (com mouse); 'tablet'/'celular' é só compatibilidade, não um tablet.
+        if re.search(r'\b(?:teclado|keyboard)\b', alvo_norm) and \
+           re.search(r'\b(?:tablet|tablete|ipad|celular|telefone|smartphone|android|ios)\b', alvo_norm):
+            return 'teclado'
         if re.search(r'\b(?:tablet|tablete)\b', alvo_norm):
             return 'tablet'
         if re.search(r'\bipad\b', alvo_norm):
