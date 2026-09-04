@@ -74,7 +74,7 @@
                 <span class="brand-mark"></span>
                 <span class="brand-name">Nitro<strong>Tech</strong></span>
             </a>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="/promos/" class="nav-link {% block nav_promos %}active{% endblock %}">Promoções</a>
                 <a href="{% url 'blog' %}" class="nav-link">Blog</a>
                 <a href="{% url 'eventos' %}" class="nav-link">Eventos</a>
@@ -83,7 +83,26 @@
                 <a href="https://www.instagram.com/nitro_tech_brasil/" target="_blank" class="nav-link">Instagram</a>
                 <a href="https://www.tiktok.com/@nitrotech.store" target="_blank" class="nav-link">TikTok</a>
             </div>
-            <a href="{% url 'nitroalerta' %}" class="btn btn-primary btn-sm">Nitro Alerta <i class="fas fa-bell"></i></a>
+            <div class="nav-actions">
+                <a href="{% url 'nitroalerta' %}" class="btn btn-primary btn-sm">Nitro Alerta <i class="fas fa-bell"></i></a>
+                <button type="button" class="nav-burger" id="navBurger" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobileMenu">
+                    <span class="burger-bar"></span>
+                    <span class="burger-bar"></span>
+                    <span class="burger-bar"></span>
+                </button>
+            </div>
+        </div>
+        <div class="mobile-menu" id="mobileMenu">
+            <div class="mobile-menu-inner">
+                <a href="/promos/" class="mobile-link {% block nav_promos_mobile %}active{% endblock %}"><i class="fas fa-store"></i> Promoções</a>
+                <a href="{% url 'blog' %}" class="mobile-link"><i class="fas fa-newspaper"></i> Blog</a>
+                <a href="{% url 'eventos' %}" class="mobile-link"><i class="fas fa-bolt"></i> Eventos</a>
+                <a href="https://t.me/Nitro_Tech_1" target="_blank" class="mobile-link"><i class="fab fa-telegram-plane"></i> Telegram</a>
+                <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" class="mobile-link"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+                <a href="https://www.instagram.com/nitro_tech_brasil/" target="_blank" class="mobile-link"><i class="fab fa-instagram"></i> Instagram</a>
+                <a href="https://www.tiktok.com/@nitrotech.store" target="_blank" class="mobile-link"><i class="fab fa-tiktok"></i> TikTok</a>
+                <a href="{% url 'nitroalerta' %}" class="mobile-link mobile-cta"><i class="fas fa-bell"></i> Nitro Alerta</a>
+            </div>
         </div>
     </nav>
 </header>
@@ -191,6 +210,34 @@ if ('serviceWorker' in navigator) {
         });
     });
 }
+
+// ─── Menu hamburger (mobile) ───────────────────────────────────
+(function () {
+    var burger = document.getElementById('navBurger');
+    var menu = document.getElementById('mobileMenu');
+    if (!burger || !menu) return;
+
+    function fechar() {
+        burger.classList.remove('open');
+        burger.setAttribute('aria-expanded', 'false');
+        menu.classList.remove('open');
+        document.body.classList.remove('menu-open');
+    }
+    burger.addEventListener('click', function () {
+        var aberto = menu.classList.toggle('open');
+        burger.classList.toggle('open', aberto);
+        burger.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+        document.body.classList.toggle('menu-open', aberto);
+    });
+    // Fecha ao tocar em um link do menu
+    menu.querySelectorAll('.mobile-link').forEach(function (link) {
+        link.addEventListener('click', fechar);
+    });
+    // Fecha ao pressionar Esc
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') fechar();
+    });
+})();
 </script>
 </body>
 </html>
