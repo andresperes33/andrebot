@@ -353,6 +353,11 @@ def detectar_categoria(texto, titulo=None):
         # embarcado da TV, não um CPU avulso.
         if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|qled|oled|miniled|neo\s*qled)\b', alvo_norm):
             continue
+        # 'Air Cooler AMD novo ryzen wraith' — é um air cooler; 'ryzen' é a
+        # plataforma compatível do cooler, não um CPu avulso.
+        eh_cooler_produto = re.search(r'\b(?:air\s*cooler|water\s*cooler|watercooler|dissipador|ventoinha|wraith|cooler)\b', alvo_norm)
+        if eh_cooler_produto and re.search(r'\b(?:processador|cpu|ryzen|xeon|intel\s*core|core\s*i[3579]|athlon|threadripper)\b', alvo_norm):
+            continue
         if re.search(r'\b(?:processador|cpu|xeon|ryzen|intel\s*core|core\s*i[3579]|athlon|threadripper)\b', alvo_norm):
             return 'processador'
 
