@@ -1350,6 +1350,8 @@ a.price-history-row:hover {
 @media (max-width: 768px) {
     .nav-links { display: none; }
     .nav-burger { display: flex; }
+    .utility-bar { display: none; }
+    .nav-actions .btn { display: none; }
     .footer-inner { grid-template-columns: 1fr 1fr; }
     .hero-dark { padding: 48px 24px 40px; }
     .hero-dark .corner-square { top: 24px; left: 24px; }
@@ -1367,28 +1369,6 @@ a.price-history-row:hover {
     .footer-inner { grid-template-columns: 1fr; }
     .hero-actions, .detail-actions { flex-direction: column; }
     .hero-actions .btn, .detail-actions .btn { width: 100%; }
-    .utility-left span { display: none; }
-    .utility-right { gap: 10px; }
-    .utility-link {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.12);
-        justify-content: center;
-        font-size: 0;
-        gap: 0;
-    }
-    .utility-link i {
-        font-size: 19px;
-        color: #ffffff;
-        line-height: 1;
-    }
-    .utility-link:hover { background: rgba(255,255,255,0.22); color: #ffffff; }
-    .utility-link.telegram i { color: #2aabee; }
-    .utility-link.whatsapp i { color: #25d366; }
-    .utility-link.instagram i { color: #e4405f; }
-    .utility-link.tiktok i { color: #ffffff; }
-    .utility-label { display: none; }
 }
 
 /* ─── Social Proof Popup ─── */
