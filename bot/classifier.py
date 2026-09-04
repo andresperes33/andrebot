@@ -298,6 +298,18 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:ar\s*condicionado|condicionador|air\s*conditioner|split\s*hi\s*wall|hi\s*wall)\b', alvo_norm):
             return 'ar_condicionado'
 
+    # Gabinete tem prioridade sobre 'placa-mãe' — 'Gabinete Gamer ...
+    # Micro-ATX/Mid' é um GABINETE; 'micro-atx' (muitas vezes dentro da URL
+    # do produto) não é uma placa-mãe.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\bgabinete\b', alvo_norm):
+            return 'gabinete'
+
     # Notebook tem prioridade sobre GPU/SSD citados no título
     # ('RTX5060 Notebook ASUS TUF ... 512GB SSD' é um NOTEBOOK, não um SSD).
     # 'notebook' de compatibilidade ('para notebook') NÃO conta aqui.
