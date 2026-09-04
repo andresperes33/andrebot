@@ -277,7 +277,7 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|qled|oled|miniled|neo\s*qled)\b', alvo_norm) and \
+        if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|qled|miniled|neo\s*qled)\b', alvo_norm) and \
            re.search(r'\bcontrole\b', alvo_norm):
             continue  # é TV; 'controle' é o controle remoto incluso
         # Microfone com controle de volume RGB ('Microfone FIFINE ... Controle
