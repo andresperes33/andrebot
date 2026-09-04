@@ -1338,6 +1338,7 @@ a.price-history-row:hover {
 @media (max-width: 768px) {
     .nav-links { display: none; }
     .nav-burger { display: flex; }
+    .utility-bar { display: none; }
     .nav-actions .btn { display: none; }
     .footer-inner { grid-template-columns: 1fr 1fr; }
     .hero-dark { padding: 48px 24px 40px; }
