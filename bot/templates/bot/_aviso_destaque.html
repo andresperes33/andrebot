@@ -8,15 +8,15 @@
             </div>
             <a href="{% url 'avisos' %}" class="btn-ghost">Ver todos <i class="fas fa-arrow-right arrow"></i></a>
         </div>
-        <div class="aviso-destaque-grid">
+        <div class="blog-grid">
             {% for aviso in avisos_destaque %}
-            <a href="{% url 'aviso_detail' aviso.slug %}" class="aviso-card" style="color:inherit;text-decoration:none;">
+            <a href="{% url 'aviso_detail' aviso.slug %}" class="blog-card" style="color:inherit;text-decoration:none;">
                 {% if aviso.imagem %}
-                <div class="aviso-card-thumb">
+                <div class="blog-card-thumb">
                     <img src="{{ aviso.imagem.url }}" alt="{{ aviso.titulo }}" loading="lazy">
                 </div>
                 {% endif %}
-                <div class="aviso-card-body">
+                <div class="blog-card-body">
                     <span class="blog-card-cat">Aviso</span>
                     <h3 class="blog-card-title">{{ aviso.titulo }}</h3>
                     <span class="blog-card-date">{{ aviso.atualizado_em|date:"d/m/Y" }}</span>
