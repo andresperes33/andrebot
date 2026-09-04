@@ -353,6 +353,12 @@ def _chave_produto(titulo):
             continue  # megapixels da câmera ('50mp', '108mp') não identifica o produto
         if re.fullmatch(r'\d{1,2}', w) or w in ('1000',):
             continue  # números soltos pequenos ('1', '5', '9') não identificam
+        # Tamanhos de radiador de water cooler (120/240/360mm) — variam entre
+        # postagens e não identificam a marca/modelo. Sem isso, '360' virava
+        # 'código de modelo' e o histórico agrupava water coolers de marcas
+        # diferentes (ex.: Gigabyte GME 360 com Corsair H150i e Cooler Master).
+        if w in ('120', '240', '360'):
+            continue
         if w in ('bluetooth', 'wireless', 'sem', 'fio', 'rgb'):
             continue
         if re.fullmatch(r'\(\d+\)', w):
