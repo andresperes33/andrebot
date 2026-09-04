@@ -418,6 +418,12 @@ def _preco_do_texto(texto):
         baixa = linha.casefold()
         if any(palavra in baixa for palavra in ('cupom', 'off', 'desconto', 'economize', 'use o código', 'use o codigo')):
             continue
+        # Pula linhas de nota/bullet ('- O da Shopee cobra R$ 400,00++ de
+        # frete') e linhas que citam R$ só como frete/comissão, não o preço.
+        if baixa.lstrip().startswith('-'):
+            continue
+        if any(palavra in baixa for palavra in ('frete', 'comissao', 'cobra', 'de entrega')):
+            continue
         # Pula linhas de teaser/parcelamento que mencionam R$ mas não são o
         # preço do produto (ex.: 'caiu quase R$ 400,00!', 'em 9x sem juros').
         if re.search(r'^\s*(?:caiu|quase|baixou|barateou|despencou|deixa|agarra|sobe|limite)\b', baixa):
