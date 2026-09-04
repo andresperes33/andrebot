@@ -428,6 +428,10 @@ def detectar_categoria(texto, titulo=None):
         eh_headset = re.search(r'\b(?:headset|headphone|fone\s*de\s*ouvido|fone\b|fones\b|auricular|earbuds?)\b', alvo_norm)
         if eh_headset and not re.search(r'\bmicrofone\s*(?:de|dedicado|avulso|usb|condensador|gamer)\b', alvo_norm):
             continue  # é headset/fone com microfone embutido
+        # 'Webcam ... Com Microfone' — o microfone é embutido na webcam, não
+        # um microfone avulso. O produto é a WEBCAM.
+        if re.search(r'\bwebcam\b', alvo_norm):
+            continue
         if re.search(r'\bmicrofone\b', alvo_norm) and \
            re.search(r'\b(?:microfone|usb|condensador|gamer|streaming|gravac|fifine|modmic|de\s*lapela)\b', alvo_norm):
             return 'microfone'
