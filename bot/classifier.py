@@ -370,6 +370,11 @@ def detectar_categoria(texto, titulo=None):
         eh_cooler_produto = re.search(r'\b(?:air\s*cooler|water\s*cooler|watercooler|dissipador|ventoinha|wraith|cooler)\b', alvo_norm)
         if eh_cooler_produto and re.search(r'\b(?:processador|cpu|ryzen|xeon|intel\s*core|core\s*i[3579]|athlon|threadripper)\b', alvo_norm):
             continue
+        # 'Pasta Térmica ... para CPU GPU' — é pasta térmica; 'cpu'/'gpu' é
+        # só a aplicação, não um processador avulso.
+        eh_pasta_termica = re.search(r'\b(?:pasta\s*t[eé]rmica|pasta\b|composto\s*de\s*silicone|thermal\s*compound|thermal\s*paste|termal)\b', alvo_norm)
+        if eh_pasta_termica and re.search(r'\b(?:processador|cpu|gpu|ryzen|xeon|intel\s*core)\b', alvo_norm):
+            return 'pasta_termica'
         if re.search(r'\b(?:processador|cpu|xeon|ryzen|intel\s*core|core\s*i[3579]|athlon|threadripper)\b', alvo_norm):
             return 'processador'
 
