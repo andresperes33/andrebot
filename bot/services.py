@@ -132,12 +132,14 @@ def _link_produto_compra(texto):
 
 
 # Domínios/marcadores de loja que devem virar link da página do site (no
-# Telegram/WhatsApp). Links de redes e do próprio rodapé não são trocados.
+# Telegram/WhatsApp). Só converte URLs REAIS (com http/https) — não toca no
+# nome da loja no texto (ex.: '#Kabum', 'Mercado Livre', 'Shopee').
+# '[^\s<>"\']*?' (zero ou mais) permite marcas logo após '://' (ex.: amzn.to).
 _RE_LINKS_LOJA = re.compile(
-    r'((?:https?://)?(?:[^\s<>"\']+?(?:amazon|amzn\.to|link\.amazon|shopee|'
+    r'https?://[^\s<>"\']*?(?:amazon|amzn\.to|link\.amazon|shopee|'
     r'mercadolivre|mercadolibre|meli\.la|aliexpress|s\.click\.ali|kabum|'
     r'magazineluiza|magalu|mgl\.io|pichau|terabyte|americanas|casasbahia|'
-    r'pontofrio|submarino|cnc|fastshop|walmart|renner|extra)[^\s<>"\']*))',
+    r'pontofrio|submarino|cnc|fastshop|walmart|renner|extra)[^\s<>"\']*',
     re.IGNORECASE,
 )
 
