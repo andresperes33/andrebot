@@ -343,6 +343,32 @@ class Command(BaseCommand):
                     except Exception as crop_err:
                         logger.warning(f"⚠️ Erro ao cortar rodapé: {crop_err}")
 
+                # ─── Salva a promo no banco para a página web ─────────────────
+                promo_id = None
+                try:
+                    from bot.services import save_promo_to_db, _chave_dedup
+                    # Chave estável baseada no link BRUTO + preço (msg_text),
+                    # para não ignorar ofertas novas do mesmo produto com preço/cupom diferente.
+                    chave_estavel = _chave_dedup(msg_text)
+                    promo_id = await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, source_channel, chave_estavel)
+                    logger.info("💾 Promo salva no banco de dados")
+                except Exception as db_err:
+                    logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")
+
+                # ─── Redireciona os links de loja para a página do site ──────
+                # No Telegram/WhatsApp, quem clica no link vai para a página
+                # da promoção aqui no site; de lá o botão 'Comprar' leva ao
+                # produto (link de afiliado). O rodapé não é alterado.
+                if promo_id:
+                    try:
+                        from bot.services import trocar_links_loja_por_site
+                        base_site = (getattr(settings, 'SITE_URL', '') or '').rstrip('/')
+                        if base_site:
+                            modified_text = trocar_links_loja_por_site(modified_text, promo_id, base_site)
+                            logger.info("🔗 Links de loja -> página do site (Telegram/WhatsApp)")
+                    except Exception as relink_err:
+                        logger.warning(f"⚠️ Erro ao trocar links para o site: {relink_err}")
+
                 # ─── Envia para o Telegram ───────────────────────────────────
                 try:
                     texto_telegram = modified_text + _RODAPE_CANAIS_TEXTO
@@ -385,18 +411,6 @@ class Command(BaseCommand):
                     logger.info("🔔 Nitro Alerta (WhatsApp) verificado/enviado")
                 except Exception as site_err:
                     logger.error(f"❌ Erro no Nitro Alerta: {site_err}")
-
-                # ─── Salva a promo no banco para a página web ─────────────────
-                promo_id = None
-                try:
-                    from bot.services import save_promo_to_db, _chave_dedup
-                    # Chave estável baseada no link BRUTO + preço (msg_text),
-                    # para não ignorar ofertas novas do mesmo produto com preço/cupom diferente.
-                    chave_estavel = _chave_dedup(msg_text)
-                    promo_id = await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, source_channel, chave_estavel)
-                    logger.info("💾 Promo salva no banco de dados")
-                except Exception as db_err:
-                    logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")
 
                 # ─── Publica Story no Instagram ─────────────────────────────
                 try:

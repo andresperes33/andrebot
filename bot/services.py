@@ -131,6 +131,41 @@ def _link_produto_compra(texto):
     return itens[0][1]
 
 
+# Domínios/marcadores de loja que devem virar link da página do site (no
+# Telegram/WhatsApp). Links de redes e do próprio rodapé não são trocados.
+_RE_LINKS_LOJA = re.compile(
+    r'((?:https?://)?(?:[^\s<>"\']+?(?:amazon|amzn\.to|link\.amazon|shopee|'
+    r'mercadolivre|mercadolibre|meli\.la|aliexpress|s\.click\.ali|kabum|'
+    r'magazineluiza|magalu|mgl\.io|pichau|terabyte|americanas|casasbahia|'
+    r'pontofrio|submarino|cnc|fastshop|walmart|renner|extra)[^\s<>"\']*))',
+    re.IGNORECASE,
+)
+
+
+def trocar_links_loja_por_site(texto, promo_id, site_url=''):
+    """Substitui os links de loja do texto (Amazon, Shopee, ML, AliExpress,
+    etc.) pelo link da página da promoção no site.
+
+    Assim, quem clica no link no Telegram/WhatsApp vai para a página do
+    produto aqui no site, e de lá o botão 'Comprar' leva ao produto/afiliado.
+    Links de redes sociais e do rodapé não são alterados.
+    """
+    if not texto or not promo_id:
+        return texto
+    if not site_url:
+        site_url = getattr(settings, 'SITE_URL', '') or ''
+    site_url = site_url.rstrip('/')
+    if not site_url:
+        return texto
+    pagina = f"{site_url}/promos/{promo_id}/"
+    # Substitui apenas os links de loja (sobras de pontuação colada são
+    # mantidas fora do link).
+    def _sub(m):
+        return pagina
+    novo = _RE_LINKS_LOJA.sub(_sub, texto)
+    return novo
+
+
 # Palavras genéricas ruído ao normalizar o nome do produto para a chave
 # (repetem entre todas as ofertas e não identificam o produto).
 _TOKENS_RUIDO = {
