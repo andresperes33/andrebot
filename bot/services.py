@@ -1663,6 +1663,29 @@ def strip_promo_footer(text):
     return cleaned_text.strip()
 
 
+def normaliza_emoji_inicial(texto):
+    """Força o emoji inicial de toda promoção para 👍.
+
+    Remove qualquer emoji/símbolo no início e garante 👍 + espaço.
+    Se já começa com 👍, normaliza para um único.
+    """
+    if not texto:
+        return texto
+    t = texto.lstrip()
+    if not t:
+        return texto
+    if t.startswith('👍'):
+        rest = t[1:].lstrip('\ufe0f\u200d \t')
+        while rest.startswith('👍'):
+            rest = rest[1:].lstrip('\ufe0f\u200d \t')
+        return '👍 ' + rest.lstrip() if rest else '👍'
+    m = re.match(r'^[^\w\s]+', t, flags=re.UNICODE)
+    if m:
+        rest = t[m.end():].lstrip()
+        return '👍 ' + rest if rest else '👍'
+    return '👍 ' + t
+
+
 async def process_offer_to_group(bot_app, text, photo=None):
     """
     Processa uma oferta (texto + foto opcional), converte links e posta no grupo.
