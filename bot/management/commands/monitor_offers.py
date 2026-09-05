@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import time
+import requests
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from bot.models import Promo
