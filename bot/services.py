@@ -1185,6 +1185,17 @@ def convert_to_affiliate_link(url, final_url=None):
     Decide qual API usar com base na URL.
     """
     if 'shopee.com.br' in url or 's.shopee' in url:
+        # Se for um link de afiliado (s.shopee.com.br/an_redir ou an_redir),
+        # extrai o origin_link que contém a URL pura do produto.
+        if 'an_redir' in url or 'affiliate_id=' in url:
+            try:
+                from urllib.parse import urlparse, parse_qs, unquote
+                qs = parse_qs(urlparse(url).query)
+                origin = qs.get('origin_link', [''])[0]
+                if origin:
+                    url = unquote(origin)
+            except Exception:
+                pass
         return convert_shopee_link(url)
     elif 'aliexpress.com' in url or 's.click.aliexpress' in url:
         return convert_aliexpress_link(url)
