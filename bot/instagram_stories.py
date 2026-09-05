@@ -61,48 +61,31 @@ def _url_publica_imagem(photo_path):
     return f"{base_url}{settings.MEDIA_URL}promos/{filename}"
 
 
-def post_instagram_story(texto, photo_path=None, pagina_url=''):
-    """
-    Publica um Story no Instagram com a imagem, título, preço e link da oferta.
-    Usa a Instagram Graph API (media + media_publish).
-    pagina_url: URL da página do produto no site (adiciona sticker de link clicável).
-    """
+def _contas_instagram():
+    """Lista todas as contas de Instagram configuradas.
+
+    Cada conta é um dict {'token': ..., 'user_id': ...}. A conta principal vem
+    de IG_ACCESS_TOKEN/IG_USER_ID; contas extras de IG_ACCOUNTS_EXTRA
+    (formato 'token|user_id,token2|user_id2')."""
+    contas = []
     token = getattr(settings, 'IG_ACCESS_TOKEN', None)
-    ig_user_id = getattr(settings, 'IG_USER_ID', None)
+    user_id = getattr(settings, 'IG_USER_ID', None)
+    if token and user_id:
+        contas.append({'token': token, 'user_id': str(user_id)})
+    extra = getattr(settings, 'IG_ACCOUNTS_EXTRA', '') or ''
+    for item in extra.split(','):
+        item = item.strip()
+        if not item or '|' not in item:
+            continue
+        t, _, uid = item.partition('|')
+        t, uid = t.strip(), uid.strip()
+        if t and uid:
+            contas.append({'token': t, 'user_id': uid})
+    return contas
 
-    if not token or not ig_user_id:
-        logger.warning("⚠️ Instagram não configurado (IG_ACCESS_TOKEN / IG_USER_ID).")
-        return False
 
-    titulo, preco, link = _titulo_preco_link(texto)
-
-    # Se houver foto local, compõe o Story no estilo do card do site:
-    # foto + texto completo da promoção + faixa "LINK NA BIO".
-    if photo_path and not (isinstance(photo_path, str) and photo_path.startswith('http')):
-        try:
-            from bot.story_composer import compor_story_card
-            from bot.services import texto_card
-            mensagem = texto_card(texto) or titulo
-            story_path = compor_story_card(photo_path, mensagem)
-            if story_path and os.path.exists(story_path):
-                photo_path = story_path
-        except Exception as e:
-            logger.error(f"⚠️ Instagram: erro ao compor Story: {e}")
-
-    imagem_url = _url_publica_imagem(photo_path)
-
-    if not imagem_url:
-        logger.warning("⚠️ Instagram: nenhuma imagem disponível para o Story.")
-        return False
-
-    # Monta a legenda do Story
-    caption = titulo or "Promoção imperdível"
-    if preco:
-        caption += f" — {preco}"
-    if link:
-        caption += f"\n\n{link}"
-
-    # 1. Cria o container de mídia (STORIES)
+def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url):
+    """Publica um Story em UMA conta específica. Retorna True/False."""
     payload = {
         "image_url": imagem_url,
         "media_type": "STORIES",
@@ -166,3 +149,52 @@ def post_instagram_story(texto, photo_path=None, pagina_url=''):
 
     logger.info(f"✅ Story publicado no Instagram! (media={pub_data['id']})")
     return True
+
+
+def post_instagram_story(texto, photo_path=None, pagina_url=''):
+    """
+    Publica um Story no Instagram em TODAS as contas configuradas.
+    Usa a Instagram Graph API (media + media_publish).
+    pagina_url: URL da página do produto no site (adiciona sticker de link clicável).
+    """
+    contas = _contas_instagram()
+    if not contas:
+        logger.warning("⚠️ Instagram não configurado (IG_ACCESS_TOKEN / IG_USER_ID).")
+        return False
+
+    titulo, preco, link = _titulo_preco_link(texto)
+
+    # Se houver foto local, compõe o Story no estilo do card do site:
+    # foto + texto completo da promoção + faixa "LINK NA BIO".
+    if photo_path and not (isinstance(photo_path, str) and photo_path.startswith('http')):
+        try:
+            from bot.story_composer import compor_story_card
+            from bot.services import texto_card
+            mensagem = texto_card(texto) or titulo
+            story_path = compor_story_card(photo_path, mensagem)
+            if story_path and os.path.exists(story_path):
+                photo_path = story_path
+        except Exception as e:
+            logger.error(f"⚠️ Instagram: erro ao compor Story: {e}")
+
+    imagem_url = _url_publica_imagem(photo_path)
+
+    if not imagem_url:
+        logger.warning("⚠️ Instagram: nenhuma imagem disponível para o Story.")
+        return False
+
+    # Monta a legenda do Story
+    caption = titulo or "Promoção imperdível"
+    if preco:
+        caption += f" — {preco}"
+    if link:
+        caption += f"\n\n{link}"
+
+    publicou = False
+    for conta in contas:
+        try:
+            if _postar_conta(conta['token'], conta['user_id'], imagem_url, caption, pagina_url):
+                publicou = True
+        except Exception as e:
+            logger.error(f"❌ Instagram: erro na conta {conta['user_id']}: {e}")
+    return publicou
