@@ -1669,7 +1669,7 @@ async def process_offer_to_group(bot_app, text, photo=None):
     channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
     
     # Limpa nomes de outros canais
-    modified_text = re.sub(r'(?i)zFinnY|Iskandar|CaCau|André Indica|Tecnan', channel_name, modified_text)
+    modified_text = re.sub(r'(?i)zFinnY|Iskandar|CaCau|André Indica|Tecnan|PC DO FAFA', channel_name, modified_text)
 
     # Substitui links do Linktree pelo link personalizado
     modified_text = re.sub(r'https?://linktr\.ee/\S+', 'https://links.andreindica.com.br/', modified_text)

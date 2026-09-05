@@ -194,7 +194,7 @@ class Command(BaseCommand):
                 modified_text = msg_text
                 
                 # 1. Substitui nomes de canais
-                modified_text = re.sub(r'(?i)zFinnY|Iskandar|CaCau|André Indica|Tecnan', channel_name, modified_text)
+                modified_text = re.sub(r'(?i)zFinnY|Iskandar|CaCau|André Indica|Tecnan|PC DO FAFA', channel_name, modified_text)
 
                 # 2. Remove o rodapé antigo do grupo (Limpeza Pesada)
                 # Remove o emoji da sacola (várias versões) e qualquer linha residual
@@ -332,16 +332,6 @@ class Command(BaseCommand):
                             logger.info(f"🎫 Cupom ML: imagem padrão aplicada em todos os envios -> {photo_path}")
                 except Exception as cupom_img_err:
                     logger.warning(f"⚠️ Erro ao aplicar imagem padrão do cupom ML: {cupom_img_err}")
-
-                # ─── Corta o rodapé da imagem (crédito da postagem) ──────────
-                if photo_path and os.path.exists(photo_path) and not cupom_ml_imagem:
-                    try:
-                        from bot.services import cortar_rodape_imagem
-                        photo_path = await asyncio.to_thread(
-                            cortar_rodape_imagem, photo_path, 100
-                        )
-                    except Exception as crop_err:
-                        logger.warning(f"⚠️ Erro ao cortar rodapé: {crop_err}")
 
                 # ─── Salva a promo no banco para a página web ─────────────────
                 promo_id = None
