@@ -242,6 +242,7 @@ class Command(BaseCommand):
                     is_ali = 'aliexpress.com' in link or 's.click.ali' in link
                     is_kabum = 'kabum.com.br' in link
                     is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link
+                    is_pcdofafa = 'pcdofafa.com.br' in link
 
                     if is_telegram or is_tecnan:
                         modified_text = modified_text.replace(link, '') # Remove links de outros telegrams
@@ -265,6 +266,40 @@ class Command(BaseCommand):
                                 converted_any = True
                                 continue
                         converted_any = True
+                        continue
+
+                    if is_pcdofafa:
+                        # Canal PC DO FAFA: o link pcdofafa.com.br faz redirect
+                        # via <meta http-equiv="refresh">. Extrai a URL real e
+                        # converte para afiliado.
+                        try:
+                            import re as _re_pcd
+                            resp = requests.get(
+                                link,
+                                allow_redirects=True,
+                                timeout=8,
+                                headers={"User-Agent": "Mozilla/5.0"},
+                            )
+                            html_pcd = resp.text
+                            real_url = ''
+                            m_refresh = _re_pcd.search(
+                                r'http-equiv=["\']refresh["\']\s+content=["\']\d+;\s*url=([^"\']+)',
+                                html_pcd,
+                                _re_pcd.IGNORECASE,
+                            )
+                            if m_refresh:
+                                real_url = m_refresh.group(1).strip()
+                            if real_url:
+                                converted = convert_to_affiliate_link(real_url)
+                                if converted:
+                                    modified_text = modified_text.replace(link, converted)
+                                    converted_any = True
+                                    if 'aliexpress' in real_url:
+                                        has_ali = True
+                                    continue
+                        except Exception as pcd_err:
+                            logger.warning(f"⚠️ pcdofafa expand erro: {pcd_err}")
+                        # Se falhou, não conta como convertido (vai sair no 'nenhum link')
                         continue
 
                     if any([is_amazon, is_shopee, is_ml, is_ali, is_kabum, is_magalu]):
