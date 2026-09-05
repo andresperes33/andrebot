@@ -202,7 +202,10 @@ _REGEX_CATEGORIA = [
         r'\bwebcam\b', r'\bweb\s*cam\b', r'\bvideocam\b',
     ]),
     ('roteador', [
-        r'\broteador\b', r'\brouter\b', r'\bwifi\s*6e?\b', r'\bmesh\b',
+        r'\broteador\b', r'\brouter\b', r'\bwifi\s*6e?\b',
+        r'\bmesh\s*wifi\b', r'\bwifi\s*mesh\b',
+        r'\broteador\b.*\bmesh\b', r'\bmesh\b.*\broteador\b',
+        r'\brouter\b.*\bmesh\b', r'\bmesh\b.*\brouter\b',
     ]),
     ('cadeira', [
         r'\bcadeira\b', r'\bgamer\s*chair\b', r'\bchair\b',
@@ -325,6 +328,18 @@ def detectar_categoria(texto, titulo=None):
             continue
         if re.search(r'\b(?:ar\s*condicionado|condicionador|air\s*conditioner|split\s*hi\s*wall|hi\s*wall)\b', alvo_norm):
             return 'ar_condicionado'
+
+    # Cadeira tem prioridade — 'Cadeira ... Mesh Reclinável'
+    # é uma CADEIRA; 'mesh' sozinha pode ser cadeira ou roteador (mesh wifi),
+    # mas com 'cadeira' é cadeira.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\bcadeira\b', alvo_norm):
+            return 'cadeira'
 
     # Gabinete tem prioridade sobre 'placa-mãe' — 'Gabinete Gamer ...
     # Micro-ATX/Mid' é um GABINETE; 'micro-atx' (muitas vezes dentro da URL
