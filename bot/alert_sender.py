@@ -137,9 +137,41 @@ def smart_phrase_matches(text_norm: str, keyword_norm: str) -> bool:
     if not required_groups:
         return keyword_norm in text_norm
 
-    # Todos os grupos devem bater no texto
+    # Todos os grupos devem bater no texto.
+    # Termos com dígitos (códigos/modelos como '5060', 'rx580') correspondem
+    # como PALAVRA INTEIRA, e NÃO casam quando o texto traz uma variante da
+    # MESMA linha com sufixo ('5060 ti', '4060 super') que a keyword NÃO pediu
+    # (produtos diferentes). Se a própria keyword já pede o sufixo, vale.
+    import re as _re
+    _SUFIXOS_LINHA = ('ti', 'super', 's', 'ultra', 'max')
     for variants in required_groups:
-        if not any(v in text_norm for v in variants):
+        casou = False
+        for v in variants:
+            if any(c.isdigit() for c in v):
+                # variação separada por espaço (ex.: '5060 ti') — só casa se a
+                # própria keyword também contém o sufixo (senão é outro modelo).
+                variante_nao_pedida = False
+                for suf in _SUFIXOS_LINHA:
+                    if _re.search(r'(?<![a-z0-9])' + _re.escape(v) + r'\s+' + suf + r'\b', text_norm):
+                        if suf not in keyword_norm:
+                            variante_nao_pedida = True
+                if variante_nao_pedida:
+                    continue
+                # palavra inteira (não colado a outra letra/dígito)
+                padrao = r'(?<![a-z0-9])' + _re.escape(v) + r'(?![a-z0-9])'
+                if _re.search(padrao, text_norm):
+                    casou = True
+                    break
+                # '12400f'/'5060ti' colados: aceita se a keyword também é o
+                # mesmo número (o sufixo colado faz parte do código do modelo).
+                if _re.search(r'(?<![a-z0-9])' + _re.escape(v) + r'(?![0-9])', text_norm):
+                    casou = True
+                    break
+            else:
+                if v in text_norm:
+                    casou = True
+                    break
+        if not casou:
             return False
     return True
 
