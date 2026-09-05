@@ -151,7 +151,10 @@ _REGEX_CATEGORIA = [
         r'\barmazenamento\b', r'\bsata\b',
     ]),
     ('monitor', [
-        r'\bmonitor\b', r'\bdisplay\b', r'\bultrawide\b', r'\bcurvo\b', r'\bpainel\b',
+        r'\bmonitor\b', r'\bdisplay\b', r'\bultrawide\b', r'\bcurvo\b',
+        # 'painel' de monitor (painel IPS/VA/TN), mas NÃO 'painel solar' de
+        # câmera de segurança (ex.: 'Câmera Baseus ... painel solar 2K').
+        r'\bpainel\b(?!\s*solar)', r'\bpainel\s*(?:ips|va|tn|led|amoled|curvo|ultrawide)\b',
         r'\b(144|165|240|280|360)hz\b', r'\b1440p\b',
     ]),
     ('headset', [
