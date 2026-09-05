@@ -70,11 +70,19 @@ _VALOR_RE_TAG_SAFE = re.compile(
 
 @register.filter(is_safe=True)
 def destacar_valores(value):
-    """Envolve valores (preço R$, desconto %, parcelas) em <strong>."""
+    """Envolve valores (preço R$, desconto %, parcelas) em <strong> sem quebrar links."""
     if not value:
         return ''
     texto = conditional_escape(value)
+    _A_OPEN = '\x00A_OPEN\x00'
+    _A_CLOSE = '\x00A_CLOSE\x00'
+    anchors = []
+    def _guard(m):
+        anchors.append(m.group(0))
+        return f'{_A_OPEN}{len(anchors)-1}{_A_CLOSE}'
+    texto = re.sub(r'(?is)<a\b[^>]*>.*?</a>', _guard, texto)
     texto = _VALOR_RE.sub(r'<strong>\1</strong>', texto)
+    texto = re.sub(rf'{re.escape(_A_OPEN)}(\d+){re.escape(_A_CLOSE)}', lambda m: anchors[int(m.group(1))], texto)
     return mark_safe(texto)
 
 
