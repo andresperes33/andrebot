@@ -406,6 +406,33 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:processador|cpu|xeon|ryzen|intel\s*core|core\s*i[3579]|athlon|threadripper)\b', alvo_norm):
             return 'processador'
 
+    # Headset/fone de ouvido tem prioridade sobre 'cabo' — quando o texto é
+    # claramente um headset ('Headphone ... Gamer ... com Microfone, Falante de
+    # 50mm') e menciona 'Cabo USB para Iluminação' ou 'Cabo de energia' como
+    # atributo do headset, é um HEADSET, não um cabo avulso.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        eh_headset = re.search(
+            r'\b(?:headset|headphone|fone\s*de\s*ouvido|fone\b|fones\b|auricular|earbuds?)\b',
+            alvo_norm,
+        )
+        if not eh_headset:
+            continue
+        # Confirma que é headset/fone (não um acessório citando fone como compatibilidade)
+        # Exige palavra 'gamer' ou 'falante' ou 'microfone' ou '50mm'/'40mm' ou marca típica.
+        if re.search(
+            r'\b(?:gamer|falante|microfone|driver|rgb|com\s*microfone|over\s*ear|on\s*ear|in\s*ear|est[eé]reo|2\.0|stereo|conector|plug|havit|hyperx|razer|redragon|logitech|corsair|steelseries|jbl|sony|akg|sennheiser|astro|turtle\s*beach|qcy|edifier|huawei|xiaomi|audeze|beyerdynamic)\b',
+            alvo_norm,
+        ):
+            return 'headset'
+        # Se tem dimensões de driver de headset (mm em head/ear):
+        if re.search(r'\b(?:40|50|53)mm\b', alvo_norm):
+            return 'headset'
+
     # Placa-mãe explícita tem prioridade sobre qualquer processador/SSD
     # citado ('Asus Prime A520M-R ... Ddr4 M.2 Chipset A520' é uma PLACA-MÃE).
     for alvo in (titulo, texto,):
