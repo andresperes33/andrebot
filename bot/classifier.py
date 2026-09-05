@@ -519,6 +519,8 @@ def detectar_categoria(texto, titulo=None):
 
     # Monitor tem prioridade — 'Monitor Odyssey OLED G5' é um monitor mesmo
     # com 'oled'/'qled' no título (que viraria 'tv' no loop de categorias).
+    # Acessórios de monitor ('Suporte Para Monitores Articulado', 'braço
+    # para monitor', 'suporte tv monitor') também contam como monitor.
     for alvo in (titulo, texto,):
         if not alvo:
             continue
@@ -526,6 +528,9 @@ def detectar_categoria(texto, titulo=None):
         if not alvo_norm:
             continue
         if re.search(r'\bmonitor\b', alvo_norm):
+            return 'monitor'
+        if re.search(r'\bsuporte\b.*\b(?:monitor|monitores|tv)\b', alvo_norm) or \
+           re.search(r'\b(?:monitor|monitores)\b.*\bsuporte\b', alvo_norm):
             return 'monitor'
 
     # Teclado tem prioridade sobre 'cabo' — 'Teclado ... com cabo USB Tipo-C'
