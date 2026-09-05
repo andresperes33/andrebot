@@ -28,9 +28,13 @@ class PromoAdmin(admin.ModelAdmin):
 class ArtigoAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'categoria', 'slug', 'publicado', 'criado_em')
     list_filter = ('publicado', 'categoria')
-    search_fields = ('titulo', 'conteudo', 'categoria')
+    search_fields = ('titulo', 'conteudo', 'categoria', 'produtos_texto')
     prepopulated_fields = {'slug': ('titulo',)}
     ordering = ('-criado_em',)
+    fieldsets = (
+        (None, {'fields': ('titulo', 'slug', 'categoria', 'imagem', 'conteudo', 'publicado')}),
+        ('Barra lateral de produtos', {'fields': ('produtos_texto',), 'description': 'Uma linha por produto, no formato: <strong>Nome do produto | Loja: https://link | Loja2: https://link2</strong>. Ex.: "GameSir Nova Lite | AliExpress: https://s.click.aliexpress.com/x | Shopee: https://s.shopee.com.br/x"'})
+    )
 
 
 @admin.register(AlertaSite)

@@ -1245,6 +1245,84 @@ a.price-history-row:hover {
 }
 
 /* ─── Compartilhar artigo ────────────────────────────────────── */
+/* ─── Layout artigo + barra lateral de produtos ─────────────── */
+.artigo-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 40px;
+    padding: 48px 24px;
+    align-items: start;
+}
+.artigo-main {
+    min-width: 0;
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--body);
+}
+.artigo-sidebar {
+    min-width: 0;
+}
+.sidebar-sticky {
+    position: sticky;
+    top: 88px;
+}
+.sidebar-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-promo);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--body);
+    padding: 14px 16px;
+    background: var(--surface-soft);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+}
+.sidebar-heading i { color: var(--primary); }
+.produto-card {
+    background: var(--surface-soft);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+}
+.produto-nome {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--body);
+    margin-bottom: 12px;
+    line-height: 1.35;
+}
+.produto-lojas {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.produto-loja-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background .2s, transform .15s;
+}
+.produto-loja-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+@media (max-width: 900px) {
+    .artigo-layout { grid-template-columns: 1fr; gap: 24px; }
+    .sidebar-sticky { position: static; }
+    .produto-lojas { flex-direction: row; flex-wrap: wrap; }
+}
 .article-share {
     margin-top: 36px;
     padding-top: 22px;

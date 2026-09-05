@@ -140,6 +140,7 @@ class Artigo(models.Model):
     slug = models.SlugField(max_length=200, unique=True)
     categoria = models.CharField(max_length=50, blank=True, default='', db_index=True, help_text='Categoria do artigo (ex.: Celulares, Placas de Vídeo). Você define ao criar.')
     conteudo = models.TextField(help_text='Conteúdo em linha única (HTML) ou blocos separados por quebras. Recomenda-se usar tags básicas de HTML (<p>, <h2>, <ul>, <strong>).')
+    produtos_texto = models.TextField(blank=True, help_text='Produtos recomendados na barra lateral. Uma linha por produto, no formato: Nome do produto | Loja: https://link | Loja2: https://link2. Ex.: "GameSir Nova Lite | AliExpress: https://s.click.aliexpress.com/x | Shopee: https://s.shopee.com.br/x"')
     imagem = models.ImageField(upload_to='artigos/', blank=True, help_text='Imagem de capa do artigo. Enviada em JPG/PNG e convertida automaticamente para WebP.')
     publicado = models.BooleanField(default=True)
     criado_em = models.DateTimeField(auto_now_add=True)

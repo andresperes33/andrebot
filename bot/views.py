@@ -290,9 +290,12 @@ def guia_artigo_view(request, slug):
     relacionados = Artigo.objects.filter(
         publicado=True, categoria=artigo.categoria
     ).exclude(pk=artigo.pk)[:4]
+    from bot.services import parse_produtos_artigo
+    produtos = parse_produtos_artigo(artigo.produtos_texto)
     return render(request, 'bot/guia_artigo.html', {
         'artigo': artigo,
         'relacionados': relacionados,
+        'produtos': produtos,
     })
 
 

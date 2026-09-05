@@ -168,6 +168,42 @@ def trocar_links_loja_por_site(texto, promo_id, site_url=''):
     return novo
 
 
+def parse_produtos_artigo(texto):
+    """Converte o texto de produtos da barra lateral do artigo em uma lista
+    estruturada.
+
+    Formato (uma linha por produto):
+      'Nome do produto | Loja: https://link | Loja2: https://link2'
+
+    Retorna:
+      [{'nome': 'Nome', 'lojas': [{'loja': 'AliExpress', 'url': 'https://...'}, ...]}, ...]
+    """
+    if not texto:
+        return []
+    produtos = []
+    for linha in texto.splitlines():
+        linha = linha.strip()
+        if not linha:
+            continue
+        partes = [p.strip() for p in linha.split('|')]
+        nome = partes[0].strip()
+        if not nome:
+            continue
+        lojas = []
+        for parte in partes[1:]:
+            if ':' not in parte:
+                continue
+            loja_nome, _, url = parte.partition(':')
+            loja_nome = loja_nome.strip()
+            url = url.strip()
+            if not loja_nome or not url:
+                continue
+            lojas.append({'loja': loja_nome, 'url': url})
+        if lojas:
+            produtos.append({'nome': nome, 'lojas': lojas})
+    return produtos
+
+
 # Palavras genéricas ruído ao normalizar o nome do produto para a chave
 # (repetem entre todas as ofertas e não identificam o produto).
 _TOKENS_RUIDO = {
