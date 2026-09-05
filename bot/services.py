@@ -168,6 +168,30 @@ def trocar_links_loja_por_site(texto, promo_id, site_url=''):
     return novo
 
 
+def _nome_loja_por_url(url):
+    """Infere o nome da loja a partir do domínio, quando o rótulo não foi
+    informado. Ex.: tidd.ly → KaBuM (Awin), meli.la → Mercado Livre."""
+    if not url:
+        return ''
+    baixo = url.casefold()
+    pares = [
+        ('amazon', 'Amazon'), ('amzn.to', 'Amazon'), ('link.amazon', 'Amazon'),
+        ('shopee', 'Shopee'), ('s.shopee', 'Shopee'),
+        ('mercadolivre', 'Mercado Livre'), ('mercadolibre', 'Mercado Livre'),
+        ('meli.la', 'Mercado Livre'), ('mlstatic', 'Mercado Livre'),
+        ('aliexpress', 'AliExpress'), ('s.click.ali', 'AliExpress'),
+        ('kabum', 'KaBuM'), ('tidd.ly', 'KaBuM'), ('awin1.com', 'Awin'),
+        ('magazineluiza', 'Magazine Luíza'), ('magalu', 'Magazine Luíza'), ('mgl.io', 'Magazine Luíza'),
+        ('pichau', 'Pichau'), ('terabyte', 'Terabyte'), ('americanas', 'Americanas'),
+        ('casasbahia', 'Casas Bahia'), ('pontofrio', 'Ponto'), ('submarino', 'Submarino'),
+        ('walmart', 'Walmart'), ('renner', 'Renner'),
+    ]
+    for chave, nome in pares:
+        if chave in baixo:
+            return nome
+    return ''
+
+
 def parse_produtos_artigo(texto):
     """Converte o texto de produtos da barra lateral do artigo em uma lista
     estruturada.
@@ -175,6 +199,7 @@ def parse_produtos_artigo(texto):
     Formato (uma linha por produto):
       'Nome do produto | Loja: https://link | Loja2: https://link2'
       'Nome do produto | Loja https://link | Loja2 https://link2'
+      'Nome do produto | https://link | https://link2'  (nome da loja inferido)
 
     Retorna:
       [{'nome': 'Nome', 'lojas': [{'loja': 'AliExpress', 'url': 'https://...'}, ...]}, ...]
@@ -202,6 +227,8 @@ def parse_produtos_artigo(texto):
             url = m.group(0).rstrip('.,;:!?)')
             # Nome da loja = texto antes da URL, sem ':'/' ' finais.
             loja_nome = parte[:m.start()].strip().rstrip(':,; ')
+            if not loja_nome:
+                loja_nome = _nome_loja_por_url(url)
             if not loja_nome:
                 continue
             lojas.append({'loja': loja_nome, 'url': url})
