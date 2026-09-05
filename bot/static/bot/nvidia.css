@@ -1241,7 +1241,7 @@ a.price-history-row:hover {
 
 /* ─── Quadro de Avisos ──────────────────────────────────────── */
 .aviso-destaque-section {
-    padding-bottom: 0;
+    padding-bottom: 48px;
 }
 
 /* ─── Compartilhar artigo ────────────────────────────────────── */
