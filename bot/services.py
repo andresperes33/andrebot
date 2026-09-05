@@ -79,10 +79,14 @@ def cortar_rodape_imagem(caminho, rodape_px=10):
 
 
 def _primeiro_link_produto(texto):
-    """Extrai o primeiro link de produto do texto (ignora links de rede social)."""
+    """Extrai o primeiro link de produto do texto (ignora links de rede social e serviços)."""
     for lnk in re.findall(r'(https?://\S+)', texto or ''):
         lnk = lnk.rstrip('.,;|)')
         if any(d in lnk for d in ['t.me/', 'linktr.ee', 'youtube', 'youtu.be', 'tecnan.com.br', 'links.andreindica']):
+            continue
+        # Ignora links internos de serviços (assinaturas, plataformas)
+        if any(d in lnk for d in ['amazonprime', 'netflix', 'disney+', 'hbo+', 'spotify', 'apple.music', 'steam',
+                                  'pago.com.br', 'asassinatura', 'assinatura', 'plus', 'prime', 'completed']):
             continue
         return lnk
     return ''
@@ -101,10 +105,14 @@ def _link_produto_compra(texto):
     # Coleta todos os links com o texto que os precede (rótulo), para
     # identificar qual é marcado como produto.
     itens = []  # (rotulo, link)
-    for m in re.finditer(r'([^\n:]{0,80}?):?\s*(https?://\S+)', texto):
+    for m in re.finditer(r'([\n:]{0,80}?):?\s*(https?://\S+)', texto):
         rotulo = (m.group(1) or '').strip().casefold()
         link = m.group(2).rstrip('.,;|)')
         if any(d in link for d in ['t.me/', 'linktr.ee', 'youtube', 'youtu.be', 'tecnan.com.br', 'links.andreindica']):
+            continue
+        # Ignora links internos de serviços (assinaturas, plataformas)
+        if any(d in link for d in ['amazonprime', 'netflix', 'disny+', 'hbo+', 'spotify', 'apple.music', 'steam',
+                                  'pago.com.br', 'asassinatura', 'assinatura', 'plus', 'prime', 'completed']):
             continue
         itens.append((rotulo, link))
 
