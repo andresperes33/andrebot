@@ -1323,6 +1323,86 @@ a.price-history-row:hover {
     .sidebar-sticky { position: static; }
     .produto-lojas { flex-direction: row; flex-wrap: wrap; }
 }
+
+/* ─── Comentários do artigo ──────────────────────────────────── */
+.comentarios-section {
+    margin-top: 44px;
+    padding-top: 30px;
+    border-top: 1px solid var(--hairline);
+}
+.comentarios-title {
+    font-family: var(--font-promo);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--body);
+    margin: 0 0 20px;
+}
+.comentarios-title i { color: var(--primary); margin-right: 6px; }
+.comentarios-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.comentario-item {
+    background: var(--surface-soft);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+}
+.comentario-nome {
+    font-weight: 700;
+    color: var(--primary-dark);
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+.comentario-texto {
+    color: var(--body);
+    font-size: 14px;
+    line-height: 1.6;
+}
+.comentario-data {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--mute);
+}
+.comentarios-vazio {
+    color: var(--mute);
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+.comentario-mensagem {
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    font-size: 14px;
+}
+.comentario-mensagem.ok { background: rgba(118,185,0,0.12); color: var(--primary-dark); }
+.comentario-mensagem.err { background: rgba(220,50,50,0.1); color: #b33; }
+.comentario-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 480px;
+}
+.comentario-form input,
+.comentario-form textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    background: var(--surface-soft);
+    color: var(--body);
+    font-family: inherit;
+    font-size: 14px;
+}
+.comentario-form input:focus,
+.comentario-form textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+.comentario-form textarea { resize: vertical; }
+.comentario-form .btn { align-self: flex-start; }
 .article-share {
     margin-top: 36px;
     padding-top: 22px;

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserAlert, BotConfig, Promo, Artigo, AlertaSite, Evento
+from .models import UserAlert, BotConfig, Promo, Artigo, AlertaSite, Evento, ComentarioArtigo
 
 
 
@@ -53,3 +53,12 @@ class EventoAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('titulo',)}
     ordering = ('-criado_em',)
     list_editable = ('publicado', 'destaque')
+
+
+@admin.register(ComentarioArtigo)
+class ComentarioArtigoAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'artigo', 'publicado', 'criado_em')
+    list_filter = ('publicado', 'artigo', 'criado_em')
+    search_fields = ('nome', 'email', 'texto')
+    list_editable = ('publicado',)
+    ordering = ('-criado_em',)

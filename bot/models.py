@@ -265,3 +265,23 @@ class Evento(models.Model):
     def get_absolute_url(self):
         from django.urls import reverse
         return reverse('evento_detail', args=[self.slug])
+
+
+class ComentarioArtigo(models.Model):
+    """
+    Comentário de visitante em um artigo do blog.
+    """
+    artigo = models.ForeignKey(Artigo, on_delete=models.CASCADE, related_name='comentarios')
+    nome = models.CharField(max_length=100)
+    email = models.EmailField(blank=True)
+    texto = models.TextField()
+    publicado = models.BooleanField(default=False, help_text='Comentários ficam invisíveis até serem aprovados.')
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['criado_em']
+        verbose_name = 'Comentário'
+        verbose_name_plural = 'Comentários'
+
+    def __str__(self):
+        return f"{self.nome} — {self.artigo.titulo}"

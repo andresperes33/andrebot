@@ -55,6 +55,40 @@
         </div>
 
         <p style="margin-top:28px;font-size:13px;color:var(--mute);">Atualizado em {{ artigo.atualizado_em|date:"d/m/Y" }}</p>
+
+        <!-- ─── Comentários ─────────────────────────────────────── -->
+        <div class="comentarios-section" id="comentarios">
+            <h3 class="comentarios-title"><i class="fas fa-comments"></i> Comentários</h3>
+
+            {% if comentarios %}
+            <div class="comentarios-lista">
+                {% for c in comentarios %}
+                <div class="comentario-item">
+                    <div class="comentario-nome">{{ c.nome }}</div>
+                    <div class="comentario-texto">{{ c.texto|linebreaksbr }}</div>
+                    <div class="comentario-data">{{ c.criado_em|date:"d/m/Y \à\s H:i" }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="comentarios-vazio">Seja o primeiro a comentar!</p>
+            {% endif %}
+
+            {% if mensagem %}
+            <div class="comentario-mensagem ok">{{ mensagem }}</div>
+            {% endif %}
+            {% if erro %}
+            <div class="comentario-mensagem err">{{ erro }}</div>
+            {% endif %}
+
+            <form method="post" class="comentario-form" action="{% url 'blog_artigo' artigo.slug %}#comentarios">
+                {% csrf_token %}
+                <input type="text" name="nome" placeholder="Seu nome *" maxlength="100" required value="{{ request.POST.nome|default:'' }}">
+                <input type="email" name="email" placeholder="Seu e-mail (opcional)" maxlength="254" value="{{ request.POST.email|default:'' }}">
+                <textarea name="texto" rows="4" placeholder="Escreva seu comentário *" required>{{ request.POST.texto|default:'' }}</textarea>
+                <button type="submit" class="btn btn-primary">Enviar comentário</button>
+            </form>
+        </div>
     </article>
 
     <!-- Barra lateral de produtos (~35%) -->

@@ -285,17 +285,40 @@ def guia_artigo_view(request, slug):
     """
     Página individual de um artigo/guiu + artigos relacionados (mesma categoria).
     """
-    from .models import Artigo
+    from .models import Artigo, ComentarioArtigo
     artigo = get_object_or_404(Artigo, slug=slug, publicado=True)
     relacionados = Artigo.objects.filter(
         publicado=True, categoria=artigo.categoria
     ).exclude(pk=artigo.pk)[:4]
     from bot.services import parse_produtos_artigo
     produtos = parse_produtos_artigo(artigo.produtos_texto)
+
+    # ─── Comentários ─────────────────────────────────────────────
+    mensagem = ''
+    erro = ''
+    if request.method == 'POST':
+        nome = (request.POST.get('nome') or '').strip()
+        email = (request.POST.get('email') or '').strip()
+        texto = (request.POST.get('texto') or '').strip()
+        if not nome or not texto:
+            erro = 'Preencha pelo menos o nome e o comentário.'
+        elif len(texto) < 3:
+            erro = 'O comentário está muito curto.'
+        else:
+            ComentarioArtigo.objects.create(
+                artigo=artigo, nome=nome[:100], email=email[:254], texto=texto,
+            )
+            mensagem = 'Comentário enviado! Ele aparecerá após a aprovação.'
+            # mantém o form preenchido (nome/email) após envio
+    comentarios = artigo.comentarios.filter(publicado=True)
+
     return render(request, 'bot/guia_artigo.html', {
         'artigo': artigo,
         'relacionados': relacionados,
         'produtos': produtos,
+        'comentarios': comentarios,
+        'mensagem': mensagem,
+        'erro': erro,
     })
 
 
