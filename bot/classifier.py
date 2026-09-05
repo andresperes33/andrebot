@@ -152,7 +152,7 @@ _REGEX_CATEGORIA = [
     ]),
     ('ssd', [
         r'\bssd\b', r'\bnvme\b', r'\bm\.2\b', r'\bhdd\b', r'\bhard\s*disk\b',
-        r'\barmazenamento\b', r'\bsata\b',
+        r'\barmazenamento\b', r'\bsata\b', r'\bdisco\s*s[oó]lido\b',
     ]),
     ('monitor', [
         r'\bmonitor\b', r'\bdisplay\b', r'\bultrawide\b', r'\bcurvo\b',
@@ -429,7 +429,7 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        if re.search(r'\b(?:ssd|nvme|m\.2|hard\s*disk|disco\s*rigido|armazenamento|sata)\b', alvo_norm):
+        if re.search(r'\b(?:ssd|nvme|m\.2|hard\s*disk|disco\s*rigido|disco\s*s[oó]lido|armazenamento|sata)\b', alvo_norm):
             return 'ssd'
 
     # Cooler/air cooler/water cooler tem prioridade — 'torre' do cooler
