@@ -40,6 +40,10 @@ def _limpar_compat(texto):
         return texto
     # Normaliza para o regex (evita 'compatível' com acento não casar).
     base = sem_acento(texto or '')
+    # Remove URLs (o slug do link pode conter nome de outro produto, ex.:
+    # link de cupom apontando para 'monitor-gamer-aoc...' — não deve
+    # influenciar a categoria do anúncio).
+    base = re.sub(r'https?://[^\s<>"\']+', ' ', base, flags=re.I)
     # Apaga desde 'compatível' até o fim da cláusula (vírgula, ponto ou fim).
     base = re.sub(r'\s+compativel\s*(com\b|para\b|:|\s)*[^,;.]*', ' ', base, flags=re.I)
     # Apaga 'para <aparelho>' quando o aparelho citado é só compatibilidade
