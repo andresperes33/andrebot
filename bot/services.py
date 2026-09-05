@@ -1723,6 +1723,50 @@ async def process_offer_to_group(bot_app, text, photo=None):
             continue
 
         if not any([is_shopee, is_aliexpress, is_ml, is_amazon, is_kabum, is_magalu]):
+            # Canal PC DO FAFA: links vêm como redirecionamento em pcdofafa.com.br.
+            # A página faz redirect via <meta http-equiv="refresh"> com delay 0;
+            # extrai esse destino e converte para afiliado.
+            if 'pcdofafa.com.br' in link:
+                try:
+                    resp = requests.get(
+                        link,
+                        allow_redirects=True,
+                        timeout=8,
+                        headers={"User-Agent": "Mozilla/5.0"},
+                    )
+                    html = resp.text
+                    real_url = ''
+                    m = re.search(
+                        r'http-equiv=["\']refresh["\']\s+content=["\']\d+;\s*url=([^"\']+)',
+                        html,
+                        re.IGNORECASE,
+                    )
+                    if m:
+                        real_url = m.group(1).strip()
+                    if not real_url:
+                        # Fallback: procura qualquer link de loja conhecida no HTML
+                        m2 = re.search(
+                            r'https?://(?:a\.|s\.click\.|pt\.)?aliexpress\.com/[^\s"<>]+'
+                            r'|https?://[^\s"<>]*shopee\.com[^\s"<>]+'
+                            r'|https?://[^\s"<>]*mercadolivre\.com[^\s"<>]+'
+                            r'|https?://[^\s"<>]*amazon\.com\.br[^\s"<>]+'
+                            r'|https?://[^\s"<>]*kabum\.com\.br[^\s"<>]+'
+                            r'|https?://[^\s"<>]*magalu[^\s"<>]+',
+                            html,
+                            re.IGNORECASE,
+                        )
+                        if m2:
+                            real_url = m2.group(0)
+                    if real_url:
+                        print(f"PC DO FAFA redirect: {link} -> {real_url}")
+                        converted = convert_to_affiliate_link(real_url)
+                        if converted:
+                            modified_text = modified_text.replace(link, converted)
+                            converted_any = True
+                            original_link = link
+                            continue
+                except Exception as fafa_err:
+                    print(f"PC DO FAFA expand erro: {fafa_err}")
             continue
 
         print(f"Convertendo link: {link}")
