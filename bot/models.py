@@ -161,6 +161,15 @@ class Artigo(models.Model):
                 self.imagem = self._converter_webp(self.imagem)
             except Exception as e:
                 print(f"[Artigo] Erro ao converter imagem para WebP: {e}")
+        # Converte links "crus" da barra lateral de produtos para os links de
+        # afiliado (Amazon, Shopee, Mercado Livre, AliExpress, etc.). O usuário
+        # cola o link normal no admin e o sistema já salva o de afiliado.
+        if self.produtos_texto:
+            try:
+                from bot.services import _converter_links_afiliado_texto
+                self.produtos_texto = _converter_links_afiliado_texto(self.produtos_texto)
+            except Exception as e:
+                print(f"[Artigo] Erro ao converter links de produtos: {e}")
         super().save(*args, **kwargs)
 
     def _converter_webp(self, imagem):

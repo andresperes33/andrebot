@@ -204,6 +204,31 @@ def parse_produtos_artigo(texto):
     return produtos
 
 
+def _converter_links_afiliado_texto(texto):
+    """Converte cada URL de loja do texto para o link de afiliado.
+
+    Usado ao salvar o artigo (campo produtos_texto) no admin: o usuário cola o
+    link 'cru' (ex.: https://amzn.to/x, https://s.shopee.com.br/y) e o sistema
+    salva já convertido para o link de afiliado da Nitro Tech.
+    """
+    if not texto:
+        return texto
+
+    def _sub(m):
+        url = m.group(0).rstrip('.,;:!?')
+        # Não converte novamente se já for link de afiliado.
+        if any(marc in url.casefold() for marc in ('tag=', 'matt_tool=', 'mat_click', 'affiliate', 'awin', '?p=')):
+            return url
+        try:
+            conv = convert_to_affiliate_link(url)
+            return conv or url
+        except Exception:
+            return url
+
+    # Converte apenas URLs de loja conhecidas (Amazon, Shopee, ML, Ali, etc.)
+    return _RE_LINKS_LOJA.sub(_sub, texto)
+
+
 # Palavras genéricas ruído ao normalizar o nome do produto para a chave
 # (repetem entre todas as ofertas e não identificam o produto).
 _TOKENS_RUIDO = {
