@@ -174,12 +174,14 @@ def parse_produtos_artigo(texto):
 
     Formato (uma linha por produto):
       'Nome do produto | Loja: https://link | Loja2: https://link2'
+      'Nome do produto | Loja https://link | Loja2 https://link2'
 
     Retorna:
       [{'nome': 'Nome', 'lojas': [{'loja': 'AliExpress', 'url': 'https://...'}, ...]}, ...]
     """
     if not texto:
         return []
+    _URL = re.compile(r'https?://\S+')
     produtos = []
     for linha in texto.splitlines():
         linha = linha.strip()
@@ -191,12 +193,16 @@ def parse_produtos_artigo(texto):
             continue
         lojas = []
         for parte in partes[1:]:
-            if ':' not in parte:
+            if not parte:
                 continue
-            loja_nome, _, url = parte.partition(':')
-            loja_nome = loja_nome.strip()
-            url = url.strip()
-            if not loja_nome or not url:
+            # Extrai a URL da parte (pode ser 'Loja: link' ou 'Loja link').
+            m = _URL.search(parte)
+            if not m:
+                continue
+            url = m.group(0).rstrip('.,;:!?)')
+            # Nome da loja = texto antes da URL, sem ':'/' ' finais.
+            loja_nome = parte[:m.start()].strip().rstrip(':,; ')
+            if not loja_nome:
                 continue
             lojas.append({'loja': loja_nome, 'url': url})
         if lojas:
