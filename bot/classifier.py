@@ -303,6 +303,11 @@ def detectar_categoria(texto, titulo=None):
         # RGB') — o 'controle' é um botão do microfone, não um gamepad avulso.
         if re.search(r'\bmicrofone\b', alvo_norm) and re.search(r'\bcontrole\b', alvo_norm):
             continue
+        # Caixa de som com 'controle por aplicativo' — o 'controle' é um
+        # recurso do app da caixa, não um gamepad avulso.
+        if re.search(r'\b(?:caixa\s*de\s*som|caixa\s*som|soundbar|speaker|bluetooth)\b', alvo_norm) and \
+           re.search(r'\bcontrole\b', alvo_norm):
+            continue
         if re.search(r'\b(?:controle|gamepad|joystick|joypad|gamepad\s*controller)\b', alvo_norm):
             return 'controle'
 
