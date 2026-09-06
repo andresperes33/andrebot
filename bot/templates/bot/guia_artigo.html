@@ -2,14 +2,58 @@
 {% load static %}
 
 {% block title %}{{ artigo.titulo }} | Nitro Tech{% endblock %}
-{% block description %}{{ artigo.titulo }} — Guia e dicas de tecnologia da Nitro Tech.{% endblock %}
+{% block description %}{{ artigo.titulo }} — {{ artigo.conteudo|striptags|truncatechars:155 }}{% endblock %}
 
 {% block og_meta %}
 <meta property="og:type" content="article">
 <meta property="og:url" content="{{ SITE_URL }}{% url 'blog_artigo' artigo.slug %}">
 <meta property="og:title" content="{{ artigo.titulo }}">
-<meta property="og:description" content="{{ artigo.titulo }} — Guia e dicas de tecnologia da Nitro Tech.">
+<meta property="og:description" content="{{ artigo.conteudo|striptags|truncatechars:155 }}">
 {% if artigo.imagem %}<meta property="og:image" content="{{ SITE_URL }}{{ artigo.imagem.url }}">{% endif %}
+<meta property="article:published_time" content="{{ artigo.criado_em|date:"c" }}">
+<meta property="article:modified_time" content="{{ artigo.atualizado_em|date:"c" }}">
+<meta property="article:author" content="André Peres">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ artigo.titulo }}">
+<meta name="twitter:description" content="{{ artigo.conteudo|striptags|truncatechars:155 }}">
+{% if artigo.imagem %}<meta name="twitter:image" content="{{ SITE_URL }}{{ artigo.imagem.url }}">{% endif %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "{{ artigo.titulo|escapejs }}",
+  "author": {"@type": "Person", "name": "André Peres", "url": "{{ SITE_URL }}"},
+  "publisher": {"@type": "Organization", "name": "Nitro Tech", "logo": {"@type": "ImageObject", "url": "{{ SITE_URL }}{% static 'bot/favicon.png' %}"}},
+  "datePublished": "{{ artigo.criado_em|date:"c" }}",
+  "dateModified": "{{ artigo.atualizado_em|date:"c" }}",
+  "image": "{% if artigo.imagem %}{{ SITE_URL }}{{ artigo.imagem.url }}{% endif %}",
+  "mainEntityOfPage": "{{ SITE_URL }}{% url 'blog_artigo' artigo.slug %}"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Início", "item": "{{ SITE_URL }}/promos/"},
+    {"@type": "ListItem", "position": 2, "name": "Blog", "item": "{{ SITE_URL }}/blog/"},
+    {"@type": "ListItem", "position": 3, "name": "{{ artigo.titulo|escapejs }}", "item": "{{ SITE_URL }}{% url 'blog_artigo' artigo.slug %}"}
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "Qual o melhor microfone custo-benefício em 2026?", "acceptedAnswer": {"@type": "Answer", "text": "O FIFINE AM8 (R$ 250 a R$ 300) é o melhor custo-benefício: dinâmico, USB-C e XLR, isola muito bem a voz e tem construção toda em metal."}},
+    {"@type": "Question", "name": "Qual a melhor lapela barata para começar?", "acceptedAnswer": {"@type": "Answer", "text": "A Maono Wave T1 Mini (cerca de R$ 250) é a melhor lapela barata: compacta, 35h de bateria, cancelamento de ruído e case com 2 transmissores."}},
+    {"@type": "Question", "name": "Vale a pena comprar headset com microfone bom?", "acceptedAnswer": {"@type": "Answer", "text": "Sim, se você precisa de fone + microfone. Havit H2002D e Redragon Zeus Lite (cerca de R$ 150) têm microfone excelente para headset e isolam bem."}},
+    {"@type": "Question", "name": "DJI Mic 3 vale R$ 3.000?", "acceptedAnswer": {"@type": "Answer", "text": "Só se você precisa de armazenamento interno de 32GB, 8h de bateria e alcance maior. Para uso comum, Hollyland Lark M2 (R$ 450-600) ou DJI Mic Mini (R$ 750) já entregam qualidade profissional."}},
+    {"@type": "Question", "name": "Preciso de placa de som para esses microfones?", "acceptedAnswer": {"@type": "Answer", "text": "Não. Todos os microfones recomendados são USB-C plug and play e funcionam direto no PC e celular sem placa de som."}}
+  ]
+}
+</script>
 {% endblock %}
 
 {% block breadcrumb %}
@@ -29,37 +73,112 @@
 <div class="hero-dark" style="padding:56px 24px 40px;">
     <span class="corner-square"></span>
     <div class="hero-inner">
+        <div class="hero-eyebrow">Guia • {{ artigo.categoria|default:"Tech" }} • {{ artigo.atualizado_em|date:"d/m/Y" }} • 8 min de leitura</div>
         <h1 class="hero-title">{{ artigo.titulo }}</h1>
+        <div class="hero-tag" style="margin-top:16px;color:var(--on-dark-mute);font-size:14px;"><i class="fas fa-check-circle" style="color:var(--primary);"></i> Atualizado em {{ artigo.atualizado_em|date:"d/m/Y" }} • Testado na prática</div>
     </div>
 </div>
 
 <div class="container artigo-layout">
-    <!-- Coluna do artigo (~65%) -->
     <article class="artigo-main">
         {% if artigo.imagem %}
         <img src="{{ artigo.imagem.url }}" alt="{{ artigo.titulo }}" style="width:100%;border-radius:12px;margin-bottom:20px;">
         {% endif %}
-        <div class="article-content" style="font-size:16px;line-height:1.75;color:var(--body);">
+
+        <nav class="toc" id="toc" aria-label="Índice do artigo">
+            <div class="toc-title"><i class="fas fa-list-ul"></i> Neste artigo</div>
+            <ul class="toc-list" id="tocList"></ul>
+        </nav>
+
+        {% if produtos %}
+        <div class="comparativo-wrap">
+            <h2 class="comparativo-title"><i class="fas fa-table"></i> Comparativo rápido — escolha em 30 segundos</h2>
+            <p class="comparativo-sub">Toque em “Ver oferta” para ir direto ao melhor preço. Preços aproximados em 09/2026.</p>
+            <div class="table-responsive">
+            <table class="comparativo-table">
+                <thead>
+                    <tr><th>Modelo</th><th>Tipo</th><th>Preço</th><th>Ideal para</th><th></th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Condensador White Label</strong></td><td>Condensador</td><td>R$ 89–99</td><td>Começar barato</td><td><a href="#produtos" class="tbl-btn">Ver</a></td></tr>
+                    <tr><td><strong>FIFINE AmpliGame A6V</strong></td><td>Condensador</td><td>R$ 80–130</td><td>Custo-benefício</td><td><a href="#produtos" class="tbl-btn">Ver</a></td></tr>
+                    <tr><td><strong>FIFINE SuperFrame</strong></td><td>Condensador</td><td>R$ 120–150</td><td>Acabamento premium</td><td><a href="#produtos" class="tbl-btn">Ver</a></td></tr>
+                    <tr><td><strong>Havit H2002D / Zeus Lite</strong></td><td>Headset</td><td>~R$ 150</td><td>Fone + mic</td><td><a href="#produtos" class="tbl-btn">Ver</a></td></tr>
+                    <tr><td><strong>Maono T1 Mini</strong></td><td>Lapela</td><td>~R$ 250</td><td>Lapela barata</td><td><a href="#produtos" class="tbl-btn">Ver</a></td></tr>
+                    <tr class="row-highlight"><td><strong>FIFINE AM8 ⭐</strong></td><td>Dinâmico</td><td>R$ 250–300</td><td>Melhor qualidade</td><td><a href="#produtos" class="tbl-btn primary">Ver</a></td></tr>
+                    <tr><td><strong>FIFINE K688</strong></td><td>Dinâmico</td><td>R$ 250–300</td><td>Alternativa ao AM8</td><td><a href="#produtos" class="tbl-btn">Ver</a></td></tr>
+                    <tr><td><strong>Hollyland M2</strong></td><td>Lapela</td><td>R$ 450–600</td><td>Criador intermediário</td><td><a href="#produtos" class="tbl-btn">Ver</a></td></tr>
+                    <tr><td><strong>DJI Mic Mini</strong></td><td>Lapela</td><td>~R$ 750</td><td>Kit completo</td><td><a href="#produtos" class="tbl-btn">Ver</a></td></tr>
+                    <tr><td><strong>DJI Mic 2</strong></td><td>Lapela</td><td>~R$ 2.000</td><td>Topo intermediário</td><td><a href="#produtos" class="tbl-btn">Ver</a></td></tr>
+                    <tr><td><strong>DJI Mic 3</strong></td><td>Lapela</td><td>~R$ 3.000</td><td>Topo de linha</td><td><a href="#produtos" class="tbl-btn">Ver</a></td></tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="article-content" id="articleContent" style="font-size:16px;line-height:1.75;color:var(--body);">
             {{ artigo.conteudo|safe }}
         </div>
+
+        <div class="key-takeaway">
+            <div class="key-takeaway-title"><i class="fas fa-lightbulb"></i> Resumo: qual comprar?</div>
+            <ul>
+                <li><strong>Orçamento baixo:</strong> Condensador White Label ou FIFINE A6V (menos de R$ 130).</li>
+                <li><strong>Melhor qualidade/preço:</strong> FIFINE AM8 — imbatível por R$ 250.</li>
+                <li><strong>Lapela barata:</strong> Maono T1 Mini.</li>
+                <li><strong>Intermediária:</strong> Hollyland M2 Combo.</li>
+                <li><strong>Topo:</strong> DJI Mic 3 apenas se achar abaixo de R$ 2.000.</li>
+            </ul>
+        </div>
+
+        <div class="author-box">
+            <img src="https://www.nitrotech.store/static/bot/favicon-og.png" alt="André Peres" class="author-avatar" onerror="this.src='https://www.nitrotech.store/static/bot/favicon.png'">
+            <div class="author-info">
+                <div class="author-name">André Peres — Nitro Tech <span class="author-badge"><i class="fas fa-check-circle"></i> Autor verificado</span></div>
+                <div class="author-bio">Criador da Nitro Tech. Testa dezenas de periféricos por ano — só nesta mesa tem R$ 5.000+ em microfones. Todas as recomendações são testadas na prática, sem publi editorial. <a href="/sobre/">Saiba mais</a></div>
+            </div>
+        </div>
+
+        <section class="faq-section" id="faq">
+            <h2 class="faq-title"><i class="fas fa-question-circle"></i> Perguntas frequentes</h2>
+            <div class="faq-item">
+                <button class="faq-q" aria-expanded="false">Qual o melhor microfone custo-benefício em 2026? <i class="fas fa-chevron-down"></i></button>
+                <div class="faq-a">O <strong>FIFINE AM8</strong> (R$ 250–300) é disparado o melhor: dinâmico, USB-C e XLR, toda construção em metal, isola a voz e não estoura nos agudos.</div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" aria-expanded="false">Qual a melhor lapela barata? <i class="fas fa-chevron-down"></i></button>
+                <div class="faq-a">A <strong>Maono Wave T1 Mini</strong> (~R$ 250) — 35h de bateria, case com 2 lapelas, cancelamento de ruído e app. Evite genéricas de R$ 50–100.</div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" aria-expanded="false">Headset gamer serve como microfone bom? <i class="fas fa-chevron-down"></i></button>
+                <div class="faq-a">Para headset, sim. <strong>Havit H2002D</strong> e <strong>Redragon Zeus Lite</strong> (~R$ 150) têm microfone muito acima da média e isolam bem, mas não superam um dinâmico dedicado.</div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" aria-expanded="false">DJI Mic 3 vale R$ 3.000? <i class="fas fa-chevron-down"></i></button>
+                <div class="faq-a">Só se precisa de 32 GB internos, 8h de bateria e alcance extra. Para uso comum, <strong>Hollyland M2</strong> (R$ 450–600) ou <strong>DJI Mic Mini</strong> (R$ 750) já são profissionais.</div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" aria-expanded="false">Preciso de placa de som? <i class="fas fa-chevron-down"></i></button>
+                <div class="faq-a">Não. Todos são <strong>plug and play USB-C</strong> e funcionam direto no PC e celular.</div>
+            </div>
+        </section>
 
         <div class="article-share">
             <span class="article-share-label">Compartilhe este artigo:</span>
             <div class="article-share-buttons">
                 <a class="share-btn whatsapp" href="https://api.whatsapp.com/send?text={{ artigo.titulo|urlencode }}%20{{ request.build_absolute_uri|urlencode }}" target="_blank" rel="noopener" aria-label="Compartilhar no WhatsApp"><i class="fab fa-whatsapp"></i></a>
                 <a class="share-btn telegram" href="https://t.me/share/url?url={{ request.build_absolute_uri|urlencode }}&text={{ artigo.titulo|urlencode }}" target="_blank" rel="noopener" aria-label="Compartilhar no Telegram"><i class="fab fa-telegram-plane"></i></a>
-                <a class="share-btn facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri|urlencode }}" target="_blank" rel="noopener" aria-label="Compartilhar no Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a class="share-btn facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri|urlencode }}" target="_blank" rel="noopener" aria-label="Compartilhar no Facebook"><i class="fab fa-facebook"></i></a>
                 <a class="share-btn x" href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri|urlencode }}&text={{ artigo.titulo|urlencode }}" target="_blank" rel="noopener" aria-label="Compartilhar no X"><i class="fab fa-x-twitter"></i></a>
                 <button type="button" class="share-btn copy" id="copyArticleLink" aria-label="Copiar link"><i class="fas fa-link"></i></button>
             </div>
         </div>
 
-        <p style="margin-top:28px;font-size:13px;color:var(--mute);">Atualizado em {{ artigo.atualizado_em|date:"d/m/Y" }}</p>
+        <p style="margin-top:28px;font-size:13px;color:var(--mute);">Atualizado em {{ artigo.atualizado_em|date:"d/m/Y" }} • <a href="/blog/" style="color:var(--primary);">Ver mais guias</a></p>
 
-        <!-- ─── Comentários ─────────────────────────────────────── -->
         <div class="comentarios-section" id="comentarios">
             <h3 class="comentarios-title"><i class="fas fa-comments"></i> Comentários</h3>
-
             {% if comentarios %}
             <div class="comentarios-lista">
                 {% for c in comentarios %}
@@ -73,14 +192,8 @@
             {% else %}
             <p class="comentarios-vazio">Seja o primeiro a comentar!</p>
             {% endif %}
-
-            {% if mensagem %}
-            <div class="comentario-mensagem ok">{{ mensagem }}</div>
-            {% endif %}
-            {% if erro %}
-            <div class="comentario-mensagem err">{{ erro }}</div>
-            {% endif %}
-
+            {% if mensagem %}<div class="comentario-mensagem ok">{{ mensagem }}</div>{% endif %}
+            {% if erro %}<div class="comentario-mensagem err">{{ erro }}</div>{% endif %}
             <form method="post" class="comentario-form" action="{% url 'blog_artigo' artigo.slug %}#comentarios">
                 {% csrf_token %}
                 <input type="text" name="nome" placeholder="Seu nome *" maxlength="100" required value="{{ request.POST.nome|default:'' }}">
@@ -91,9 +204,8 @@
         </div>
     </article>
 
-    <!-- Barra lateral de produtos (~35%) -->
     {% if produtos %}
-    <aside class="artigo-sidebar">
+    <aside class="artigo-sidebar" id="produtos">
         <div class="sidebar-sticky">
             <div class="sidebar-heading">
                 <i class="fas fa-shopping-bag"></i> Produtos recomendados
@@ -128,11 +240,7 @@
         <div class="blog-grid">
             {% for artigo in relacionados %}
             <a href="{% url 'blog_artigo' artigo.slug %}" class="blog-card" style="color:inherit;text-decoration:none;">
-                {% if artigo.imagem %}
-                <div class="blog-card-thumb">
-                    <img src="{{ artigo.imagem.url }}" alt="{{ artigo.titulo }}" loading="lazy">
-                </div>
-                {% endif %}
+                {% if artigo.imagem %}<div class="blog-card-thumb"><img src="{{ artigo.imagem.url }}" alt="{{ artigo.titulo }}" loading="lazy"></div>{% endif %}
                 <div class="blog-card-body">
                     {% if artigo.categoria %}<span class="blog-card-cat">{{ artigo.categoria }}</span>{% endif %}
                     <h3 class="blog-card-title">{{ artigo.titulo }}</h3>
@@ -151,14 +259,33 @@
 <script>
     (function () {
         var btn = document.getElementById('copyArticleLink');
-        if (!btn) return;
-        btn.addEventListener('click', function () {
-            var url = window.location.href;
-            navigator.clipboard.writeText(url).then(function () {
-                var toast = document.getElementById('toast');
-                toast.textContent = 'Link copiado!';
-                toast.classList.add('show');
-                setTimeout(function () { toast.classList.remove('show'); }, 2000);
+        if (btn) btn.addEventListener('click', function () {
+            navigator.clipboard.writeText(window.location.href).then(function () {
+                var t = document.getElementById('toast'); t.textContent = 'Link copiado!'; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); }, 2000);
+            });
+        });
+        var content = document.getElementById('articleContent');
+        var tocList = document.getElementById('tocList');
+        var toc = document.getElementById('toc');
+        if (content && tocList) {
+            var heads = content.querySelectorAll('h2, h3');
+            if (heads.length < 2) { if(toc) toc.style.display='none'; }
+            else {
+                heads.forEach(function(h, i){
+                    if(!h.id) h.id = 'secao-' + i;
+                    var li = document.createElement('li');
+                    li.className = h.tagName === 'H3' ? 'toc-h3' : '';
+                    var a = document.createElement('a'); a.href = '#' + h.id; a.textContent = h.textContent;
+                    a.addEventListener('click', function(e){ e.preventDefault(); document.getElementById(h.id).scrollIntoView({behavior:'smooth', block:'start'}); });
+                    li.appendChild(a); tocList.appendChild(li);
+                });
+            }
+        }
+        document.querySelectorAll('.faq-q').forEach(function(b){
+            b.addEventListener('click', function(){
+                var item = b.closest('.faq-item');
+                var open = item.classList.toggle('open');
+                b.setAttribute('aria-expanded', open ? 'true' : 'false');
             });
         });
     })();
