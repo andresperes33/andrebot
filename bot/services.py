@@ -1663,27 +1663,36 @@ def strip_promo_footer(text):
     return cleaned_text.strip()
 
 
-def normaliza_emoji_inicial(texto):
-    """Força o emoji inicial de toda promoção para 👍.
+_RE_EMOJI_ALL = re.compile(
+    r'[\U0001F000-\U0001FAFF]'
+    r'|[\u2600-\u27BF]'
+    r'|[\u2190-\u21FF]'
+    r'|[\u2B00-\u2BFF]'
+    r'|\ufe0f|\u200d|\u00a9|\u00ae|\u2122|\u00a0',
+)
 
-    Remove qualquer emoji/símbolo no início e garante 👍 + espaço.
-    Se já começa com 👍, normaliza para um único.
-    """
+def normaliza_emoji_inicial(texto):
+    """Força o emoji inicial para 👍 e remove todos os outros emojis do texto."""
     if not texto:
         return texto
     t = texto.lstrip()
     if not t:
         return texto
-    if t.startswith('👍'):
-        rest = t[1:].lstrip('\ufe0f\u200d \t')
-        while rest.startswith('👍'):
-            rest = rest[1:].lstrip('\ufe0f\u200d \t')
-        return '👍 ' + rest.lstrip() if rest else '👍'
-    m = re.match(r'^[^\w\s]+', t, flags=re.UNICODE)
-    if m:
-        rest = t[m.end():].lstrip()
-        return '👍 ' + rest if rest else '👍'
-    return '👍 ' + t
+    t_sem = _RE_EMOJI_ALL.sub('', t)
+    t_sem = t_sem.replace('\ufe0f', '').replace('\u200d', '')
+    linhas = t_sem.split('\n')
+    novas = []
+    for linha in linhas:
+        linha = re.sub(r'[ \t]+', ' ', linha).strip()
+        novas.append(linha)
+    t_sem = '\n'.join(novas)
+    t_sem = re.sub(r'\n{3,}', '\n\n', t_sem).strip()
+    t_sem = re.sub(r'^[^\w\s]+', '', t_sem.lstrip(), flags=re.UNICODE).lstrip()
+    while t_sem.startswith('👍'):
+        t_sem = t_sem[1:].lstrip('\ufe0f\u200d \t')
+    if not t_sem:
+        return '👍'
+    return '👍 ' + t_sem
 
 
 async def process_offer_to_group(bot_app, text, photo=None):
