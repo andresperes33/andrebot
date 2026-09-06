@@ -1019,6 +1019,14 @@ a.price-history-row:hover {
 }
 .footer-legal a { color: var(--on-dark-mute); }
 .footer-legal a:hover { color: var(--primary); }
+.footer-social { display: flex; gap: 10px; margin-top: 14px; }
+.footer-social-icon {
+    width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); color: var(--on-dark-mute);
+    font-size: 15px; transition: border-color .2s, color .2s, background .2s;
+}
+.footer-social-icon:hover { border-color: var(--primary); color: var(--primary); background: rgba(118,185,0,0.08); }
+.footer-link i { margin-right: 6px; opacity: 0.85; }
 
 /* ─── Toast ──────────────────────────────────────────────────── */
 .toast {
