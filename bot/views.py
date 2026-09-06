@@ -29,7 +29,7 @@ _CATEGORIA_DESCRICOES = {
     'teclado': 'Teclados mecânicos e membranas para melhorar sua digitação e jogatina. Switches, RGB e designs gamer.',
     'mouse': 'Mouses gamer e de escritório com alta precisão, DPI ajustável e design ergonômico para todas as tarefas.',
     'mousepad': 'Mousepads grandes e de alta qualidade para precisão nos jogos e conforto no dia a dia.',
-    'cadeira': 'Cadeiras gamers e ergonômicas para cuidar da sua postura nas longas horas de trabalho e gameplay.',
+    'cadeira': 'Cadeiras de escritório e gamers ergonômicas para cuidar da sua postura nas longas horas de trabalho e gameplay.',
     'impressora': 'Impressoras e multifuncionais com toner e tinta em promoção para uso doméstico e de escritório.',
     'fonte': 'Fontes de alimentação com certificação e wattagem para PC. Eficiência e estabilidade para seu hardware.',
     'gabinete': 'Gabinetes e torres com boa ventilação, vidro temperado e espaços para o seu setup crescer.',
