@@ -92,7 +92,7 @@ class Promo(models.Model):
         ('teclado', 'Teclado'),
         ('mouse', 'Mouse'),
         ('mousepad', 'Mousepad'),
-        ('cadeira', 'Cadeira Escritório/Gamer'),
+        ('cadeira', 'Cadeira Escritório / Gamer'),
         ('impressora', 'Impressora'),
         ('fonte', 'Fonte'),
         ('gabinete', 'Gabinete'),
