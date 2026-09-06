@@ -382,6 +382,8 @@ class Command(BaseCommand):
                 except Exception as db_err:
                     logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")
 
+                texto_para_alertas = modified_text
+
                 # ─── Redireciona os links de loja para a página do site ──────
                 # No Telegram/WhatsApp, quem clica no link vai para a página
                 # da promoção aqui no site; de lá o botão 'Comprar' leva ao
@@ -424,9 +426,11 @@ class Command(BaseCommand):
                     logger.error(f"❌ Erro WhatsApp: {wa_err}")
 
                 # ─── Dispara alertas para usuários do Bot ────────────────────
+                # Usa o texto ANTES de trocar os links pelo site, para que
+                # keywords como 'aliexpress', 'amazon', etc. ainda casem com a URL original.
                 try:
                     from bot.alert_sender import send_alerts
-                    await asyncio.to_thread(send_alerts, modified_text, photo_path)
+                    await asyncio.to_thread(send_alerts, texto_para_alertas, photo_path)
                     logger.info("🔔 Alertas de usuários verificados/enviados")
                 except Exception as alert_err:
                     logger.error(f"❌ Erro ao enviar alertas: {alert_err}")
@@ -434,7 +438,7 @@ class Command(BaseCommand):
                 # ─── Dispara alertas do NITRO ALERTA (site → WhatsApp) ──────
                 try:
                     from bot.alert_site import send_alerts_site
-                    await asyncio.to_thread(send_alerts_site, modified_text, photo_path)
+                    await asyncio.to_thread(send_alerts_site, texto_para_alertas, photo_path)
                     logger.info("🔔 Nitro Alerta (WhatsApp) verificado/enviado")
                 except Exception as site_err:
                     logger.error(f"❌ Erro no Nitro Alerta: {site_err}")
