@@ -64,25 +64,8 @@
     </div>
 
     <div class="detail-info">
-        <div class="card">
-            {% if promo.preco %}
-            <div>
-                <span class="detail-label">Preço</span>
-                <div class="detail-price">{{ promo.preco|preco_completo }}</div>
-            </div>
-            {% endif %}
-
-            {% if promo.cupom %}
-            <div>
-                <span class="detail-label">Cupom de desconto</span>
-                <div class="detail-cupom-row">
-                    <code>{{ promo.cupom }}</code>
-                    <button class="copy-btn" onclick="copiarCupom(this, '{{ promo.cupom|escapejs }}')" aria-label="Copiar cupom"><i class="fas fa-copy"></i></button>
-                </div>
-            </div>
-            {% endif %}
-
-            <div class="detail-label">Compre nos links abaixo:</div>
+        <div class="card" style="text-align:center;">
+            <p style="font-size:1.15rem;font-weight:700;color:var(--primary);margin:0;">🔍 Confira todos os detalhes da oferta 👇</p>
         </div>
 
         <div class="card">
