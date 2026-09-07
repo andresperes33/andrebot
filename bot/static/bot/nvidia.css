@@ -865,7 +865,11 @@ body.menu-open { overflow: hidden; }
     word-break: break-word;
 }
 .detail-channels a:hover { text-decoration: underline; }
-.detail-text a { color: var(--link-blue); text-decoration: underline; }
+.detail-text a:not(.btn) { color: var(--link-blue); text-decoration: underline; }
+.detail-text .btn {
+    color: var(--on-primary);
+    text-decoration: none;
+}
 /* Histórico de preços */
 .price-history { margin-top: 14px; }
 .price-history-chart-wrap {
