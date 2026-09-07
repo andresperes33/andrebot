@@ -504,6 +504,18 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:air\s*cooler|water\s*cooler|watercooler|dissipador|cooler\b.*torre|torre\b.*cooler|ventoinha|cooler\b.*ventilador|ventilador\b.*cooler|cooler\s*para\s*processador|processador\s*cooler)\b', alvo_norm):
             return 'cooler'
 
+    # Caixa de som tem prioridade sobre headset/microfone — 'Caixa de Som
+    # Portátil ... com Microfone Integrado, TWS' é uma CAIXA DE SOM; o
+    # 'microfone' é handsfree embutido e 'tws' é o recurso de parear duas.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:caixa\s*de\s*som|caixa\s*som|soundbar|alto[ -]?falante|altofalante|speaker)\b', alvo_norm):
+            return 'caixa_som'
+
     # Microfone tem prioridade sobre 'headset'/'fone de ouvido' citados como
     # recurso ('Microfone FIFINE ... Fone de Ouvido, Microfone USB Condensador'
     # é um MICROFONE, não um headset). Mas 'Headset ... com Microfone' é um
@@ -520,6 +532,10 @@ def detectar_categoria(texto, titulo=None):
         # 'Webcam ... Com Microfone' — o microfone é embutido na webcam, não
         # um microfone avulso. O produto é a WEBCAM.
         if re.search(r'\bwebcam\b', alvo_norm):
+            continue
+        # 'Caixa de Som ... com Microfone Integrado' — o microfone é embutido
+        # na caixa de som (handsfree), não um microfone avulso.
+        if re.search(r'\b(?:caixa\s*de\s*som|caixa\s*som|soundbar|alto[ -]?falante|altofalante|speaker|bluetooth)\b', alvo_norm):
             continue
         if re.search(r'\bmicrofone\b', alvo_norm) and \
            re.search(r'\b(?:microfone|usb|condensador|gamer|streaming|gravac|fifine|modmic|de\s*lapela)\b', alvo_norm):
