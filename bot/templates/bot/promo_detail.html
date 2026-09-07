@@ -84,6 +84,13 @@
             {{ rodape_canais|safe }}
         </div>
 
+        {% if dicas_categoria %}
+        <div class="detail-tips">
+            <div class="detail-label"><i class="fas fa-lightbulb"></i> Dicas da Nitro Tech</div>
+            <p>{{ dicas_categoria }}</p>
+        </div>
+        {% endif %}
+
         {% if historico %}
         <div class="card">
             <div class="detail-label"><i class="fas fa-chart-line" style="color:var(--primary);"></i> Histórico de preços</div>
@@ -108,6 +115,19 @@
             {{ chart_data|json_script:"priceChartData" }}
         </div>
         {% endif %}
+
+        {% if guias_blog %}
+        <div class="card">
+            <div class="detail-label"><i class="fas fa-newspaper" style="color:var(--primary);"></i> Leia também no Blog</div>
+            <div class="detail-guides">
+                {% for guia in guias_blog %}
+                <a href="{% url 'blog_artigo' guia.slug %}"><i class="fas fa-arrow-right" style="color:var(--primary);"></i> {{ guia.titulo }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <p class="detail-affiliate">🔗 Alguns links desta página são de afiliados — se você comprar por eles, a Nitro Tech pode receber uma comissão, sem nenhum custo extra para você.</p>
 
         <div class="detail-meta">
             <span><i class="fas fa-bolt" style="color:var(--primary);"></i> Publicado automaticamente pelo bot</span>

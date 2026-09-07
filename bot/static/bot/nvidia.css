@@ -770,6 +770,53 @@ body.menu-open { overflow: hidden; }
 }
 .detail-cta:hover { border-color: var(--primary); color: var(--primary); }
 
+.detail-tips {
+    background: var(--surface-soft);
+    border: 1px solid var(--hairline);
+    border-left: 4px solid var(--primary);
+    border-radius: var(--radius-sm);
+    padding: 24px;
+}
+.detail-tips .detail-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary);
+    margin-bottom: 12px;
+}
+.detail-tips p {
+    font-family: var(--font-promo);
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--body);
+    margin: 0;
+}
+.detail-guides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+.detail-guides a {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--link-blue);
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.45;
+}
+.detail-guides a:hover { text-decoration: underline; }
+.detail-guides a i { margin-top: 3px; flex-shrink: 0; }
+.detail-affiliate {
+    font-size: 12px;
+    color: var(--stone);
+    line-height: 1.55;
+    margin-top: 4px;
+    padding-top: 16px;
+    border-top: 1px solid var(--hairline);
+}
+
 .detail-layout {
     max-width: var(--container);
     margin: 0 auto;
