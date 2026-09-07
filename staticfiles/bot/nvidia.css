@@ -1557,6 +1557,8 @@ a.price-history-row:hover {
     .promos-grid { grid-template-columns: 1fr; }
     .footer-inner { grid-template-columns: 1fr; }
     .hero-actions, .detail-actions { flex-direction: column; }
+    .detail-actions { align-items: center; }
+    .detail-cta { text-align: center; }
     .hero-actions .btn, .detail-actions .btn { width: 100%; }
 }
 
