@@ -353,6 +353,17 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\bgabinete\b', alvo_norm):
             return 'gabinete'
 
+    # Monitor tem prioridade sobre notebook — 'Monitor Portátil ... Tela IPS'
+    # é um MONITOR; a 'tela ips' é o painel do monitor, não um notebook.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\bmonitor\b', alvo_norm):
+            return 'monitor'
+
     # Notebook tem prioridade sobre GPU/SSD citados no título
     # ('RTX5060 Notebook ASUS TUF ... 512GB SSD' é um NOTEBOOK, não um SSD).
     # 'notebook' de compatibilidade ('para notebook') NÃO conta aqui.
