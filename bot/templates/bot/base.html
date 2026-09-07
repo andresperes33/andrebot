@@ -191,7 +191,7 @@ if (toTopBtn) {
 }
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-        navigator.serviceWorker.register('{% static 'bot/sw.js' %}').catch(function (err) {
+        navigator.serviceWorker.register('{% static 'bot/sw.js' %}?v=2').catch(function (err) {
             console.warn('Service Worker falhou:', err);
         });
     });
