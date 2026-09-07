@@ -9,14 +9,17 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
-def send_alerts_site(offer_text: str, photo_path=None):
+def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None):
     """
     Percorre os alertas cadastrados no site (AlertaSite) e envia a oferta
     para o WhatsApp de cada usuário cuja palavra-chave combina.
     Envia sempre que aparece (pode ser mais de uma vez por dia).
+
+    oferta_categoria: categoria da promoção (ex.: 'placa_video'). Quando
+    informada, o alerta só dispara se a categoria da keyword corresponder.
     """
     from bot.models import AlertaSite
-    from bot.alert_sender import keyword_matches
+    from bot.alert_sender import keyword_matches, _categoria_bate
     from bot.services import send_whatsapp_to_user, normalizar_whatsapp
 
     alertas = AlertaSite.objects.filter(is_active=True)
@@ -27,6 +30,8 @@ def send_alerts_site(offer_text: str, photo_path=None):
 
     for alerta in alertas:
         try:
+            if not _categoria_bate(alerta.keyword, oferta_categoria):
+                continue
             if not keyword_matches(offer_text, alerta.keyword):
                 continue
 

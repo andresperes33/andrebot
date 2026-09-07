@@ -394,6 +394,29 @@ class Command(BaseCommand):
 
                 texto_para_alertas = modified_text
 
+                # ─── Categoria da oferta (para filtro dos alertas) ──────────
+                # O alerta só dispara se o produto aparecer na categoria
+                # correspondente à keyword (ex.: alerta 'placa de video rtx
+                # 5060' NÃO dispara para um cupom, mesmo com link da placa).
+                categoria_oferta = None
+                if promo_id:
+                    try:
+                        from bot.models import Promo
+                        cat = Promo.objects.filter(pk=promo_id).values_list('categoria', flat=True).first()
+                        if cat:
+                            categoria_oferta = cat
+                    except Exception as cat_err:
+                        logger.warning(f"⚠️ Erro ao obter categoria da promo: {cat_err}")
+                if not categoria_oferta:
+                    try:
+                        from bot.classifier import detectar_categoria
+                        from bot.services import _linha_titulo
+                        categoria_oferta = detectar_categoria(
+                            texto_para_alertas, titulo=_linha_titulo(texto_para_alertas)
+                        )
+                    except Exception as cat_err2:
+                        logger.warning(f"⚠️ Erro ao detectar categoria da oferta: {cat_err2}")
+
                 # ─── Redireciona os links de loja para a página do site ──────
                 # No Telegram/WhatsApp, quem clica no link vai para a página
                 # da promoção aqui no site; de lá o botão 'Comprar' leva ao
@@ -440,7 +463,7 @@ class Command(BaseCommand):
                 # keywords como 'aliexpress', 'amazon', etc. ainda casem com a URL original.
                 try:
                     from bot.alert_sender import send_alerts
-                    await asyncio.to_thread(send_alerts, texto_para_alertas, photo_path)
+                    await asyncio.to_thread(send_alerts, texto_para_alertas, photo_path, categoria_oferta)
                     logger.info("🔔 Alertas de usuários verificados/enviados")
                 except Exception as alert_err:
                     logger.error(f"❌ Erro ao enviar alertas: {alert_err}")
@@ -448,7 +471,7 @@ class Command(BaseCommand):
                 # ─── Dispara alertas do NITRO ALERTA (site → WhatsApp) ──────
                 try:
                     from bot.alert_site import send_alerts_site
-                    await asyncio.to_thread(send_alerts_site, texto_para_alertas, photo_path)
+                    await asyncio.to_thread(send_alerts_site, texto_para_alertas, photo_path, categoria_oferta)
                     logger.info("🔔 Nitro Alerta (WhatsApp) verificado/enviado")
                 except Exception as site_err:
                     logger.error(f"❌ Erro no Nitro Alerta: {site_err}")

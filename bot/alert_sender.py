@@ -209,10 +209,40 @@ def keyword_matches(offer_text: str, keyword: str) -> bool:
     return smart_phrase_matches(text_norm, keyword_lower)
 
 
-def send_alerts(offer_text: str, photo_path: str = None):
+def _categoria_do_keyword(keyword: str) -> str:
+    """Detecta a categoria esperada do alerta pela palavra-chave.
+
+    Ex.: 'placa de video rtx 5060' → 'placa_video'.
+    Retorna 'outros' quando a keyword não identifica uma categoria do site
+    (ex.: 'geladeira', 'airfryer') — nesses casos não há filtro por categoria.
+    """
+    try:
+        from bot.classifier import detectar_categoria
+        return detectar_categoria(keyword) or 'outros'
+    except Exception:
+        return 'outros'
+
+
+def _categoria_bate(alert_keyword: str, oferta_categoria) -> bool:
+    """Verdadeiro se a categoria da oferta corresponde à categoria que a
+    palavra-chave do alerta identifica (ou se a keyword é genérica/'outros')."""
+    if not oferta_categoria:
+        return True
+    cat_alerta = _categoria_do_keyword(alert_keyword)
+    if cat_alerta in ('outros', ''):
+        return True
+    return cat_alerta == oferta_categoria
+
+
+def send_alerts(offer_text: str, photo_path: str = None, oferta_categoria=None):
     """
     Verifica os alertas cadastrados e envia mensagem para cada usuário
     cuja palavra-chave combina com a oferta.
+
+    oferta_categoria: categoria da promoção (ex.: 'placa_video'). Quando
+    informada, o alerta só dispara se a categoria da keyword corresponder
+    (ex.: alerta 'placa de video rtx 5060' não dispara para cupom, mesmo
+    que o texto mencione a placa).
     """
     from bot.models import UserAlert
     import os
@@ -231,6 +261,9 @@ def send_alerts(offer_text: str, photo_path: str = None):
     for alert in alerts:
         user_id = alert.telegram_user_id
         if user_id in notified_users:
+            continue
+
+        if not _categoria_bate(alert.keyword, oferta_categoria):
             continue
 
         if keyword_matches(offer_text, alert.keyword):
