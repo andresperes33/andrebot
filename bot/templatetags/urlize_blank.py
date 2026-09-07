@@ -40,6 +40,34 @@ def urlize_blank(value):
     return mark_safe(''.join(partes))
 
 
+@register.filter(is_safe=True)
+def urlize_botao(value):
+    """Converte URLs do texto em botões 'Ver oferta' do design system,
+    mantendo-os na mesma posição do link original.
+
+    Diferente do |urlize_blank (que mostra a URL em texto), aqui cada
+    URL vira um botão de compra clicável (abre em nova aba).
+    """
+    if not value:
+        return ''
+    texto = conditional_escape(value)
+    partes = []
+    pos = 0
+    for m in _URL_RE.finditer(texto):
+        partes.append(texto[pos:m.start()])
+        url = m.group(1)
+        # tira pontuação final que não faz parte da URL
+        url = url.rstrip('.,;:!?\'"\u2026')
+        partes.append(
+            f'<a href="{url}" target="_blank" rel="nofollow noopener" '
+            f'class="btn btn-primary btn-block btn-sm" style="margin:4px 0;">'
+            f'Ver oferta <i class="fas fa-arrow-right"></i></a>'
+        )
+        pos = m.end()
+    partes.append(texto[pos:])
+    return mark_safe(''.join(partes))
+
+
 @register.filter
 def card_text(value):
     """Texto descritivo para o card: a mensagem original até o primeiro
