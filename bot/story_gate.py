@@ -5,19 +5,10 @@ logger = logging.getLogger(__name__)
 
 # Intervalo mínimo entre Stories (em minutos)
 INTERVALO_MIN_MINUTOS = 30
-# Janela de publicação: das 08:00 às 23:00
-HORA_INICIO = 8
-HORA_FIM = 23
 
 
 def _agora():
     return datetime.now()
-
-
-def dentro_da_janela(agora=None):
-    """Retorna True se agora está dentro da janela de publicação (08:00-23:00)."""
-    agora = agora or _agora()
-    return HORA_INICIO <= agora.hour < HORA_FIM
 
 
 def _ler_ultima_publicacao():
@@ -48,15 +39,11 @@ def _salvar_ultima_publicacao(agora=None):
 
 def pode_publicar_story(agora=None):
     """
-    Decide se um Story pode ser publicado agora, respeitando:
-    - Janela de horário (08:00 às 23:00)
-    - Intervalo mínimo de 30 minutos desde o último
+    Decide se um Story pode ser publicado agora, respeitando apenas o
+    intervalo mínimo de 30 minutos desde o último (sem janela de horário).
     Retorna (permitido: bool, motivo: str).
     """
     agora = agora or _agora()
-
-    if not dentro_da_janela(agora):
-        return False, f"fora da janela ({HORA_INICIO}h-{HORA_FIM}h)"
 
     ultima = _ler_ultima_publicacao()
     if ultima:
