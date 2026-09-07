@@ -754,6 +754,21 @@ body.menu-open { overflow: hidden; }
     max-width: 900px;
 }
 .detail-actions { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 32px; }
+.detail-cta {
+    display: inline-block;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.25;
+    padding: 11px 24px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--on-dark);
+    color: var(--on-dark);
+    background: transparent;
+    box-sizing: border-box;
+    cursor: default;
+    transition: border-color 0.15s, color 0.15s;
+}
+.detail-cta:hover { border-color: var(--primary); color: var(--primary); }
 
 .detail-layout {
     max-width: var(--container);
