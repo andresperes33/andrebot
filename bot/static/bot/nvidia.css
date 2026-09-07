@@ -803,6 +803,22 @@ body.menu-open { overflow: hidden; }
     letter-spacing: 0.05em;
     color: var(--mute);
 }
+.info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 700;
+    font-style: normal;
+    vertical-align: middle;
+    margin-right: 4px;
+    line-height: 1;
+}
 .detail-price {
     font-size: 48px;
     font-weight: 700;
