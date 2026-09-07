@@ -157,8 +157,10 @@ def smart_phrase_matches(text_norm: str, keyword_norm: str) -> bool:
                             variante_nao_pedida = True
                 if variante_nao_pedida:
                     continue
-                # palavra inteira (não colado a outra letra/dígito)
-                padrao = r'(?<![a-z0-9])' + _re.escape(v) + r'(?![a-z0-9])'
+                # número como palavra (ex.: '5060' isolado) ou colado a letra
+                # de modelo (ex.: 'rtx5060', 'gtx4060ti') — aceita desde que
+                # não esteja dentro de outro número ('4060', '50600').
+                padrao = r'(?<![0-9])' + _re.escape(v) + r'(?![0-9])'
                 if _re.search(padrao, text_norm):
                     casou = True
                     break
