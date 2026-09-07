@@ -448,6 +448,14 @@ def detectar_categoria(texto, titulo=None):
         )
         if not eh_headset:
             continue
+        # 'Microfone Gamer FIFINE A8 ... Entrada para Fone de Ouvido' é um
+        # MICROFONE; o 'fone de ouvido' é só a entrada do microfone, não o
+        # produto. O bloco de microfone (abaixo) decide corretamente.
+        if re.search(
+            r'\bmicrofone\s*(?:gamer|usb|condensador|de\s*est[uú]dio|de\s*gabinete|de\s*lapela|boom|profissional|dedicado|fifine)\b',
+            alvo_norm,
+        ):
+            continue
         # Confirma que é headset/fone (não um acessório citando fone como compatibilidade)
         # Exige palavra 'gamer' ou 'falante' ou 'microfone' ou '50mm'/'40mm' ou marca típica.
         if re.search(
