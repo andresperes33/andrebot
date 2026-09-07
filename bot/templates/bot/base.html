@@ -36,6 +36,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{% static 'bot/nvidia.css' %}?v=5">
+    <link rel="canonical" href="{{ SITE_URL }}{{ request.path }}">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Nitro Tech",
+        "url": "{{ SITE_URL }}",
+        "logo": "{{ SITE_URL }}{% static 'bot/icon-512.png' %}"
+    }
+    </script>
     {% block extra_head %}{% endblock %}
 
     <!-- Google AdSense -->

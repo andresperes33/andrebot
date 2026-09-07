@@ -10,6 +10,17 @@
 <meta property="og:title" content="{{ artigo.titulo }}">
 <meta property="og:description" content="{{ artigo.titulo }} — Guia e dicas de tecnologia da Nitro Tech.">
 {% if artigo.imagem %}<meta property="og:image" content="{{ SITE_URL }}{{ artigo.imagem.url }}">{% endif %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "{{ artigo.titulo|escapejs }}",
+    "url": "{{ SITE_URL }}{% url 'blog_artigo' artigo.slug %}",
+    "datePublished": "{{ artigo.criado_em|date:'c' }}",
+    "dateModified": "{{ artigo.atualizado_em|date:'c' }}",
+    "mainEntityOfPage": "{{ SITE_URL }}{% url 'blog_artigo' artigo.slug %}"
+}
+</script>
 {% endblock %}
 
 {% block breadcrumb %}

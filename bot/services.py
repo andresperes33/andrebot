@@ -8,6 +8,14 @@ import unicodedata
 import requests
 from django.conf import settings
 
+
+def site_base_url(request):
+    """URL base do site, sempre em HTTPS (mesmo atrás de proxy/Cloudflare)."""
+    url = request.build_absolute_uri('/')
+    if url.startswith('http://'):
+        url = 'https://' + url[len('http://'):]
+    return url.rstrip('/')
+
 # Rodapé de canais anexado às promoções (Telegram/WhatsApp/site). Em texto puro.
 _RODAPE_CANAIS_TEXTO = (
     "\n\n"

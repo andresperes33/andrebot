@@ -387,7 +387,8 @@ def robots_txt_view(request):
     """
     Gera o robots.txt dinamicamente.
     """
-    base_url = request.build_absolute_uri('/').rstrip('/')
+    from bot.services import site_base_url
+    base_url = site_base_url(request)
     lines = [
         "User-agent: *",
         "Allow: /",
@@ -412,7 +413,8 @@ def sitemap_xml_view(request):
     """
     Gera o sitemap.xml com as rotas principais e todas as páginas individuais de promo.
     """
-    base_url = request.build_absolute_uri('/').rstrip('/')
+    from bot.services import site_base_url
+    base_url = site_base_url(request)
     pages = [
         {"loc": f"{base_url}/promos/", "changefreq": "always", "priority": "1.0"},
         {"loc": f"{base_url}/blog/", "changefreq": "weekly", "priority": "0.7"},
@@ -429,6 +431,14 @@ def sitemap_xml_view(request):
             "loc": f"{base_url}/blog/{artigo.slug}/",
             "changefreq": "monthly",
             "priority": "0.7",
+        })
+
+    # Quadro de Eventos (conteúdo original indexável)
+    for evento in Evento.objects.filter(publicado=True):
+        pages.append({
+            "loc": f"{base_url}/eventos/{evento.slug}/",
+            "changefreq": "monthly",
+            "priority": "0.6",
         })
 
     # Cada promo vira uma página individual indexável

@@ -19,7 +19,17 @@
 <meta property="twitter:url" content="{{ SITE_URL }}{% url 'promo_detail' promo.pk %}">
 <meta property="twitter:title" content="{{ promo.titulo }}">
 <meta property="twitter:description" content="{{ promo.preco }} — Promoção de {{ promo.get_categoria_display }}.">
-{% if promo.imagem_url %}<meta property="twitter:image" content="{{ promo.imagem_url }}">{% endif %}
+{% if promo.imagem_url %}<meta property="twitter:image" content="{{ SITE_URL }}{{ promo.imagem_url }}">{% endif %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Início", "item": "{{ SITE_URL }}/promos/"},
+        {"@type": "ListItem", "position": 2, "name": "{{ promo.get_categoria_display|escapejs }}", "item": "{{ SITE_URL }}/promos/"}
+    ]
+}
+</script>
 {% endblock %}
 
 {% block breadcrumb %}
