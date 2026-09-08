@@ -202,7 +202,8 @@
         }
         function go(n) {
             idx = ((n % slides) + slides) % slides;
-            carrossel.scrollTo({ left: idx * passo(), behavior: 'smooth' });
+            var step = track.children[0].offsetWidth;
+            track.style.transform = 'translateX(' + (-idx * step) + 'px)';
             updateDots();
         }
         function restart() {
@@ -221,15 +222,23 @@
         prev.addEventListener('click', function () { go(idx - 1); restart(); });
         next.addEventListener('click', function () { go(idx + 1); restart(); });
 
-        // Ao rolar/arrastar (swipe nativo), sincroniza as bolinhas
-        var scrollTimer = null;
-        carrossel.addEventListener('scroll', function () {
-            if (scrollTimer) clearTimeout(scrollTimer);
-            scrollTimer = setTimeout(function () {
-                var newIdx = Math.round(carrossel.scrollLeft / passo());
-                if (newIdx !== idx) { idx = ((newIdx % slides) + slides) % slides; updateDots(); }
-            }, 80);
+        // Swipe (arrastar com o dedo no mobile)
+        var startX = null;
+        track.addEventListener('touchstart', function (e) {
+            startX = e.touches[0].clientX;
         }, { passive: true });
+        track.addEventListener('touchend', function (e) {
+            if (startX === null) return;
+            var delta = e.changedTouches[0].clientX - startX;
+            if (delta < -40) { go(idx + 1); restart(); }
+            else if (delta > 40) { go(idx - 1); restart(); }
+            startX = null;
+        }, { passive: true });
+
+        window.addEventListener('resize', function () {
+            var step = track.children[0].offsetWidth;
+            track.style.transform = 'translateX(' + (-idx * step) + 'px)';
+        });
 
         restart();
         carrossel.addEventListener('mouseenter', function () { if (timer) clearInterval(timer); });
