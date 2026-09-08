@@ -241,13 +241,14 @@ button, input { font-family: inherit; }
     flex: 0 0 100%;
     aspect-ratio: 1330 / 140;
 }
+.carrossel-slide picture,
 .carrossel-slide img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 14px;
 }
-.carrossel-mobile { display: none; }
 .carrossel-btn {
     position: absolute;
     top: 50%;
@@ -2002,8 +2003,6 @@ a.price-history-row:hover {
     .utility-bar { display: none; }
     .carrossel { padding: 0 12px; margin-top: 12px; overflow: hidden; }
     .carrossel-slide { aspect-ratio: 377 / 128; padding: 0 8px; box-sizing: border-box; }
-    .carrossel-desktop { display: none; }
-    .carrossel-mobile { display: block; }
     .carrossel-prev, .carrossel-next { display: none; }
     .carrossel-dots { margin-top: 8px; }
     .detail-store-row .detail-label { font-size: 15px !important; }
