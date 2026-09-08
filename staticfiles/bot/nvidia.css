@@ -1111,6 +1111,20 @@ body.menu-open { overflow: hidden; }
     padding-top: 16px;
     border-top: 1px solid var(--hairline);
 }
+.detail-store-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.detail-store-date {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mute);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
 
 .detail-layout {
     max-width: var(--container);
