@@ -219,6 +219,19 @@
         var carrossel = document.getElementById('carrossel');
         carrossel.addEventListener('mouseenter', function () { if (timer) clearInterval(timer); });
         carrossel.addEventListener('mouseleave', restart);
+
+        // Swipe (arrastar com o dedo no mobile)
+        var startX = null;
+        track.addEventListener('touchstart', function (e) {
+            startX = e.touches[0].clientX;
+        }, { passive: true });
+        track.addEventListener('touchend', function (e) {
+            if (startX === null) return;
+            var delta = e.changedTouches[0].clientX - startX;
+            if (delta < -40) { go(idx + 1); restart(); }
+            else if (delta > 40) { go(idx - 1); restart(); }
+            startX = null;
+        }, { passive: true });
     })();
     function copiarCupom(el, cupom) {
         navigator.clipboard.writeText(cupom).then(() => {

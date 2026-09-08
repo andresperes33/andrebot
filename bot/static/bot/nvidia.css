@@ -271,14 +271,12 @@ button, input { font-family: inherit; }
 .carrossel-prev { left: 34px; }
 .carrossel-next { right: 34px; }
 .carrossel-dots {
-    position: absolute;
-    bottom: 10px;
-    left: 0;
-    right: 0;
     display: flex;
     justify-content: center;
     gap: 8px;
-    z-index: 2;
+    margin-top: 12px;
+    position: static;
+    z-index: auto;
 }
 .carrossel-dot {
     width: 9px;
@@ -2005,8 +2003,8 @@ a.price-history-row:hover {
     .utility-bar { display: none; }
     .carrossel { padding: 0 14px; margin-top: 12px; }
     .carrossel-slide { aspect-ratio: 377 / 128; }
-    .carrossel-prev { left: 22px; }
-    .carrossel-next { right: 22px; }
+    .carrossel-prev, .carrossel-next { display: none; }
+    .carrossel-dots { margin-top: 8px; }
     .detail-store-row .detail-label { font-size: 15px !important; }
     .detail-store-date { font-size: 12px; }
     .detail-share-inline { width: 40px; height: 40px; padding: 0; }
