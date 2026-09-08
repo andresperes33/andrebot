@@ -472,14 +472,6 @@ def sitemap_xml_view(request):
             "priority": "0.7",
         })
 
-    # Quadro de Eventos (conteúdo original indexável)
-    for evento in Evento.objects.filter(publicado=True):
-        pages.append({
-            "loc": f"{base_url}/eventos/{evento.slug}/",
-            "changefreq": "monthly",
-            "priority": "0.6",
-        })
-
     # Cada promo vira uma página individual indexável
     for promo in Promo.objects.all()[:500]:
         pages.append({
@@ -499,25 +491,3 @@ def sitemap_xml_view(request):
     xml.append('</urlset>')
     
     return HttpResponse("\n".join(xml), content_type="application/xml")
-
-
-def eventos_view(request):
-    """
-    Página do Quadro de Eventos — lista todos os eventos publicados.
-    """
-    eventos = Evento.objects.filter(publicado=True)
-    return render(request, 'bot/eventos.html', {
-        'eventos': eventos,
-    })
-
-
-def evento_detail_view(request, slug):
-    """
-    Página individual de um evento do Quadro.
-    """
-    evento = get_object_or_404(Evento, slug=slug, publicado=True)
-    outros = Evento.objects.filter(publicado=True).exclude(pk=evento.pk)[:4]
-    return render(request, 'bot/evento_detail.html', {
-        'evento': evento,
-        'outros': outros,
-    })
