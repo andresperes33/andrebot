@@ -235,23 +235,21 @@ button, input { font-family: inherit; }
 }
 .carrossel-track {
     display: flex;
-    gap: 40px;
     transition: transform .55s ease;
 }
 .carrossel-slide {
-    flex: 0 0 calc(100% - 40px);
+    flex: 0 0 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
     aspect-ratio: 1330 / 140;
-    border-radius: 14px;
-    overflow: hidden;
 }
-.carrossel-slide img,
-.carrossel-slide picture {
+.carrossel-slide picture,
+.carrossel-slide img {
     display: block;
     width: 100%;
     height: 100%;
-}
-.carrossel-slide img {
     object-fit: cover;
+    border-radius: 14px;
 }
 .carrossel-btn {
     position: absolute;

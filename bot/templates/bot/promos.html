@@ -197,8 +197,7 @@
         }
         function go(n) {
             idx = (n + slides) % slides;
-            var gap = parseFloat(getComputedStyle(track).gap) || 0;
-            var step = track.children[0].offsetWidth + gap;
+            var step = track.clientWidth;
             track.style.transform = 'translateX(' + (-idx * step) + 'px)';
             updateDots();
         }
@@ -236,8 +235,7 @@
         }, { passive: true });
 
         window.addEventListener('resize', function () {
-            var gap = parseFloat(getComputedStyle(track).gap) || 0;
-            var step = track.children[0].offsetWidth + gap;
+            var step = track.clientWidth;
             track.style.transform = 'translateX(' + (-idx * step) + 'px)';
         });
     })();
