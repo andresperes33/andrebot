@@ -1116,7 +1116,19 @@ body.menu-open { overflow: hidden; }
     display: flex;
     align-items: center;
     gap: 14px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+}
+.detail-store-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+.detail-store-info .detail-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .detail-store-date {
     font-size: 13px;
@@ -1125,6 +1137,7 @@ body.menu-open { overflow: hidden; }
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    white-space: nowrap;
 }
 .detail-share-btn {
     display: flex;
@@ -1148,7 +1161,8 @@ body.menu-open { overflow: hidden; }
     width: auto;
     height: 38px;
     padding: 0 18px;
-    margin: 0 0 0 auto;
+    margin: 0;
+    flex-shrink: 0;
 }
 
 .detail-layout {

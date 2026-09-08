@@ -76,8 +76,10 @@
     <div class="detail-info">
         <div class="card" style="text-align:left;">
             <div class="detail-store-row">
-                <p class="detail-label" style="font-size:16.8px;font-weight:700;color:#76B900;margin:0;display:flex;align-items:center;gap:8px;"><i class="fas fa-store"></i> {{ promo.loja|default:"Loja" }}</p>
-                <span class="detail-store-date"><i class="far fa-clock"></i> {{ promo.criado_em|date:"d/m \à\s H:i" }}</span>
+                <div class="detail-store-info">
+                    <p class="detail-label" style="font-size:16.8px;font-weight:700;color:#76B900;margin:0;display:flex;align-items:center;gap:8px;"><i class="fas fa-store"></i> {{ promo.loja|default:"Loja" }}</p>
+                    <span class="detail-store-date"><i class="far fa-clock"></i> {{ promo.criado_em|date:"d/m \à\s H:i" }}</span>
+                </div>
                 <button type="button" class="detail-share-btn detail-share-inline promo-card-share" aria-label="Compartilhar oferta"
                         data-share-url="{{ SITE_URL }}{% url 'promo_detail' promo.pk %}"
                         data-share-title="{{ promo.titulo|default:''|escapejs }}">
