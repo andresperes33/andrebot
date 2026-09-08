@@ -197,7 +197,8 @@
         }
         function go(n) {
             idx = (n + slides) % slides;
-            track.style.transform = 'translateX(' + (-idx * 100) + '%)';
+            var w = track.clientWidth;
+            track.style.transform = 'translateX(' + (-idx * w) + 'px)';
             updateDots();
         }
         function restart() {
@@ -232,6 +233,11 @@
             else if (delta > 40) { go(idx - 1); restart(); }
             startX = null;
         }, { passive: true });
+
+        window.addEventListener('resize', function () {
+            var w = track.clientWidth;
+            track.style.transform = 'translateX(' + (-idx * w) + 'px)';
+        });
     })();
     function copiarCupom(el, cupom) {
         navigator.clipboard.writeText(cupom).then(() => {
