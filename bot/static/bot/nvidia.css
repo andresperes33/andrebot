@@ -2002,7 +2002,7 @@ a.price-history-row:hover {
     .nav-burger { display: flex; }
     .utility-bar { display: none; }
     .carrossel { padding: 0 12px; margin-top: 12px; overflow: hidden; }
-    .carrossel-slide { aspect-ratio: 377 / 128; }
+    .carrossel-slide { aspect-ratio: 377 / 128; padding: 0 8px; box-sizing: border-box; }
     .carrossel-prev, .carrossel-next { display: none; }
     .carrossel-dots { margin-top: 8px; }
     .detail-store-row .detail-label { font-size: 15px !important; }
