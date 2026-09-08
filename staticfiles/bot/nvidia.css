@@ -244,10 +244,13 @@ button, input { font-family: inherit; }
     border-radius: 14px;
     overflow: hidden;
 }
-.carrossel-slide img {
+.carrossel-slide img,
+.carrossel-slide picture {
     display: block;
     width: 100%;
     height: 100%;
+}
+.carrossel-slide img {
     object-fit: cover;
 }
 .carrossel-btn {
