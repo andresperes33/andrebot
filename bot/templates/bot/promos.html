@@ -41,21 +41,6 @@
 
 {% block content %}
 
-<div class="hero-dark">
-    <span class="corner-square"></span>
-    <div class="hero-inner">
-        <span class="hero-eyebrow">Monitoramento em tempo real</span>
-        <h1 class="hero-title">Promoções de Tech</h1>
-        <p class="hero-sub">Eu reúno as melhores ofertas e trago pra você aqui no site, com foto, link e cupom. SSD, placa de vídeo, notebook e muito mais — 24 horas por dia. Você acompanha tudo de onde estiver.</p>
-        <div class="hero-actions">
-            <a href="#grid" class="btn btn-primary">Ver ofertas <i class="fas fa-arrow-down"></i></a>
-            {% if artigos_blog %}<a href="#blog" class="btn btn-primary">Ver Blog <i class="fas fa-arrow-down"></i></a>{% endif %}
-            <a href="#avisos" class="btn btn-primary">Ver Eventos <i class="fas fa-arrow-down"></i></a>
-        </div>
-        <div class="hero-tag"><i class="fas fa-circle-check"></i> Toda promo aqui tem foto, link e cupom</div>
-    </div>
-</div>
-
 <div id="resultado">
 <div class="stats">
     <span class="stats-count">{{ total }} oferta{{ total|pluralize:"s" }} encontrada{{ total|pluralize:"s" }}</span>
@@ -115,8 +100,6 @@
     </div>
 </section>
 {% endif %}
-
-{% include 'bot/_evento_destaque.html' %}
 
 {% if not categoria_ativa %}
 <section class="section" style="padding-top:32px;">
