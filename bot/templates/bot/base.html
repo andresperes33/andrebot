@@ -132,10 +132,9 @@
                 <a href="{% url 'nitroalerta' %}" class="mobile-link mobile-cta"><i class="fas fa-bell"></i> Nitro Alerta</a>
             </div>
         </div>
+        {% block menu_filters %}{% endblock %}
     </nav>
 </header>
-
-{% block menu_filters %}{% endblock %}
 
 <div class="qr-modal" id="qrModal" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="qr-modal-box">
