@@ -197,8 +197,9 @@
         }
         function go(n) {
             idx = (n + slides) % slides;
-            var w = track.clientWidth;
-            track.style.transform = 'translateX(' + (-idx * w) + 'px)';
+            var gap = parseFloat(getComputedStyle(track).gap) || 0;
+            var step = track.children[0].offsetWidth + gap;
+            track.style.transform = 'translateX(' + (-idx * step) + 'px)';
             updateDots();
         }
         function restart() {
@@ -235,8 +236,9 @@
         }, { passive: true });
 
         window.addEventListener('resize', function () {
-            var w = track.clientWidth;
-            track.style.transform = 'translateX(' + (-idx * w) + 'px)';
+            var gap = parseFloat(getComputedStyle(track).gap) || 0;
+            var step = track.children[0].offsetWidth + gap;
+            track.style.transform = 'translateX(' + (-idx * step) + 'px)';
         });
     })();
     function copiarCupom(el, cupom) {

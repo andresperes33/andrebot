@@ -235,10 +235,11 @@ button, input { font-family: inherit; }
 }
 .carrossel-track {
     display: flex;
+    gap: 20px;
     transition: transform .55s ease;
 }
 .carrossel-slide {
-    flex: 0 0 100%;
+    flex: 0 0 calc(100% - 20px);
     aspect-ratio: 1330 / 140;
     border-radius: 14px;
     overflow: hidden;
