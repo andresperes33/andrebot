@@ -1264,6 +1264,7 @@ body.menu-open { overflow: hidden; }
 .detail-text .btn {
     color: var(--on-primary);
     text-decoration: none;
+    border-radius: 999px;
 }
 /* Histórico de preços */
 .price-history { margin-top: 14px; }
