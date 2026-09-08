@@ -240,15 +240,14 @@ button, input { font-family: inherit; }
 .carrossel-slide {
     flex: 0 0 100%;
     aspect-ratio: 1330 / 140;
-    padding: 0 8px;
-    box-sizing: border-box;
+    border-radius: 14px;
+    overflow: hidden;
 }
 .carrossel-slide img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 14px;
 }
 .carrossel-btn {
     position: absolute;
