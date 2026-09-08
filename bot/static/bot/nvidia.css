@@ -2004,7 +2004,7 @@ a.price-history-row:hover {
     .nav-burger { display: flex; }
     .utility-bar { display: none; }
     .carrossel { padding: 0 14px; margin-top: 12px; }
-    .carrossel-slide { aspect-ratio: 4 / 1; }
+    .carrossel-slide { aspect-ratio: 377 / 128; }
     .carrossel-prev { left: 22px; }
     .carrossel-next { right: 22px; }
     .detail-store-row .detail-label { font-size: 15px !important; }

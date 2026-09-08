@@ -74,12 +74,15 @@
 
 {% block content %}
 
-{% if carrossel_imgs %}
+{% if carrossel_slides %}
 <div class="carrossel" id="carrossel">
     <div class="carrossel-track" id="carrosselTrack">
-        {% for img in carrossel_imgs %}
+        {% for desktop, mobile in carrossel_slides %}
         <div class="carrossel-slide">
-            <img src="{{ img }}" alt="Promoção Nitro Tech" loading="lazy">
+            <picture>
+                {% if mobile %}<source media="(max-width: 768px)" srcset="{{ mobile }}">{% endif %}
+                <img src="{{ desktop }}" alt="Promoção Nitro Tech" loading="lazy">
+            </picture>
         </div>
         {% endfor %}
     </div>

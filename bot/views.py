@@ -234,12 +234,19 @@ def promos_view(request):
 
     # Imagens do carrossel de banners (em static para ir junto no deploy)
     import os as _os
-    carrocel_dir = _os.path.join(settings.BASE_DIR, 'bot', 'static', 'bot', 'carrossel')
-    carrossel_imgs = []
-    if _os.path.isdir(carrocel_dir):
-        for nome in sorted(_os.listdir(carrocel_dir)):
-            if nome.lower().endswith(('.webp', '.jpg', '.jpeg', '.png')):
-                carrossel_imgs.append(f"{settings.STATIC_URL}bot/carrossel/{nome}")
+    def _imgs_da_pasta(pasta):
+        urls = []
+        if _os.path.isdir(pasta):
+            for nome in sorted(_os.listdir(pasta)):
+                if nome.lower().endswith(('.webp', '.jpg', '.jpeg', '.png')):
+                    urls.append(f"{settings.STATIC_URL}bot/{_os.path.basename(pasta)}/{nome}")
+        return urls
+    carrossel_imgs = _imgs_da_pasta(_os.path.join(settings.BASE_DIR, 'bot', 'static', 'bot', 'carrossel'))
+    carrossel_mobile_imgs = _imgs_da_pasta(_os.path.join(settings.BASE_DIR, 'bot', 'static', 'bot', 'carrossel-mobile'))
+    carrossel_slides = []
+    for i, desktop in enumerate(carrossel_imgs):
+        mobile = carrossel_mobile_imgs[i] if i < len(carrossel_mobile_imgs) else ''
+        carrossel_slides.append((desktop, mobile))
 
     return render(request, 'bot/promos.html', {
         'promos': pagina,
@@ -254,6 +261,8 @@ def promos_view(request):
         'tem_mais': tem_mais,
         'LIMITE': LIMITE,
         'carrossel_imgs': carrossel_imgs,
+        'carrossel_mobile_imgs': carrossel_mobile_imgs,
+        'carrossel_slides': carrossel_slides,
         'categorias_guia': categorias_guia,
         'artigos_blog': artigos_blog,
         'eventos_destaque': eventos_destaque,
