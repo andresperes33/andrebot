@@ -42,6 +42,8 @@ body {
     color: var(--body);
     background: var(--canvas);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 a { text-decoration: none; color: inherit; }
