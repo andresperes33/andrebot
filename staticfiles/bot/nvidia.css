@@ -1798,13 +1798,16 @@ a.price-history-row:hover {
     .nav-burger { display: flex; }
     .utility-bar { display: none; }
     .nav-inner { flex-wrap: wrap; gap: 8px 16px; padding: 10px 16px; height: auto; }
-    .brand { order: 1; }
+    .brand { order: 1; flex: 1 1 auto; min-width: 0; }
     .brand-name { font-size: 21px; }
     .brand-sub { font-size: 10px; }
-    .nav-burger { order: 2; margin-left: auto; }
+    .brand-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav-burger { order: 2; margin-left: auto; flex-shrink: 0; }
     .nav-search-form { order: 3; flex-basis: 100%; max-width: 100%; }
     .nav-icon-links { display: none; }
     .nav-filters { display: none; }
+    .mobile-menu { top: 0; }
+    .mobile-menu-inner { padding-top: 120px; }
     .nav-filters-inner { gap: 10px; padding: 10px 16px; }
     .nav-filters .filter-group { flex: 1 1 auto; min-width: 0; }
     .nav-filters .filter-select { width: 100%; }

@@ -123,21 +123,22 @@
                 <span class="burger-bar"></span>
             </button>
         </div>
-        <div class="mobile-menu" id="mobileMenu">
-            <div class="mobile-menu-inner">
-                {% block mobile_filters %}{% endblock %}
-                <div class="mobile-menu-label">Menu</div>
-                <a href="#" class="mobile-link" id="btnAppQrMobile"><i class="fas fa-mobile-alt"></i> Baixar o app</a>
-                <a href="/promos/" class="mobile-link {% block nav_promos_mobile %}active{% endblock %}"><i class="fas fa-store"></i> Promoções</a>
-                <a href="{% url 'blog' %}" class="mobile-link"><i class="fas fa-newspaper"></i> Blog</a>
-                <a href="{% url 'eventos' %}" class="mobile-link"><i class="fas fa-bolt"></i> Eventos</a>
-                <a href="{% url 'sobre' %}" class="mobile-link"><i class="fas fa-info-circle"></i> Sobre</a>
-                <a href="{% url 'contato' %}" class="mobile-link"><i class="fas fa-envelope"></i> Contato</a>
-                <a href="{% url 'nitroalerta' %}" class="mobile-link mobile-cta"><i class="fas fa-bell"></i> Nitro Alerta</a>
-            </div>
-        </div>
         {% block menu_filters %}{% endblock %}
 </nav>
+
+<div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-menu-inner">
+        {% block mobile_filters %}{% endblock %}
+        <div class="mobile-menu-label">Menu</div>
+        <a href="#" class="mobile-link" id="btnAppQrMobile"><i class="fas fa-mobile-alt"></i> Baixar o app</a>
+        <a href="/promos/" class="mobile-link {% block nav_promos_mobile %}active{% endblock %}"><i class="fas fa-store"></i> Promoções</a>
+        <a href="{% url 'blog' %}" class="mobile-link"><i class="fas fa-newspaper"></i> Blog</a>
+        <a href="{% url 'eventos' %}" class="mobile-link"><i class="fas fa-bolt"></i> Eventos</a>
+        <a href="{% url 'sobre' %}" class="mobile-link"><i class="fas fa-info-circle"></i> Sobre</a>
+        <a href="{% url 'contato' %}" class="mobile-link"><i class="fas fa-envelope"></i> Contato</a>
+        <a href="{% url 'nitroalerta' %}" class="mobile-link mobile-cta"><i class="fas fa-bell"></i> Nitro Alerta</a>
+    </div>
+</div>
 
 <div class="qr-modal" id="qrModal" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="qr-modal-box">
