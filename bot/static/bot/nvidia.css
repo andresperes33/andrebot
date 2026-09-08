@@ -811,7 +811,7 @@ body.menu-open { overflow: hidden; }
     color: var(--ash);
     background: var(--surface-soft);
 }
-.promo-card-thumb .card-badge { top: 10px; left: 10px; border-radius: 999px; }
+.promo-card-thumb .card-badge { top: 10px; left: 10px; border-radius: 999px; font-size: 11px; padding: 3px 8px; line-height: 1.3; }
 .promo-card .card-body { padding: 0; gap: 8px; }
 .promo-card .card-desc { font-size: 15px; }
 .promo-card .card-title { font-size: 16px; }
