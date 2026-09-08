@@ -3,7 +3,6 @@
 <div class="promo-card">
     <div class="promo-card-head">
         <div class="promo-card-store">
-            <span class="promo-card-cat">{{ promo.get_categoria_display }}</span>
             {% if promo.loja %}<span class="card-loja"><i class="fas fa-store"></i> {{ promo.loja }}</span>{% endif %}
             <span class="card-date">{{ promo.criado_em|date:"d/m \à\s H:i" }}</span>
         </div>
@@ -22,6 +21,7 @@
             {% else %}
                 <div class="no-img"><i class="fas fa-tag"></i></div>
             {% endif %}
+            <span class="badge-tag card-badge">{{ promo.get_categoria_display }}</span>
         </div>
         <div class="card-body">
             {% if promo.texto_original|card_text %}
