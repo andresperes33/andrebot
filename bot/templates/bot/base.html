@@ -89,23 +89,39 @@
         <div class="nav-inner">
             <a href="/promos/" class="brand">
                 <span class="brand-mark"></span>
-                <span class="brand-name">Nitro<strong>Tech</strong></span>
+                <span class="brand-text">
+                    <span class="brand-name">Nitro<strong>Tech</strong></span>
+                    <span class="brand-sub">Promoções</span>
+                </span>
             </a>
-            <div class="nav-links" id="navLinks">
-                <a href="/promos/" class="nav-link {% block nav_promos %}active{% endblock %}">Promoções</a>
-                <a href="{% url 'blog' %}" class="nav-link">Blog</a>
-                <a href="{% url 'eventos' %}" class="nav-link">Eventos</a>
-                <a href="{% url 'sobre' %}" class="nav-link">Sobre</a>
-                <a href="{% url 'contato' %}" class="nav-link">Contato</a>
+
+            <form class="nav-search-form" method="get" action="/promos/" role="search">
+                <i class="fas fa-search"></i>
+                {% if request.GET.periodo %}<input type="hidden" name="periodo" value="{{ request.GET.periodo }}">{% endif %}
+                {% if request.GET.cat %}<input type="hidden" name="cat" value="{{ request.GET.cat }}">{% endif %}
+                <input type="text" name="q" placeholder="Pesquisar oferta" value="{{ request.GET.q }}" aria-label="Pesquisar oferta" autocomplete="off">
+            </form>
+
+            <div class="nav-icon-links">
+                <a href="#" class="nav-icon-item" id="btnAppQr" aria-label="Baixar o app">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Baixar o app</span>
+                </a>
+                <a href="{% url 'nitroalerta' %}" class="nav-icon-item">
+                    <i class="fas fa-bell"></i>
+                    <span>Nitro Alerta</span>
+                </a>
+                <a href="{% url 'blog' %}" class="nav-icon-item">
+                    <i class="fas fa-newspaper"></i>
+                    <span>Blog</span>
+                </a>
             </div>
-            <div class="nav-actions">
-                <a href="{% url 'nitroalerta' %}" class="btn btn-primary btn-sm">Nitro Alerta <i class="fas fa-bell"></i></a>
-                <button type="button" class="nav-burger" id="navBurger" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobileMenu">
-                    <span class="burger-bar"></span>
-                    <span class="burger-bar"></span>
-                    <span class="burger-bar"></span>
-                </button>
-            </div>
+
+            <button type="button" class="nav-burger" id="navBurger" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobileMenu">
+                <span class="burger-bar"></span>
+                <span class="burger-bar"></span>
+                <span class="burger-bar"></span>
+            </button>
         </div>
         <div class="mobile-menu" id="mobileMenu">
             <div class="mobile-menu-inner">
@@ -119,6 +135,16 @@
         </div>
     </nav>
 </header>
+
+<div class="qr-modal" id="qrModal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="qr-modal-box">
+        <button type="button" class="qr-modal-close" id="qrModalClose" aria-label="Fechar">&times;</button>
+        <h3>Baixar o app Nitro Tech</h3>
+        <p class="qr-modal-sub">Aponte a câmera do celular para o QR code e instale o app.</p>
+        <img src="{% static 'bot/qr-app.png' %}" alt="QR code do app Nitro Tech" width="260" height="260">
+        <p class="qr-modal-hint">No celular: abra com a câmera e toque no link que aparecer.</p>
+    </div>
+</div>
 
 {% block breadcrumb %}{% endblock %}
 
@@ -228,6 +254,32 @@ if (toTopBtn) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 }
+// ─── Modal QR code (baixar o app) ──────────────────────────────
+(function () {
+    var btn = document.getElementById('btnAppQr');
+    var modal = document.getElementById('qrModal');
+    var fecharBtn = document.getElementById('qrModalClose');
+    if (!btn || !modal) return;
+    function abrir() {
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+    function fechar() {
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+    }
+    btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        abrir();
+    });
+    fecharBtn.addEventListener('click', fechar);
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) fechar();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') fechar();
+    });
+})();
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
         navigator.serviceWorker.register('{% static 'bot/sw.js' %}?v=2').catch(function (err) {

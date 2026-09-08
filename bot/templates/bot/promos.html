@@ -61,12 +61,6 @@
             </select>
         </div>
         {% endif %}
-        <form class="search-form" method="get" action="/promos/">
-            {% if periodo != 'hoje' %}<input type="hidden" name="periodo" value="{{ periodo }}">{% endif %}
-            {% if categoria_ativa %}<input type="hidden" name="cat" value="{{ categoria_ativa }}">{% endif %}
-            <input class="search-input" type="text" name="q" placeholder="Buscar promoção..." value="{{ q }}">
-            <button class="btn-search" type="submit" aria-label="Buscar"><i class="fas fa-search"></i></button>
-        </form>
     </div>
 </div>
 
@@ -252,7 +246,7 @@
             btn.disabled = false;
         });
 
-        const form = document.querySelector('.search-form');
+        const form = document.querySelector('.nav-search-form');
         if (form) {
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
