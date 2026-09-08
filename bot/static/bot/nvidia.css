@@ -2001,7 +2001,7 @@ a.price-history-row:hover {
 @media (max-width: 768px) {
     .nav-burger { display: flex; }
     .utility-bar { display: none; }
-    .carrossel { padding: 0; margin-top: 12px; overflow: hidden; }
+    .carrossel { padding: 0 12px; margin-top: 12px; overflow: hidden; }
     .carrossel-slide { aspect-ratio: 377 / 128; }
     .carrossel-prev, .carrossel-next { display: none; }
     .carrossel-dots { margin-top: 8px; }
