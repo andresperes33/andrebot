@@ -232,14 +232,14 @@ def promos_view(request):
     # Eventos em destaque (Quadro de Eventos) — publicados e com 'destaque' ativo
     eventos_destaque = list(Evento.objects.filter(publicado=True, destaque=True)[:3])
 
-    # Imagens do carrossel de banners (pasta media/carrocel)
+    # Imagens do carrossel de banners (em static para ir junto no deploy)
     import os as _os
-    carrocel_dir = _os.path.join(settings.MEDIA_ROOT, 'carrocel')
+    carrocel_dir = _os.path.join(settings.BASE_DIR, 'bot', 'static', 'bot', 'carrossel')
     carrossel_imgs = []
     if _os.path.isdir(carrocel_dir):
         for nome in sorted(_os.listdir(carrocel_dir)):
             if nome.lower().endswith(('.webp', '.jpg', '.jpeg', '.png')):
-                carrossel_imgs.append(f"{settings.MEDIA_URL}carrocel/{nome}")
+                carrossel_imgs.append(f"{settings.STATIC_URL}bot/carrossel/{nome}")
 
     return render(request, 'bot/promos.html', {
         'promos': pagina,
