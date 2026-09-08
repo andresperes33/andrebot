@@ -75,7 +75,7 @@
         textEl.innerHTML = msg.html;
         timeEl.textContent = msg.time;
         el.classList.add('show');
-        timer = setTimeout(hideNotification, 50000);
+        timer = setTimeout(hideNotification, 5000);
     }
 
     function hideNotification() {
@@ -88,7 +88,7 @@
         interval = setInterval(function () {
             hideNotification();
             setTimeout(showNotification, 600);
-        }, 51000);
+        }, 50000);
     }
 
     if (closeBtn) {
