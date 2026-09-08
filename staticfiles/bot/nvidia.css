@@ -398,6 +398,44 @@ button, input { font-family: inherit; }
 }
 .mobile-cta i { color: var(--on-primary); }
 .mobile-cta:hover { background: var(--primary-dark); }
+.mobile-menu-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+    margin: 10px 16px 4px;
+}
+.mobile-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 16px;
+}
+.mobile-filter-group span {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--on-dark-mute);
+}
+.mobile-filter-group select {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    background: #161616;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 10px;
+    color: var(--on-dark);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%2376b900' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+.mobile-filter-group select:focus { outline: none; border-color: var(--primary); }
+.mobile-filter-group select option { background: #161616; color: #ffffff; }
 body.menu-open { overflow: hidden; }
 
 
@@ -1766,6 +1804,7 @@ a.price-history-row:hover {
     .nav-burger { order: 2; margin-left: auto; }
     .nav-search-form { order: 3; flex-basis: 100%; max-width: 100%; }
     .nav-icon-links { display: none; }
+    .nav-filters { display: none; }
     .nav-filters-inner { gap: 10px; padding: 10px 16px; }
     .nav-filters .filter-group { flex: 1 1 auto; min-width: 0; }
     .nav-filters .filter-select { width: 100%; }

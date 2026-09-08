@@ -39,6 +39,39 @@
 </div>
 {% endblock %}
 
+{% block mobile_filters %}
+<div class="mobile-menu-label">Filtros</div>
+<div class="mobile-filter-group">
+    <span>Período</span>
+    <select id="m-filtro-periodo" class="filter-select">
+        <option value="hoje" {% if periodo == 'hoje' %}selected{% endif %}>Hoje</option>
+        <option value="semana" {% if periodo == 'semana' %}selected{% endif %}>Esta Semana</option>
+        <option value="mes" {% if periodo == 'mes' %}selected{% endif %}>Este Mês</option>
+        <option value="tudo" {% if periodo == 'tudo' %}selected{% endif %}>Tudo</option>
+    </select>
+</div>
+<div class="mobile-filter-group">
+    <span>Categoria</span>
+    <select id="m-filtro-categoria" class="filter-select">
+        <option value="" {% if not categoria_ativa %}selected{% endif %}>Todas</option>
+        {% for slug, nome in categorias %}
+        <option value="{{ slug }}" {% if categoria_ativa == slug %}selected{% endif %}>{{ nome }}</option>
+        {% endfor %}
+    </select>
+</div>
+{% if lojas %}
+<div class="mobile-filter-group">
+    <span>Loja</span>
+    <select id="m-filtro-loja" class="filter-select">
+        <option value="" {% if not loja_ativa %}selected{% endif %}>Todas</option>
+        {% for lojanome in lojas %}
+        <option value="{{ lojanome }}" {% if loja_ativa == lojanome %}selected{% endif %}>{{ lojanome }}</option>
+        {% endfor %}
+    </select>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 
 <div id="resultado">
@@ -179,9 +212,11 @@
         // ─── Dropdowns (período/categoria/loja): recarrega ao mudar ───
         document.addEventListener('change', function (e) {
             if (!e.target || !e.target.classList || !e.target.classList.contains('filter-select')) return;
-            const periodo = document.getElementById('filtro-periodo');
-            const cat = document.getElementById('filtro-categoria');
-            const loja = document.getElementById('filtro-loja');
+            const noMobile = !!e.target.closest('.mobile-menu');
+            const p = noMobile ? 'm-' : '';
+            const periodo = document.getElementById(p + 'filtro-periodo');
+            const cat = document.getElementById(p + 'filtro-categoria');
+            const loja = document.getElementById(p + 'filtro-loja');
             const params = new URLSearchParams(window.location.search);
             params.set('periodo', periodo ? periodo.value : 'hoje');
             if (cat && cat.value) { params.set('cat', cat.value); } else { params.delete('cat'); }
