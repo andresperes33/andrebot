@@ -1765,8 +1765,7 @@ a.price-history-row:hover {
     .brand-sub { font-size: 10px; }
     .nav-burger { order: 2; margin-left: auto; }
     .nav-search-form { order: 3; flex-basis: 100%; max-width: 100%; }
-    .nav-icon-links { order: 4; flex-basis: 100%; justify-content: space-around; padding: 2px 0 4px; }
-    .nav-icon-item { font-size: 11px; }
+    .nav-icon-links { display: none; }
     .nav-filters-inner { gap: 10px; padding: 10px 16px; }
     .nav-filters .filter-group { flex: 1 1 auto; min-width: 0; }
     .nav-filters .filter-select { width: 100%; }
