@@ -231,15 +231,19 @@ button, input { font-family: inherit; }
     margin: 20px auto 0;
     padding: 0 24px;
     border-radius: 16px;
-    overflow: hidden;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
 }
+.carrossel::-webkit-scrollbar { display: none; }
 .carrossel-track {
     display: flex;
-    transition: transform .55s ease;
+    gap: 16px;
 }
 .carrossel-slide {
-    flex: 0 0 100%;
-    padding: 0;
+    flex: 0 0 calc(100% - 16px);
+    scroll-snap-align: start;
     aspect-ratio: 1330 / 140;
 }
 .carrossel-slide picture,
