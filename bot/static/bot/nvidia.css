@@ -224,6 +224,74 @@ button, input { font-family: inherit; }
 .nav-icon-item i { font-size: 18px; color: var(--primary); }
 .nav-icon-item:hover { background: rgba(118,185,0,0.12); color: var(--primary); }
 
+/* ─── Carrossel de banners ───────────────────────────────────── */
+.carrossel {
+    position: relative;
+    max-width: var(--container);
+    margin: 20px auto 0;
+    padding: 0 24px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+.carrossel-track {
+    display: flex;
+    transition: transform .55s ease;
+}
+.carrossel-slide {
+    flex: 0 0 100%;
+    aspect-ratio: 1330 / 140;
+    border-radius: 16px;
+    overflow: hidden;
+}
+.carrossel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.carrossel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+    color: #ffffff;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: background .2s;
+}
+.carrossel-btn:hover { background: var(--primary); color: var(--on-primary); }
+.carrossel-prev { left: 34px; }
+.carrossel-next { right: 34px; }
+.carrossel-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    z-index: 2;
+}
+.carrossel-dot {
+    width: 9px;
+    height: 9px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 0;
+    transition: background .2s, transform .2s;
+}
+.carrossel-dot.active { background: var(--primary); transform: scale(1.2); }
+
 /* ─── Filtros integrados ao menu ─────────────────────────────── */
 .nav-filters {
     border-top: 1px solid rgba(255, 255, 255, 0.08);

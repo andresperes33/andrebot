@@ -74,6 +74,21 @@
 
 {% block content %}
 
+{% if carrossel_imgs %}
+<div class="carrossel" id="carrossel">
+    <div class="carrossel-track" id="carrosselTrack">
+        {% for img in carrossel_imgs %}
+        <div class="carrossel-slide">
+            <img src="{{ img }}" alt="Promoção Nitro Tech" loading="lazy">
+        </div>
+        {% endfor %}
+    </div>
+    <button type="button" class="carrossel-btn carrossel-prev" aria-label="Slide anterior"><i class="fas fa-chevron-left"></i></button>
+    <button type="button" class="carrossel-btn carrossel-next" aria-label="Próximo slide"><i class="fas fa-chevron-right"></i></button>
+    <div class="carrossel-dots" id="carrosselDots"></div>
+</div>
+{% endif %}
+
 <div id="resultado">
 <div class="stats">
     <span class="stats-count">{{ total }} oferta{{ total|pluralize:"s" }} encontrada{{ total|pluralize:"s" }}</span>
@@ -159,6 +174,49 @@
 
 {% block scripts %}
 <script>
+    // ─── Carrossel de banners ───
+    (function () {
+        var track = document.getElementById('carrosselTrack');
+        if (!track) return;
+        var slides = track.children.length;
+        if (slides < 2) return;
+        var dotsWrap = document.getElementById('carrosselDots');
+        var prev = document.querySelector('.carrossel-prev');
+        var next = document.querySelector('.carrossel-next');
+        var idx = 0;
+        var timer = null;
+
+        function updateDots() {
+            var dots = dotsWrap.children;
+            for (var i = 0; i < dots.length; i++) {
+                dots[i].classList.toggle('active', i === idx);
+            }
+        }
+        function go(n) {
+            idx = (n + slides) % slides;
+            track.style.transform = 'translateX(' + (-idx * 100) + '%)';
+            updateDots();
+        }
+        function restart() {
+            if (timer) clearInterval(timer);
+            timer = setInterval(function () { go(idx + 1); }, 5000);
+        }
+        for (var i = 0; i < slides; i++) {
+            (function (i) {
+                var d = document.createElement('button');
+                d.className = 'carrossel-dot' + (i === 0 ? ' active' : '');
+                d.setAttribute('aria-label', 'Ir para o banner ' + (i + 1));
+                d.addEventListener('click', function () { go(i); restart(); });
+                dotsWrap.appendChild(d);
+            })(i);
+        }
+        prev.addEventListener('click', function () { go(idx - 1); restart(); });
+        next.addEventListener('click', function () { go(idx + 1); restart(); });
+        restart();
+        var carrossel = document.getElementById('carrossel');
+        carrossel.addEventListener('mouseenter', function () { if (timer) clearInterval(timer); });
+        carrossel.addEventListener('mouseleave', restart);
+    })();
     function copiarCupom(el, cupom) {
         navigator.clipboard.writeText(cupom).then(() => {
             el.classList.remove('fa-copy');

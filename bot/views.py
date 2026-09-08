@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.db import models as _db_models
+from django.conf import settings
 from datetime import timedelta
 from .models import Promo, Artigo, Evento
 
@@ -231,6 +232,15 @@ def promos_view(request):
     # Eventos em destaque (Quadro de Eventos) — publicados e com 'destaque' ativo
     eventos_destaque = list(Evento.objects.filter(publicado=True, destaque=True)[:3])
 
+    # Imagens do carrossel de banners (pasta media/carrocel)
+    import os as _os
+    carrocel_dir = _os.path.join(settings.MEDIA_ROOT, 'carrocel')
+    carrossel_imgs = []
+    if _os.path.isdir(carrocel_dir):
+        for nome in sorted(_os.listdir(carrocel_dir)):
+            if nome.lower().endswith(('.webp', '.jpg', '.jpeg', '.png')):
+                carrossel_imgs.append(f"{settings.MEDIA_URL}carrocel/{nome}")
+
     return render(request, 'bot/promos.html', {
         'promos': pagina,
         'periodo': periodo,
@@ -243,6 +253,7 @@ def promos_view(request):
         'offset': offset,
         'tem_mais': tem_mais,
         'LIMITE': LIMITE,
+        'carrossel_imgs': carrossel_imgs,
         'categorias_guia': categorias_guia,
         'artigos_blog': artigos_blog,
         'eventos_destaque': eventos_destaque,
