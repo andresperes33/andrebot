@@ -128,7 +128,6 @@
 
 <div class="mobile-menu" id="mobileMenu">
     <div class="mobile-menu-inner">
-        {% block mobile_filters %}{% endblock %}
         <div class="mobile-menu-label">Menu</div>
         <a href="#" class="mobile-link" id="btnAppQrMobile"><i class="fas fa-mobile-alt"></i> Baixar o app</a>
         <a href="/promos/" class="mobile-link {% block nav_promos_mobile %}active{% endblock %}"><i class="fas fa-store"></i> Promoções</a>
@@ -137,6 +136,7 @@
         <a href="{% url 'sobre' %}" class="mobile-link"><i class="fas fa-info-circle"></i> Sobre</a>
         <a href="{% url 'contato' %}" class="mobile-link"><i class="fas fa-envelope"></i> Contato</a>
         <a href="{% url 'nitroalerta' %}" class="mobile-link mobile-cta"><i class="fas fa-bell"></i> Nitro Alerta</a>
+        {% block mobile_filters %}{% endblock %}
     </div>
 </div>
 
@@ -144,9 +144,9 @@
     <div class="qr-modal-box">
         <button type="button" class="qr-modal-close" id="qrModalClose" aria-label="Fechar">&times;</button>
         <h3>Baixar o app Nitro Tech</h3>
-        <p class="qr-modal-sub">Aponte a câmera do celular para o QR code e instale o app.</p>
-        <img src="{% static 'bot/qr-app.png' %}" alt="QR code do app Nitro Tech" width="260" height="260">
-        <p class="qr-modal-hint">No celular: abra com a câmera e toque no link que aparecer.</p>
+        <p class="qr-modal-sub">Instale o app no seu celular e receba as ofertas em um toque.</p>
+        <button type="button" class="btn btn-primary qr-install-btn" id="btnInstalarApp"><i class="fas fa-download"></i> Baixar agora</button>
+        <p class="qr-modal-hint" id="qrInstallHint">No iPhone/iPad: toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong>.</p>
     </div>
 </div>
 
@@ -258,15 +258,26 @@ if (toTopBtn) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 }
-// ─── Modal QR code (baixar o app) ──────────────────────────────
+// ─── Modal QR/Instalar app (baixar o app) ──────────────────────
 (function () {
     var botoes = document.querySelectorAll('#btnAppQr, #btnAppQrMobile');
     var modal = document.getElementById('qrModal');
     var fecharBtn = document.getElementById('qrModalClose');
+    var btnInstalar = document.getElementById('btnInstalarApp');
+    var hint = document.getElementById('qrInstallHint');
     if (!modal) return;
+
+    var installPrompt = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        installPrompt = e;
+    });
+    if (hint) hint.style.display = 'none';
+
     function abrir() {
         modal.classList.add('open');
         modal.setAttribute('aria-hidden', 'false');
+        if (installPrompt && hint) hint.style.display = 'none';
     }
     function fechar() {
         modal.classList.remove('open');
@@ -278,6 +289,16 @@ if (toTopBtn) {
             abrir();
         });
     });
+    if (btnInstalar) {
+        btnInstalar.addEventListener('click', function () {
+            if (installPrompt) {
+                installPrompt.prompt();
+                installPrompt.userChoice.then(function () { installPrompt = null; });
+            } else if (hint) {
+                hint.style.display = 'block';
+            }
+        });
+    }
     fecharBtn.addEventListener('click', fechar);
     modal.addEventListener('click', function (e) {
         if (e.target === modal) fechar();
