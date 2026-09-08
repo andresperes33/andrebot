@@ -1143,6 +1143,12 @@ body.menu-open { overflow: hidden; }
     transition: background .2s, color .2s;
 }
 .detail-share-btn:hover { background: var(--primary); color: var(--on-primary); }
+.detail-share-inline {
+    width: auto;
+    height: 38px;
+    padding: 0 18px;
+    margin: 0 0 0 auto;
+}
 
 .detail-layout {
     max-width: var(--container);
