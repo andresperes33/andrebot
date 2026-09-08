@@ -981,6 +981,7 @@ body.menu-open { overflow: hidden; }
 }
 #btn-ver-mais {
     min-width: 240px;
+    border-radius: 999px;
 }
 #btn-ver-mais:disabled {
     opacity: 0.7;
