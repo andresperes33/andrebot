@@ -81,7 +81,7 @@
                 <button type="button" class="detail-share-btn detail-share-inline promo-card-share" aria-label="Compartilhar oferta"
                         data-share-url="{{ SITE_URL }}{% url 'promo_detail' promo.pk %}"
                         data-share-title="{{ promo.titulo|default:''|escapejs }}">
-                    <i class="fas fa-share-alt"></i> Compartilhar
+                    <i class="fas fa-share-alt"></i> <span class="detail-share-label">Compartilhar</span>
                 </button>
             </div>
         </div>

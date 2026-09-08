@@ -1919,6 +1919,10 @@ a.price-history-row:hover {
 @media (max-width: 768px) {
     .nav-burger { display: flex; }
     .utility-bar { display: none; }
+    .detail-store-row .detail-label { font-size: 15px !important; }
+    .detail-store-date { font-size: 12px; }
+    .detail-share-inline { width: 40px; height: 40px; padding: 0; }
+    .detail-share-label { display: none; }
     .nav-inner { flex-wrap: wrap; gap: 8px 16px; padding: 10px 16px; height: auto; }
     .brand { order: 1; flex: 1 1 auto; min-width: 0; }
     .brand-name { font-size: 21px; }
