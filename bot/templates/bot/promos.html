@@ -243,6 +243,19 @@
         restart();
         carrossel.addEventListener('mouseenter', function () { if (timer) clearInterval(timer); });
         carrossel.addEventListener('mouseleave', restart);
+
+        // Somente no mobile: garante que cada banner use a imagem mobile
+        function aplicarImagemMobile() {
+            if (window.innerWidth > 768) return;
+            for (var i = 0; i < slides; i++) {
+                var s = track.children[i];
+                var srcEl = s.querySelector('source');
+                var img = s.querySelector('img');
+                if (srcEl && img) img.src = srcEl.getAttribute('srcset');
+            }
+        }
+        aplicarImagemMobile();
+        window.addEventListener('resize', aplicarImagemMobile);
     })();
     function copiarCupom(el, cupom) {
         navigator.clipboard.writeText(cupom).then(() => {
