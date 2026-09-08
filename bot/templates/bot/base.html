@@ -240,19 +240,33 @@ if ('serviceWorker' in navigator) {
 (function () {
     var burger = document.getElementById('navBurger');
     var menu = document.getElementById('mobileMenu');
+    var banner = document.getElementById('channelsBanner');
     if (!burger || !menu) return;
+
+    function sincronizarBanner(aberto) {
+        if (!banner) return;
+        if (aberto) {
+            banner.classList.add('hidden');
+        } else if (window.scrollY > 60) {
+            banner.classList.add('hidden');
+        } else {
+            banner.classList.remove('hidden');
+        }
+    }
 
     function fechar() {
         burger.classList.remove('open');
         burger.setAttribute('aria-expanded', 'false');
         menu.classList.remove('open');
         document.body.classList.remove('menu-open');
+        sincronizarBanner(false);
     }
     burger.addEventListener('click', function () {
         var aberto = menu.classList.toggle('open');
         burger.classList.toggle('open', aberto);
         burger.setAttribute('aria-expanded', aberto ? 'true' : 'false');
         document.body.classList.toggle('menu-open', aberto);
+        sincronizarBanner(aberto);
     });
     // Fecha ao tocar em um link do menu
     menu.querySelectorAll('.mobile-link').forEach(function (link) {
