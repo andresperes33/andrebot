@@ -63,6 +63,19 @@
 </head>
 <body>
 
+<div class="channels-banner" id="channelsBanner">
+    <a class="channels-banner-half channels-whatsapp" href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" rel="noopener">
+        <i class="fab fa-whatsapp"></i>
+        <span class="channels-banner-text"><span class="banner-extra">Entre no grupo do </span>WhatsApp</span>
+        <span class="channels-banner-go"><i class="fas fa-arrow-right"></i></span>
+    </a>
+    <a class="channels-banner-half channels-telegram" href="https://t.me/Nitro_Tech_1" target="_blank" rel="noopener">
+        <i class="fab fa-telegram-plane"></i>
+        <span class="channels-banner-text"><span class="banner-extra">Entre no canal do </span>Telegram</span>
+        <span class="channels-banner-go"><i class="fas fa-arrow-right"></i></span>
+    </a>
+</div>
+
 <header>
     <div class="utility-bar">
         <div class="utility-bar-inner">
@@ -186,6 +199,22 @@
 <script src="{% static 'bot/social-proof.js' %}"></script>
 <script src="{% static 'bot/cookies.js' %}"></script>
 <script>
+// ─── Banner topo (WhatsApp/Telegram): some ao rolar pra baixo ───
+(function () {
+    var banner = document.getElementById('channelsBanner');
+    if (!banner) return;
+    var lastY = window.scrollY;
+    var limite = 60;
+    window.addEventListener('scroll', function () {
+        var y = window.scrollY;
+        if (y > limite && y > lastY) {
+            banner.classList.add('hidden');
+        } else if (y <= limite || y < lastY) {
+            banner.classList.remove('hidden');
+        }
+        lastY = y;
+    }, { passive: true });
+})();
 var toTopBtn = document.getElementById('toTopBtn');
 if (toTopBtn) {
     window.addEventListener('scroll', function () {

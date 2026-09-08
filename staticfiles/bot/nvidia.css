@@ -55,6 +55,78 @@ button, input { font-family: inherit; }
     padding: 0 24px;
 }
 
+/* ─── Banner topo WhatsApp/Telegram (some ao rolar) ──────────── */
+.channels-banner {
+    display: flex;
+    position: relative;
+    z-index: 60;
+    max-height: 64px;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.35s ease;
+}
+.channels-banner.hidden { max-height: 0; opacity: 0; }
+.channels-banner-half {
+    flex: 1 1 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 14px 20px;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.25;
+    transition: filter 0.15s;
+}
+.channels-banner-half:hover { filter: brightness(1.1); }
+.channels-banner-half i.fab { font-size: 24px; }
+.channels-banner-go i { font-size: 14px; }
+.channels-whatsapp { background: #25d366; }
+.channels-whatsapp .channels-banner-go,
+.channels-telegram .channels-banner-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.9;
+}
+.channels-telegram { background: #229ed9; }
+
+/* ─── Banner topo WhatsApp/Telegram (some ao rolar) ──────────── */
+.channels-banner {
+    display: flex;
+    position: relative;
+    z-index: 60;
+    max-height: 64px;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.35s ease;
+}
+.channels-banner.hidden { max-height: 0; opacity: 0; }
+.channels-banner-half {
+    flex: 1 1 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 14px 20px;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.25;
+    transition: filter 0.15s;
+}
+.channels-banner-half:hover { filter: brightness(1.1); }
+.channels-banner-half i.fab { font-size: 24px; }
+.channels-banner-go i { font-size: 14px; }
+.channels-whatsapp { background: #25d366; }
+.channels-whatsapp .channels-banner-go,
+.channels-telegram .channels-banner-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.9;
+}
+.channels-telegram { background: #229ed9; }
+
 /* ─── Utility Bar (dark, 32px) ───────────────────────────────── */
 .utility-bar {
     background: var(--surface-dark);
@@ -1607,6 +1679,10 @@ a.price-history-row:hover {
     .detail-actions { align-items: center; }
     .detail-cta { text-align: center; }
     .hero-actions .btn, .detail-actions .btn { width: 100%; }
+    .channels-banner-half { gap: 8px; padding: 12px 10px; font-size: 14px; }
+    .channels-banner-half i.fab { font-size: 20px; }
+    .channels-banner-text .banner-extra { display: none; }
+    .channels-banner-go { display: none; }
 }
 
 /* ─── Social Proof Popup ─── */
