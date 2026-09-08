@@ -1,27 +1,39 @@
 {% load urlize_blank %}
 {% for promo in promos %}
-<a href="{% url 'promo_detail' promo.pk %}" class="card" style="color:inherit;">
-    <span class="corner-square"></span>
-    <div class="card-thumb">
-        {% if promo.imagem_url %}
-            <img src="{{ promo.imagem_url }}" alt="{{ promo.titulo }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <div class="no-img" style="display:none"><i class="fas fa-tag"></i></div>
-        {% else %}
-            <div class="no-img"><i class="fas fa-tag"></i></div>
-        {% endif %}
-        <span class="badge-tag card-badge">{{ promo.get_categoria_display }}</span>
-    </div>
-    <div class="card-body">
-        {% if promo.texto_original|card_text %}
-        <div class="card-desc">{{ promo.texto_original|card_text|truncatechars:500|preco_completo|destacar_valores }}</div>
-        {% else %}
-        <h3 class="card-title">{{ promo.titulo }}</h3>
-        {% endif %}
-        <div class="card-footer">
+<div class="promo-card">
+    <div class="promo-card-head">
+        <div class="promo-card-store">
             {% if promo.loja %}<span class="card-loja"><i class="fas fa-store"></i> {{ promo.loja }}</span>{% endif %}
             <span class="card-date">{{ promo.criado_em|date:"d/m \à\s H:i" }}</span>
         </div>
-        <span class="card-cta">Ver oferta <i class="fas fa-arrow-right"></i></span>
+        <button type="button" class="promo-card-share" aria-label="Compartilhar oferta"
+                data-share-url="{{ SITE_URL }}{% url 'promo_detail' promo.pk %}"
+                data-share-title="{{ promo.titulo|default:''|escapejs }}">
+            <i class="fas fa-share-alt"></i>
+        </button>
     </div>
-</a>
+
+    <a href="{% url 'promo_detail' promo.pk %}" class="promo-card-link">
+        <div class="promo-card-thumb">
+            {% if promo.imagem_url %}
+                <img src="{{ promo.imagem_url }}" alt="{{ promo.titulo }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <div class="no-img" style="display:none"><i class="fas fa-tag"></i></div>
+            {% else %}
+                <div class="no-img"><i class="fas fa-tag"></i></div>
+            {% endif %}
+            <span class="badge-tag card-badge">{{ promo.get_categoria_display }}</span>
+        </div>
+        <div class="card-body">
+            {% if promo.texto_original|card_text %}
+            <div class="card-desc">{{ promo.texto_original|card_text|truncatechars:500|preco_completo|destacar_valores }}</div>
+            {% else %}
+            <h3 class="card-title">{{ promo.titulo }}</h3>
+            {% endif %}
+        </div>
+    </a>
+
+    <div class="promo-card-actions">
+        <a href="{% url 'promo_detail' promo.pk %}" class="card-cta">Ver oferta <i class="fas fa-arrow-right"></i></a>
+    </div>
+</div>
 {% endfor %}

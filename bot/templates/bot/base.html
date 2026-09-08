@@ -305,6 +305,27 @@ if (toTopBtn) {
         if (e.key === 'Escape') fechar();
     });
 })();
+// ─── Compartilhar card de produto ──────────────────────────────
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.promo-card-share');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var url = btn.getAttribute('data-share-url');
+    var titulo = btn.getAttribute('data-share-title') || 'Nitro Tech';
+    if (navigator.share) {
+        navigator.share({ title: titulo, url: url }).catch(function () {});
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function () {
+            var toast = document.getElementById('toast');
+            if (toast) {
+                toast.textContent = 'Link copiado!';
+                toast.classList.add('show');
+                setTimeout(function () { toast.classList.remove('show'); }, 2000);
+            }
+        });
+    }
+});
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
         navigator.serviceWorker.register('{% static 'bot/sw.js' %}?v=2').catch(function (err) {
