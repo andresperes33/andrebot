@@ -239,7 +239,7 @@ button, input { font-family: inherit; }
 }
 .carrossel-slide {
     flex: 0 0 100%;
-    padding: 0 20px;
+    padding: 0 25px;
     box-sizing: border-box;
     aspect-ratio: 1330 / 140;
 }
