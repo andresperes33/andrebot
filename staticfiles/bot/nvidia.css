@@ -765,6 +765,18 @@ body.menu-open { overflow: hidden; }
     flex-wrap: wrap;
     min-width: 0;
 }
+.promo-card-cat {
+    display: inline-block;
+    background: rgba(118, 185, 0, 0.12);
+    color: var(--primary-dark);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
 .promo-card-store .card-loja {
     color: var(--primary);
     font-weight: 700;
@@ -816,7 +828,7 @@ body.menu-open { overflow: hidden; }
 .promo-card .card-desc { font-size: 15px; }
 .promo-card .card-title { font-size: 16px; }
 .promo-card-actions { margin-top: auto; }
-.promo-card-actions .card-cta { margin-top: 0; }
+.promo-card-actions .card-cta { margin-top: 0; border-radius: 999px; }
 
 /* ─── Product card ───────────────────────────────────────────── */
 .card {
