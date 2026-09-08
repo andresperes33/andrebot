@@ -577,6 +577,30 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:notebook|laptop|macbook|ultrabook|chromebook|galaxy\s*book)\b', alvo_norm):
             return 'notebook'
 
+    # CONSOLE tem prioridade sobre 'oled'/'qled' da TV: 'Nintendo Switch
+    # Console OLED 64gb' é um CONSOLE, não uma TV, mesmo com 'OLED' no título.
+    # Ignora acessórios ('controle/fone/headset para PS5', 'capa Xbox').
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:headset|headphone|fone\b|fones\b|auricular|earbuds?)\b', alvo_norm):
+            continue  # fone/headset para console não é console (é acessório de áudio)
+        eh_console = re.search(
+            r'(?:\bnintendo\s*switch\b'
+            r'|\bnintendo\b(?!\s*(?:para|compat[ií]vel|fone|controle|acess[oó]rio))'
+            r'|\bswitch\b(?=\s*(?:nintendo|oled|lite|2\b|\d|joy|v2))'
+            r'|\bplaystation\b(?!\s*(?:para|compat[ií]vel|fone|headset|controle|acess[oó]rio|computador|pc\b))'
+            r'|\bxbox\b(?!\s*(?:para|fone|controle|headset|acess[oó]rio|series\s*[sx]\s*compat))'
+            r'|\bsteam\s*deck\b|\bok\s*1\b|\banbernic\b|\bhandheld\b|\bconsole\b'
+            r'|\bps[0-9]\b(?!ps[0-9]|,[^.\n]*ps[0-9]|[^.\n]*\b(?:para|compat[ií]vel|fone|headset|controle|ssd|disco|jogo|acess[oó]rio)\b))',
+            alvo_norm,
+        )
+        if eh_console:
+            return 'console'
+
     # TV tem prioridade sobre 'jogo'/'sports'/'controle'/'processador' citados:
     # 'Smart TV ... Modo Jogo Pro', 'TV ... Modo Esportes', 'Smart TV ...
     # Controle AI Magic', 'TV ... Processador a7' — tudo é atributo da TV.
