@@ -79,10 +79,8 @@
     <div class="carrossel-track" id="carrosselTrack">
         {% for desktop, mobile in carrossel_slides %}
         <div class="carrossel-slide">
-            <picture>
-                {% if mobile %}<source media="(max-width: 768px)" srcset="{{ mobile }}">{% endif %}
-                <img src="{{ desktop }}" alt="Promoção Nitro Tech" loading="lazy">
-            </picture>
+            <img class="carrossel-desktop" src="{{ desktop }}" alt="Promoção Nitro Tech" loading="lazy">
+            {% if mobile %}<img class="carrossel-mobile" src="{{ mobile }}" alt="Promoção Nitro Tech" loading="lazy">{% endif %}
         </div>
         {% endfor %}
     </div>
