@@ -8,8 +8,8 @@ def reclassificar_roteador(apps, schema_editor):
     for p in Promo.objects.exclude(categoria='roteador').iterator():
         titulo = (p.titulo or '').lower()
         texto = (p.texto_original or '').lower()
-        if re.search(r'\b(?:roteador|router|wifi|wi-?fi|mesh|2\.4\s*ghz|5\s*ghz|ax\d|ac\d|wifi\s*6)\b', titulo) or \
-           re.search(r'\b(?:roteador|router|wifi|wi-?fi|mesh|2\.4\s*ghz|5\s*ghz|ax\d|ac\d|wifi\s*6)\b', texto):
+        if re.search(r'\b(?:roteador|router)\b', titulo) or \
+           re.search(r'\b(?:roteador|router)\b', texto):
             p.categoria = 'roteador'
             p.save(update_fields=['categoria'])
             alteradas += 1
