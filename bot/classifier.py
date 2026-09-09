@@ -310,6 +310,17 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:fonte|psu)\b', alvo_norm):
             return 'fonte'
 
+    # Roteador tem prioridade — 'Roteador ... Controle Parental' é um
+    # ROTEADOR; 'controle parental' é uma feature, não um gamepad.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:roteador|router|wifi|wi-?fi|mesh|2\.4\s*ghz|5\s*ghz|ax\d|ac\d|wifi\s*6)\b', alvo_norm):
+            return 'roteador'
+
     # Controle/gamepad tem prioridade — 'Controle GameSir ... iPhone/Android'
     # é um controle para celular, não um celular. Mas se o anúncio é de uma TV
     # ('Smart TV ... Controle AI Magic'), o 'controle' é o controle remoto
