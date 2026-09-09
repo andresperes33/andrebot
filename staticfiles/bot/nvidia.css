@@ -812,10 +812,9 @@ body.menu-open { overflow: hidden; }
     flex-direction: column;
     padding: 14px;
     gap: 12px;
-    transition: transform .2s ease, box-shadow .2s ease;
+    transition: box-shadow .2s ease;
 }
 .promo-card:hover {
-    transform: translateY(-4px);
     box-shadow: 0 20px 38px rgba(118, 185, 0, 0.18);
 }
 .promo-card-head {
