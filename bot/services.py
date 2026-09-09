@@ -713,7 +713,7 @@ _TERMOS_PRODUTO = [
     'processador', 'ryzen', 'monitor', 'notebook', 'headset', 'fone', 'teclado',
     'mouse', 'gabinete', 'fonte', 'memoria', 'ram', 'placa mae', 'caixa de som',
     'soundbar', 'microfone', 'webcam', 'controle', 'jogo', 'gta', 'tv', 'celular',
-    'smartphone', 'cadeira', 'impressora', 'roteador', 'console', 'console',
+    'smartphone',     'cadeira', 'mesa', 'impressora', 'roteador', 'console', 'console',
     'pasta termica', 'pasta térmica', 'gpu', 'videogame', 'fans', 'fan',
     'ventoinha', 'ventoinhas', 'air fryer', 'batedeira', 'liquidificador', 'secador', 'aspirador',
     'iphone', 'xiaomi', 'redmi', 'poco', 'realme', 'samsung', 'galaxy', 'motorola',

@@ -210,6 +210,9 @@ _REGEX_CATEGORIA = [
     ('cadeira', [
         r'\bcadeira\b', r'\bgamer\s*chair\b', r'\bchair\b',
     ]),
+    ('mesa', [
+        r'\bmesa\b',
+    ]),
     ('impressora', [
         r'\bimpressora\b', r'\bprinter\b', r'\bmultifuncional\b', r'\btoner\b',
     ]),
