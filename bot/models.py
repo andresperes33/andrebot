@@ -95,6 +95,7 @@ class Promo(models.Model):
         ('cadeira', 'Cadeira Escritório / Gamer'),
         ('impressora', 'Impressora'),
         ('fonte', 'Fonte'),
+        ('pc_gamer', 'PC Gamer'),
         ('gabinete', 'Gabinete'),
         ('cooler', 'Cooler / Water Cooler / Fan'),
         ('pasta_termica', 'Pasta Térmica'),

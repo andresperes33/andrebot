@@ -64,6 +64,9 @@ def _limpar_compat(texto):
 # Obs.: 'kit' não entra aqui — é tratado antes, com validação de hardware
 # (só é kit se vier placa-mãe/processador/memória junto), ver detectar_categoria.
 _REGEX_CATEGORIA = [
+    ('pc_gamer', [
+        r'\bpc\s*gamer\b', r'\bcomputador\s*gamer\b', r'\bdesktop\s*gamer\b',
+    ]),
     ('jogo', [
         r'\bgta\b', r'\bgrand\s*theft\s*auto\b',
         r'\bmídia\s*f[ií]sica\b', r'\bmidia\s*fisica\b', r'\bblu-?ray\b',
@@ -256,6 +259,17 @@ def detectar_categoria(texto, titulo=None):
             for linha in _norm(alvo).split('\n'):
                 if _eh_anuncio_cupom(linha):
                     return 'cupom'
+
+    # PC Gamer tem prioridade sobre componentes — 'PC Gamer ... Fonte 500W'
+    # é um PC GAMER completo; 'Fonte 500W' ali é só a especificação do build.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\bpc\s*gamer\b|\bcomputador\s*gamer\b|\bdesktop\s*gamer\b', alvo_norm):
+            return 'pc_gamer'
 
     # Tablet tem prioridade — 'Galaxy Tab S10 Lite ... Tela 10.9"' é um tablet,
     # não um celular (mesmo vindo 'Galaxy'/'Samsung').
