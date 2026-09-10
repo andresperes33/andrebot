@@ -36,6 +36,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{% static 'bot/nvidia.css' %}?v=5">
+    <style>.qr-modal-qr{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.72);opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s}.qr-modal-qr.open{opacity:1;visibility:visible}.qr-modal-qr .qr-modal-box{position:relative;background:var(--canvas);border-radius:14px;padding:34px 30px 28px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.45)}.qr-modal-qr .qr-modal-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border:none;background:var(--surface-soft);border-radius:50%;font-size:18px;color:var(--mute);cursor:pointer;line-height:1;transition:background .2s,color .2s}.qr-modal-qr .qr-modal-close:hover{background:var(--hairline);color:var(--body)}</style>
     <link rel="canonical" href="{{ SITE_URL }}{{ request.path }}">
     <script type="application/ld+json">
     {
@@ -146,6 +147,15 @@
         <p class="qr-modal-sub">Instale o app no seu celular e receba as ofertas em um toque.</p>
         <button type="button" class="btn btn-primary qr-install-btn" id="btnInstalarApp"><i class="fas fa-download"></i> Baixar agora</button>
         <p class="qr-modal-hint" id="qrInstallHint">No iPhone/iPad: toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong>.</p>
+    </div>
+</div>
+
+<div class="qr-modal-qr" id="qrModalDesktop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="qr-modal-box">
+        <button type="button" class="qr-modal-close" id="qrModalDesktopClose" aria-label="Fechar">&times;</button>
+        <h3>Economize até 3x mais!</h3>
+        <p class="qr-modal-sub">Escaneie o QR Code e baixe o app para poder aproveitar ainda mais 💰</p>
+        <img src="{% static 'bot/qr-app.png' %}" alt="QR Code para baixar o app" style="max-width:220px; margin:0 auto 12px; display:block;">
     </div>
 </div>
 
@@ -260,7 +270,9 @@ if (toTopBtn) {
 (function () {
     var botoes = document.querySelectorAll('#btnAppQr, #btnAppQrMobile');
     var modal = document.getElementById('qrModal');
+    var modalDesktop = document.getElementById('qrModalDesktop');
     var fecharBtn = document.getElementById('qrModalClose');
+    var fecharBtnDesktop = document.getElementById('qrModalDesktopClose');
     var btnInstalar = document.getElementById('btnInstalarApp');
     var hint = document.getElementById('qrInstallHint');
     if (!modal) return;
@@ -281,10 +293,24 @@ if (toTopBtn) {
         modal.classList.remove('open');
         modal.setAttribute('aria-hidden', 'true');
     }
+    function abrirDesktop() {
+        if (!modalDesktop) return;
+        modalDesktop.classList.add('open');
+        modalDesktop.setAttribute('aria-hidden', 'false');
+    }
+    function fecharDesktop() {
+        if (!modalDesktop) return;
+        modalDesktop.classList.remove('open');
+        modalDesktop.setAttribute('aria-hidden', 'true');
+    }
     botoes.forEach(function (btn) {
         btn.addEventListener('click', function (e) {
             e.preventDefault();
-            abrir();
+            if (btn.id === 'btnAppQr' && window.innerWidth >= 1024) {
+                abrirDesktop();
+            } else {
+                abrir();
+            }
         });
     });
     if (btnInstalar) {
@@ -301,8 +327,12 @@ if (toTopBtn) {
     modal.addEventListener('click', function (e) {
         if (e.target === modal) fechar();
     });
+    if (fecharBtnDesktop) fecharBtnDesktop.addEventListener('click', fecharDesktop);
+    if (modalDesktop) modalDesktop.addEventListener('click', function (e) {
+        if (e.target === modalDesktop) fecharDesktop();
+    });
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') fechar();
+        if (e.key === 'Escape') { fechar(); fecharDesktop(); }
     });
 })();
 // ─── Compartilhar card de produto ──────────────────────────────
