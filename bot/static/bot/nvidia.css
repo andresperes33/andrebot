@@ -130,6 +130,7 @@ button, input { font-family: inherit; }
     background: rgba(13, 13, 13, 0.97);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    contain: layout;
 }
 .nav-inner {
     max-width: var(--container);
