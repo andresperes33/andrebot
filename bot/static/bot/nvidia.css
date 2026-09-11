@@ -64,7 +64,7 @@ button, input { font-family: inherit; }
     z-index: 60;
     max-height: 64px;
     overflow: hidden;
-    transition: opacity .35s ease;
+    transition: max-height 0.35s ease, opacity 0.35s ease;
 }
 .channels-banner.hidden { max-height: 0; opacity: 0; }
 .channels-banner-half {
@@ -813,6 +813,8 @@ body.menu-open { overflow: hidden; }
     padding: 14px;
     gap: 12px;
     transform: translateZ(0);
+    content-visibility: auto;
+    contain-intrinsic-size: auto 420px;
 }
 .promo-card-head {
     display: flex;
