@@ -269,17 +269,47 @@
         }
     })();
 
-    // Auto-refresh a cada 30 segundos quando estiver na aba "Hoje"
+    // Auto-refresh via AJAX a cada 30 segundos quando estiver na aba "Hoje".
+    // Atualiza só o bloco de ofertas: o scroll e os filtros ficam onde estão,
+    // e as imagens não piscam de novo (evita a "tremida" ao rolar).
     {% if periodo == 'hoje' %}
     (function () {
         var seg = 30;
-        var el = document.getElementById('temporizador');
-        function tick() {
-            seg -= 1;
-            if (seg <= 0) { location.reload(); return; }
+        var emRefresco = false;
+        function exibir() {
+            var el = document.getElementById('temporizador');
             if (el) el.textContent = seg;
         }
+        function tick() {
+            seg -= 1;
+            if (seg <= 0) {
+                if (!emRefresco) refreshAutomatico();
+                return;
+            }
+            exibir();
+        }
+        async function refreshAutomatico() {
+            emRefresco = true;
+            seg = 30;
+            exibir();
+            var wrapper = document.getElementById('resultado');
+            if (wrapper) {
+                try {
+                    var res = await fetch(window.location.pathname + window.location.search, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (res.ok) {
+                        var html = await res.text();
+                        var doc = new DOMParser().parseFromString(html, 'text/html');
+                        var novo = doc.getElementById('resultado');
+                        if (novo) wrapper.innerHTML = novo.innerHTML;
+                    }
+                } catch (e) { /* mantém o conteúdo se a rede falhar */ }
+            }
+            setTimeout(function () { emRefresco = false; }, 1000);
+        }
         setInterval(tick, 1000);
+        exibir();
     })();
     {% endif %}
 </script>
