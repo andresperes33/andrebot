@@ -804,16 +804,10 @@ body.menu-open { overflow: hidden; }
 /* ─── Product card flutuante (borda verde) ───────────────────── */
 .promo-card {
     background: var(--canvas);
-    border: 2px solid var(--primary);
-    border-radius: 18px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
-    overflow: hidden;
     display: flex;
     flex-direction: column;
     padding: 14px;
     gap: 12px;
-    content-visibility: auto;
-    contain-intrinsic-size: auto 420px;
 }
 .promo-card-head {
     display: flex;
