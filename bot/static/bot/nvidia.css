@@ -806,18 +806,12 @@ body.menu-open { overflow: hidden; }
     background: var(--canvas);
     border: 2px solid var(--primary);
     border-radius: 18px;
-    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     padding: 14px;
     gap: 12px;
-}
-/* Sem transição/sombra no hover: com o mouse parado sobre a grade enquanto
-   rola, cada card sob o cursor acendia/apagava a sombra grande (blur 30px)
-   e a página ficava "tremendo". Só a borda muda (repintura barata). */
-.promo-card:hover {
-    border-color: var(--primary-dark);
 }
 .promo-card-head {
     display: flex;

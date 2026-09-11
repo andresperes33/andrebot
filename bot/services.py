@@ -950,6 +950,37 @@ def caminho_imagem_cupom_ml():
     return os.path.join(settings.MEDIA_ROOT, 'cupom', 'cupom_mercado_livre.jpg')
 
 
+def _converter_para_webp(origem, destino_dir, prefixo='promo', max_lado=900, qualidade=82):
+    """Converte a imagem 'origem' para WebP (redimensionada para max_lado) e
+    salva em destino_dir com nome '<prefixo>_<timestamp>_<nome>.webp'.
+
+    Retorna (filename, caminho_absoluto) ou (None, None) se falhar.
+    """
+    from PIL import Image, ImageOps
+    import re as _re
+    nome = os.path.basename(origem)
+    base = _re.sub(r'[^A-Za-z0-9_.-]', '_', os.path.splitext(nome)[0])[:80] or 'img'
+    filename = f'{prefixo}_{int(time.time())}_{base}.webp'
+    out_path = os.path.join(destino_dir, filename)
+    try:
+        with Image.open(origem) as img:
+            img = ImageOps.exif_transpose(img)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                fundo = Image.new('RGB', img.size, (255, 255, 255))
+                fundo.paste(img, mask=img.split()[-1])
+                img = fundo
+            else:
+                img = img.convert('RGB')
+            if max(img.size) > max_lado:
+                img.thumbnail((max_lado, max_lado), Image.LANCZOS)
+            img.save(out_path, 'WEBP', quality=qualidade, method=4, optimize=True)
+        return filename, out_path
+    except Exception:
+        return None, None
+
+
 def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     """
     Salva a promoção no banco de dados para exibição na página web.
@@ -997,33 +1028,55 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
 
     # Processa imagem
     imagem_url = ''
+    media_promos_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
+
+    def _salvar_imagem_site(origem, prefixo):
+        """Salva a imagem no site: converte para WebP (leve, sem "tremida" na
+        rolagem). Se a conversão falhar, copia o arquivo original."""
+        os.makedirs(media_promos_dir, exist_ok=True)
+        convertida, _path = _converter_para_webp(origem, media_promos_dir, prefixo=prefixo)
+        if convertida:
+            return convertida
+        import shutil
+        filename = f"{prefixo}_{int(time.time())}_{os.path.basename(origem)}"
+        shutil.copy2(origem, os.path.join(media_promos_dir, filename))
+        return filename
+
     if eh_cupom_ml:
         img_cupom = caminho_imagem_cupom_ml()
         if os.path.exists(img_cupom):
             try:
-                import shutil
-                media_promos_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
-                os.makedirs(media_promos_dir, exist_ok=True)
-                filename = f"cupom_ml_{int(time.time())}.jpg"
-                new_path = os.path.join(media_promos_dir, filename)
-                shutil.copy2(img_cupom, new_path)
+                filename = _salvar_imagem_site(img_cupom, 'cupom_ml')
                 imagem_url = f"{settings.MEDIA_URL}promos/{filename}"
                 print(f"🎫 Cupom ML: imagem fixa aplicada -> {imagem_url}")
             except Exception as cupom_img_err:
                 print(f"Erro ao aplicar imagem fixa do cupom ML: {cupom_img_err}")
-    if not imagem_url and photo_path and isinstance(photo_path, str) and photo_path.startswith('http'):
-        imagem_url = photo_path
-    elif not imagem_url and photo_path and os.path.exists(photo_path):
+    if not imagem_url and photo_path:
         try:
-            import shutil
-            media_promos_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
-            os.makedirs(media_promos_dir, exist_ok=True)
-            filename = f"promo_{int(time.time())}_{os.path.basename(photo_path)}"
-            new_path = os.path.join(media_promos_dir, filename)
-            shutil.copy2(photo_path, new_path)
-            imagem_url = f"{settings.MEDIA_URL}promos/{filename}"
+            if isinstance(photo_path, str) and photo_path.startswith('http'):
+                # URL externa (ex.: imagem do produto Shopee): baixa e converte
+                # para não deixar uma imagem pesada/hotlinked no site.
+                import tempfile
+                import urllib.request
+                req = urllib.request.Request(photo_path, headers={'User-Agent': 'Mozilla/5.0 (NitroTech)'})
+                tmp_img = os.path.join(tempfile.gettempdir(), f"promo_dl_{int(time.time())}.img")
+                with urllib.request.urlopen(req, timeout=20) as resp, open(tmp_img, 'wb') as f:
+                    f.write(resp.read())
+                if os.path.getsize(tmp_img) < 1024:
+                    raise ValueError('download de imagem inválido (muito pequeno)')
+                try:
+                    filename = _salvar_imagem_site(tmp_img, 'promo')
+                    imagem_url = f"{settings.MEDIA_URL}promos/{filename}"
+                finally:
+                    if os.path.exists(tmp_img):
+                        os.remove(tmp_img)
+            elif os.path.exists(photo_path):
+                filename = _salvar_imagem_site(photo_path, 'promo')
+                imagem_url = f"{settings.MEDIA_URL}promos/{filename}"
         except Exception as img_err:
             print(f"Erro imagem: {img_err}")
+            if isinstance(photo_path, str) and photo_path.startswith('http'):
+                imagem_url = photo_path  # fallback: mantém o link original
 
     # Deduplicação por link_afiliado: DESATIVADO a pedido do usuário.
     # Todas as promoções são salvas, sem ignorar por "já postada".
