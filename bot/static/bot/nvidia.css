@@ -812,7 +812,6 @@ body.menu-open { overflow: hidden; }
     flex-direction: column;
     padding: 14px;
     gap: 12px;
-    transform: translateZ(0);
     content-visibility: auto;
     contain-intrinsic-size: auto 420px;
 }
