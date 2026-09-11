@@ -812,10 +812,12 @@ body.menu-open { overflow: hidden; }
     flex-direction: column;
     padding: 14px;
     gap: 12px;
-    transition: box-shadow .2s ease;
 }
+/* Sem transição/sombra no hover: com o mouse parado sobre a grade enquanto
+   rola, cada card sob o cursor acendia/apagava a sombra grande (blur 30px)
+   e a página ficava "tremendo". Só a borda muda (repintura barata). */
 .promo-card:hover {
-    box-shadow: 0 20px 38px rgba(118, 185, 0, 0.18);
+    border-color: var(--primary-dark);
 }
 .promo-card-head {
     display: flex;
@@ -1573,12 +1575,11 @@ a.price-history-row:hover {
     border: 1px solid var(--hairline);
     border-radius: var(--radius);
     overflow: hidden;
-    transition: border-color .2s, transform .2s;
+    transition: border-color .2s;
     display: block;
 }
 .guide-card:hover {
     border-color: rgba(118,185,0,0.45);
-    transform: translateY(-2px);
 }
 .guide-card-body { padding: 22px; }
 .guide-card-eyebrow {
@@ -1695,11 +1696,10 @@ a.price-history-row:hover {
     border: 1px solid var(--hairline);
     border-radius: var(--radius);
     overflow: hidden;
-    transition: border-color .2s, transform .2s;
+    transition: border-color .2s;
 }
 .blog-card:hover {
     border-color: rgba(255,255,255,0.25);
-    transform: translateY(-3px);
 }
 .blog-card-thumb {
     width: 100%;
@@ -1816,11 +1816,10 @@ a.price-history-row:hover {
     font-weight: 700;
     font-size: 14px;
     text-decoration: none;
-    transition: background .2s, transform .15s;
+    transition: background .2s;
 }
 .produto-loja-btn:hover {
     background: var(--primary-dark);
-    transform: translateY(-1px);
 }
 @media (max-width: 900px) {
     .artigo-layout { grid-template-columns: 1fr; gap: 24px; }
