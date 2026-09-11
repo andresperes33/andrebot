@@ -804,6 +804,9 @@ body.menu-open { overflow: hidden; }
 /* ─── Product card flutuante (borda verde) ───────────────────── */
 .promo-card {
     background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     padding: 14px;
