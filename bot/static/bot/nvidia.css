@@ -851,9 +851,7 @@ body.menu-open { overflow: hidden; }
     color: var(--mute);
     font-size: 15px;
     cursor: pointer;
-    transition: border-color .2s, color .2s, background .2s;
 }
-.promo-card-share:hover { border-color: var(--primary); color: var(--primary); background: rgba(118,185,0,0.08); }
 .promo-card-link { display: block; color: inherit; }
 .promo-card-thumb {
     position: relative;
@@ -880,7 +878,6 @@ body.menu-open { overflow: hidden; }
 .promo-card .card-title { font-size: 16px; }
 .promo-card-actions { margin-top: auto; }
 .promo-card-actions .card-cta { margin-top: 0; border-radius: 999px; }
-
 /* ─── Product card ───────────────────────────────────────────── */
 .card {
     background: var(--canvas);
@@ -1029,13 +1026,8 @@ body.menu-open { overflow: hidden; }
     border-radius: var(--radius-sm);
     border: none;
     cursor: pointer;
-    transition: background-color 0.15s;
     margin-top: 12px;
 }
-.card-cta:hover { background: var(--primary-dark); }
-.card-cta i { transition: transform 0.15s; }
-.card-cta:hover i { transform: translateX(4px); }
-
 /* ─── Botão "Ver mais promoções" ─────────────────────────────── */
 .load-more-wrap {
     display: flex;
