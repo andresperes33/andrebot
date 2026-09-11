@@ -558,6 +558,9 @@ _TERMOS_CABECALHO = [
     'postagem original', 'postagem',
     'canal oficial', 'repostagem', 'repost', 'promo do dia',
     'oferta do dia', 'compra garantida',
+    'confira todos os detalhes da oferta', 'confira todos os detalhes',
+    'veja todos os detalhes da oferta', 'veja todos os detalhes',
+    'todos os detalhes da oferta', 'confira a oferta', 'confira as nossas ofertas',
     'disponivel', 'disponível', 'estoque limitado', 'ultimas unidades',
     'poucas unidades', 'últimas unidades', 'ultima chance', 'última chance',
     'corre que ainda', 'corre que', 'saiu rapidinho', 'está acabando', 'ta acabando',
@@ -676,6 +679,9 @@ def _eh_linha_quantidade(baixa):
     # 'N peça/peças/pç/un/unidade/item/itens' (+ opcional 'no estoque'/'estoque')
     if re.search(r'^\d{1,3}\s+(?:(?:peca|peça|pecas|peças|p[cç]s?|un|unidade|unidades|item|itens)(?:s)?)[!.]?\s*(?:no\s+estoque|estoque|dispon[íi]veis?|restantes?)?[!.]?$', baixa):
         return True
+    # 'ÚLTIMAS 7 UNIDADES' / 'ÚLTIMAS 3 PEÇAS' — aviso de estoque, não é o produto.
+    if re.search(r'^(?:ultimas|últimas)\s+\d{1,3}\s+(?:(?:peca|peça|pecas|peças|p[cç]s?|un|unidade|unidades|item|itens)(?:s)?)[!.]?$', baixa):
+        return True
     if re.search(r'^kit\s+\d{1,3}\s+(?:(?:peca|peça|pecas|peças|p[cç]s?|un|unidade|unidades|item|itens)(?:s)?)[!.]?\s*(?:no\s+estoque|estoque)?[!.]?$', baixa):
         return True
     # 'X no estoque' / 'X unidades restantes' (só número + estoque)
@@ -786,6 +792,7 @@ def _linha_titulo(texto):
     """
     texto = texto or ''
     tem_cupom = 'cupom' in texto.casefold() or 'cupons' in texto.casefold()
+    cupom_candidata = None
 
     for linha in texto.split('\n'):
         limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
@@ -800,15 +807,29 @@ def _linha_titulo(texto):
             continue  # nota do canal (ex.: 'dica do brendo3d')
         if _eh_linha_quantidade(baixa):
             continue  # quantidade de itens (ex.: '2 Peças!') — não é o produto
+        # Data/hora (ex.: '11/09 às 07:58', 'hoje 09:00') não é título de produto.
+        if re.search(r'\b\d{1,2}[/:][0-9]{1,2}\b', linha) or \
+           re.search(r'\b(?:\d{1,2}\s+de\s+[a-záéíóúç]+|\d{1,2}/\d{1,2}/\d{2,4})\b', baixa) and \
+           not re.search(r'\b(?:rtx|gpu|placa|rtx\s?\d|monitor|notebook|ssd)\b', baixa):
+            continue
         if any(prefixo in baixa for prefixo in _TERMOS_CABECALHO):
             continue
         if tem_cupom and _eh_anuncio_cupom(limpa):
-            return limpa
+            # Rótulo/linha de anúncio de cupom (ex.: 'Cupom', 'Novo Cupom
+            # AMAZON'). Guarda como candidata, mas se houver um PRODUTO real
+            # mais abaixo ('RTX 5070 Ti Placa de Video...'), o título do card
+            # deve ser o produto — não a linha 'Cupom'.
+            if cupom_candidata is None:
+                cupom_candidata = limpa
+            continue
         if tem_cupom and _eh_linha_cupom_instrucao(baixa):
             continue
         if any(loja in baixa for loja in _LOJAS) and len(limpa) < 30:
             continue
         return _limpar_cor_inicio(limpa)
+
+    if cupom_candidata is not None:
+        return cupom_candidata
 
     # Fallback: texto curto é só uma instrução/cupom ('Resgate o cupom de
     # R$200 OFF') e não há outra linha — usa a própria linha, pra não deixar

@@ -234,13 +234,17 @@ def detectar_categoria(texto, titulo=None):
 
     # Detecta se o texto tem um PRODUTO real (ex.: 'Water Cooler').
     # Se tiver, um 'Cupom: X' presente é só cupom do produto → não é cupom puro.
+    # Importante: iterar sobre linhas RAW do texto (não o texto colapsado por
+    # _norm, que junta tudo em uma linha e causa falsos negativos quando a
+    # primeira linha é 'Cupom').
     from bot.services import _eh_anuncio_cupom, _eh_linha_titulo_produto
     tem_produto_real = False
     for alvo in (titulo, texto,):
         if not alvo:
             continue
-        for linha in _norm(alvo).split('\n'):
-            if _eh_linha_titulo_produto(linha):
+        for linha_raw in alvo.split('\n'):
+            linha_norm = _norm(linha_raw)
+            if linha_norm and _eh_linha_titulo_produto(linha_norm):
                 tem_produto_real = True
                 break
         if tem_produto_real:
@@ -253,8 +257,9 @@ def detectar_categoria(texto, titulo=None):
         for alvo in (titulo, texto,):
             if not alvo:
                 continue
-            for linha in _norm(alvo).split('\n'):
-                if _eh_anuncio_cupom(linha):
+            for linha_raw in alvo.split('\n'):
+                linha_norm = _norm(linha_raw)
+                if linha_norm and _eh_anuncio_cupom(linha_norm):
                     return 'cupom'
 
     # PC Gamer tem prioridade sobre componentes — 'PC Gamer ... Fonte 500W'
@@ -693,13 +698,21 @@ def detectar_categoria(texto, titulo=None):
     alvo_titulo = titulo or texto
     if alvo_titulo:
         t_limpo = _norm(_limpar_compat(alvo_titulo))
-        # Verifica se o texto (não só a primeira linha) é um produto real.
-        # Assim 'Positivo Infinix ... 15% OFF' não vira cupom.
+        # Verifica se o título OU o texto inteiro é um produto real.
+        # Assim 'Positivo Infinix ... 15% OFF' e 'RTX 5070 Ti Placa de Video
+        # ... Cupom R$100 OFF' não viram cupom.
         eh_produto = any(
             re.search(p, t_limpo)
             for _, padroes in _REGEX_CATEGORIA
             for p in padroes
         )
+        if not eh_produto and texto:
+            texto_limpo = _norm(_limpar_compat(texto))
+            eh_produto = any(
+                re.search(p, texto_limpo)
+                for _, padroes in _REGEX_CATEGORIA
+                for p in padroes
+            )
         if not eh_produto:
             texto_baixo = _norm(texto)
             tem_off = re.search(r'\b\d+\s*%?\s*(?:off|de desconto)\b', texto_baixo)
