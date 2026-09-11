@@ -64,7 +64,7 @@ button, input { font-family: inherit; }
     z-index: 60;
     max-height: 64px;
     overflow: hidden;
-    transition: max-height 0.35s ease, opacity 0.35s ease;
+    transition: opacity .35s ease;
 }
 .channels-banner.hidden { max-height: 0; opacity: 0; }
 .channels-banner-half {
@@ -803,6 +803,10 @@ body.menu-open { overflow: hidden; }
 
 /* ─── Product card flutuante (borda verde) ───────────────────── */
 .promo-card {
+    background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     padding: 14px;
