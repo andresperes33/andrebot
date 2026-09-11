@@ -805,7 +805,7 @@ body.menu-open { overflow: hidden; }
 .promo-card {
     background: var(--canvas);
     border: 1px solid var(--hairline);
-    border-radius: var(--radius-sm);
+    border-radius: 14px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
