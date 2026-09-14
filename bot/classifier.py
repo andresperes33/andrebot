@@ -305,11 +305,18 @@ def detectar_categoria(texto, titulo=None):
             return 'tablet'
 
     # Fonte tem prioridade — 'Fonte 850W ... com Cabo' é uma fonte, não um cabo.
+    # MAS 'fonte rapida'/'carregador' citado como ACESSÓRIO de um aparelho
+    # (ex.: 'POCO X8 PRO ... FONTE RAPIDA COM CAPINHA') não é uma fonte —
+    # o produto é o celular/notebook, não a fonte.
     for alvo in (titulo, texto,):
         if not alvo:
             continue
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
+            continue
+        # Fonte como acessório de aparelho (celular/notebook/tablet) → não é fonte.
+        if re.search(r'\b(?:celular|smartphone|tablte\b|tablet|iphone|xiaomi|poco|redmi|realme|oneplus|zenfone|moto\b|samsung\s*galaxy|galaxy\b|notebook|laptop|macbook)\b', alvo_norm) and \
+           re.search(r'\b(?:fonte\s*rapida|fonte\s*de\s*(?:energia|carregamento)|carregador|fonte\s*de\s*carregador)\b', alvo_norm):
             continue
         if re.search(r'\bfonte\b', alvo_norm) and re.search(r'\b\d{2,4}\s*w\b', alvo_norm):
             return 'fonte'
