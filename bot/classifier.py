@@ -407,6 +407,31 @@ def detectar_categoria(texto, titulo=None):
             continue
         if re.search(r'\b(?:notebook|laptop|macbook|ultrabook|chromebook)\b', alvo_norm):
             return 'notebook'
+        # Notebooks muitas vezes NÃO trazem a palavra 'notebook' no título
+        # (ex.: 'ASUS TUF Gaming F16 Intel Core 5, RTX 4050, 8GB SSD, 16.0'' FHD,
+        # Mecha Gray - FX607VU-RL054' é um NOTEBOOK, não um processador/placa).
+        # Detecta por: tela (polegadas + FHD/QHD/UHD/IPS/OLED) + modelo de
+        # notebook (ex.: FX607VU-RL054) ou família de notebook (TUF/ROG/...).
+        if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|qled|miniled|neo\s*qled)\b', alvo_norm):
+            continue
+        tem_tela_notebook = re.search(
+            r'\b\d{2}(?:[.,]\d)?\s*(?:["\']{0,2}\s*)?(?:fhd|full\s*hd|qhd|uhd|ips|'
+            r'oled|amoled|wuxga|wwxga|pol|polegadas?)\b',
+            alvo_norm,
+        )
+        if tem_tela_notebook:
+            tem_modelo_laptop = re.search(
+                r'\b[a-z]{1,4}\d{3,}[a-z]{0,4}(?:\s*[-/]\s*[a-z]{1,3}\d{2,4})?\b',
+                alvo_norm,
+            )
+            tem_familia_laptop = re.search(
+                r'\b(?:tuf\s*gaming|rog\s*strix|rog\s*zephyrus|vivobook|zenbook|'
+                r'aspire|swift|ideapad|thinkpad|thinkbook|legion|pavilion|omen|'
+                r'envy|spectre|inspiron|xps|latitude|vostro|galaxy\s*book|vaio)\b',
+                alvo_norm,
+            )
+            if tem_modelo_laptop or tem_familia_laptop:
+                return 'notebook'
 
     # Kit (placa-mãe + processador + memória) tem prioridade sobre qualquer
     # componente individual: 'Kit X99 ... Xeon ... DDR3' é um kit, não um
