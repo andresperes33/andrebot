@@ -723,6 +723,7 @@ _TERMOS_PRODUTO = [
     'pc gamer', 'computador gamer',
     'pasta termica', 'pasta térmica', 'gpu', 'videogame', 'fans', 'fan',
     'ventoinha', 'ventoinhas', 'air fryer', 'batedeira', 'liquidificador', 'secador', 'aspirador',
+    'filtro', 'regua', 'tomadas', 'tomada', 'extensao', 'extensão',
     'iphone', 'xiaomi', 'redmi', 'poco', 'realme', 'samsung', 'galaxy', 'motorola',
     'tablet', 'ipad', 'ar condicionado', 'condicionador', 'smart tv', 'qled', 'oled',
 ]

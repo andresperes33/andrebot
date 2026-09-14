@@ -142,6 +142,10 @@ _REGEX_CATEGORIA = [
         r'placa\s*de\s*video', r'\bgpu\b', r'\bgeforce\b', r'\bradeon\b',
         r'\b(rtx|gtx)\s?\d{3,4}\b', r'\brx\s?\d{3,4}\b', r'\brx\s?\d{2,3}\b',
     ]),
+    ('filtro_linha', [
+        r'\bfiltro\s*(?:de\s*)?linha\b', r'\bregua\s*(?:de\s*)?energia\b',
+        r'\bfiltro\s*de\s*tomada\b', r'\bextensao\b', r'\bextensao\s*de\s*energia\b',
+    ]),
     ('placa_mae', [
         r'placa[- ]mae', r'\bmotherboard\b',
         r'\b(a520|a620|b450|b550|b650|b660|b760|x570|x670|z690|z790|h610|h770)\b',
