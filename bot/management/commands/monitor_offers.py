@@ -402,9 +402,7 @@ class Command(BaseCommand):
                 if promo_id:
                     try:
                         from bot.models import Promo
-                        cat = await asyncio.to_thread(
-                            lambda: Promo.objects.filter(pk=promo_id).values_list('categoria', flat=True).first()
-                        )
+                        cat = Promo.objects.filter(pk=promo_id).values_list('categoria', flat=True).first()
                         if cat:
                             categoria_oferta = cat
                     except Exception as cat_err:
