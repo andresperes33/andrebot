@@ -152,7 +152,7 @@ def _link_produto_compra(texto):
 # nome da loja no texto (ex.: '#Kabum', 'Mercado Livre', 'Shopee').
 # '[^\s<>"\']*?' (zero ou mais) permite marcas logo após '://' (ex.: amzn.to).
 _RE_LINKS_LOJA = re.compile(
-    r'https?://[^\s<>"\']*?(?:amazon|amzn\.to|link\.amazon|shopee|'
+    r'https?://[^\s<>"\']*?(?:amazon|amzn\.to|link\.amazon|aoferta|shopee|'
     r'mercadolivre|mercadolibre|meli\.la|aliexpress|s\.click\.ali|kabum|'
     r'magazineluiza|magalu|mgl\.io|pichau|terabyte|americanas|casasbahia|'
     r'pontofrio|submarino|cnc|fastshop|walmart|renner|extra)[^\s<>"\']*',
@@ -192,6 +192,7 @@ def _nome_loja_por_url(url):
     baixo = url.casefold()
     pares = [
         ('amazon', 'Amazon'), ('amzn.to', 'Amazon'), ('link.amazon', 'Amazon'),
+        ('aoferta', 'Amazon'),
         ('shopee', 'Shopee'), ('s.shopee', 'Shopee'),
         ('mercadolivre', 'Mercado Livre'), ('mercadolibre', 'Mercado Livre'),
         ('meli.la', 'Mercado Livre'), ('mlstatic', 'Mercado Livre'),
@@ -1276,6 +1277,24 @@ def convert_to_affiliate_link(url, final_url=None):
     """
     Decide qual API usar com base na URL.
     """
+    # URLs encurtadas que NÃO identificam a loja pelo domínio (ex.:
+    # aoferta.net → Amazon.com.br) precisam ser expandidas primeiro, senão
+    # o roteamento abaixo não reconhece a loja e retorna None.
+    if 'aoferta.net' in url or 'aoferta.net/' in url:
+        try:
+            resp = requests.get(
+                url,
+                allow_redirects=True,
+                timeout=12,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+                },
+            )
+            if resp.url:
+                url = resp.url
+        except Exception:
+            pass
     if 'shopee.com.br' in url or 's.shopee' in url:
         # Se for um link de afiliado (s.shopee.com.br/an_redir ou an_redir),
         # extrai o origin_link que contém a URL pura do produto.

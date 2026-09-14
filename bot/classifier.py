@@ -793,6 +793,7 @@ def detectar_categoria(texto, titulo=None):
 _LOJA_POR_DOMINIO = [
     ('shopee', 'Shopee'),
     ('amazon', 'Amazon'),
+    ('aoferta', 'Amazon'),
     ('aliexpress', 'AliExpress'),
     ('mercadolivre', 'Mercado Livre'),
     ('mercado', 'Mercado Livre'),
