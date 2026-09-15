@@ -65,7 +65,7 @@ def _limpar_compat(texto):
 # (só é kit se vier placa-mãe/processador/memória junto), ver detectar_categoria.
 _REGEX_CATEGORIA = [
     ('pc_gamer', [
-        r'\bpc\s*gamer\b', r'\bcomputador\s*gamer\b', r'\bdesktop\s*gamer\b',
+        r'^\s*pc\s*gamer\b', r'^\s*computador\s*gamer\b', r'^\s*desktop\s*gamer\b',
     ]),
     ('jogo', [
         r'\bgta\b', r'\bgrand\s*theft\s*auto\b',
@@ -275,14 +275,14 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        if re.search(r'\bpc\s*gamer\b|\bcomputador\s*gamer\b|\bdesktop\s*gamer\b', alvo_norm):
-            return 'pc_gamer'
-        # PC completo SEM a palavra 'gamer' (ex.: 'PC Home Essential S, Intel
-        # Core i3, 8GB RAM, SSD 120GB'): começa com PC/Computador/Desktop e
-        # traz especificação de hardware (RAM/SSD/HDD) → é um PC, não só o
-        # processador. Uso âncora no início para não capturar 'cabo para PC'.
-        if re.match(r'^\s*(?:pc|computador|desktop)\b', alvo_norm) and \
-           re.search(r'\b\d+\s*(?:gb|tb)\b|\bssd\b|\bhdd\b', alvo_norm):
+        # PC completo TAMBÉM sem a palavra 'gamer' (ex.: 'PC Home Essential S, Intel
+        # Core i3, 8GB RAM, SSD 120GB'). Precisa COMEÇAR com PC/Computador/
+        # Desktop (com 'gamer' ou especificação de hardware), para não capturar
+        # 'Pasta Térmica ... para PC Gamer' (aí 'PC Gamer' é só compatibilidade).
+        if re.match(r'^\s*(?:pc|computador|desktop)\b', alvo_norm) and (
+            re.search(r'\bgamer\b', alvo_norm) or
+            re.search(r'\b\d+\s*(?:gb|tb)\b|\bssd\b|\bhdd\b', alvo_norm)
+        ):
             return 'pc_gamer'
 
     # Tablet tem prioridade — 'Galaxy Tab S10 Lite ... Tela 10.9"' é um tablet,
