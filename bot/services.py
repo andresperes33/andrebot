@@ -718,7 +718,7 @@ def _eh_anuncio_cupom(limpa):
 _TERMOS_PRODUTO = [
     'water cooler', 'watercooler', 'cooler', 'ssd', 'nvme', 'placa de video',
     'processador', 'ryzen', 'monitor', 'notebook', 'headset', 'fone', 'teclado',
-    'mouse', 'gabinete', 'fonte', 'memoria', 'ram', 'placa mae', 'caixa de som',
+    'mouse', 'gabinete', 'fonte', 'memoria', 'ram', 'placa mae', 'caixa de som', 'caixas de som',
     'soundbar', 'microfone', 'webcam', 'controle', 'jogo', 'gta', 'tv', 'celular',
     'smartphone',     'cadeira', 'mesa', 'impressora', 'roteador', 'console', 'console',
     'pc gamer', 'computador gamer',

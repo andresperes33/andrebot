@@ -183,8 +183,8 @@ _REGEX_CATEGORIA = [
         r'\bmouse\b',
     ]),
     ('caixa_som', [
-        r'caixa\s*de\s*som', r'caixinha\s*de\s*som', r'\bsoundbar\b', r'\bcaixa\s*som\b',
-        r'\balto[- ]falante\b', r'\baltofalante\b', r'\bspeaker\b', r'\bmini\s*caixa\b',
+        r'caixas?\s*de\s*som', r'caixinha\s*de\s*som', r'\bsoundbar\b', r'\bcaixas?\s*som\b',
+        r'\balto[ -]?falantes?\b', r'\baltofalantes?\b', r'\bspeaker\b', r'\bmini\s*caixa\b',
         r'\bcx\s*\d{3,4}\b', r'\bbritania\b',
     ]),
     ('fonte', [
@@ -353,7 +353,7 @@ def detectar_categoria(texto, titulo=None):
             continue
         # Caixa de som com 'controle por aplicativo' — o 'controle' é um
         # recurso do app da caixa, não um gamepad avulso.
-        if re.search(r'\b(?:caixa\s*de\s*som|caixa\s*som|soundbar|speaker|bluetooth)\b', alvo_norm) and \
+        if re.search(r'\b(?:caixas?\s*de\s*som|caixas?\s*som|soundbar|speaker|bluetooth)\b', alvo_norm) and \
            re.search(r'\bcontrole\b', alvo_norm):
             continue
         if re.search(r'\b(?:controle|gamepad|joystick|joypad|gamepad\s*controller)\b', alvo_norm):
@@ -579,7 +579,7 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        if re.search(r'\b(?:caixa\s*de\s*som|caixa\s*som|soundbar|alto[ -]?falante|altofalante|speaker)\b', alvo_norm):
+        if re.search(r'\b(?:caixas?\s*de\s*som|caixas?\s*som|soundbar|alto[ -]?falantes?|altofalantes?|speaker)\b', alvo_norm):
             return 'caixa_som'
 
     # Microfone tem prioridade sobre 'headset'/'fone de ouvido' citados como
@@ -601,7 +601,7 @@ def detectar_categoria(texto, titulo=None):
             continue
         # 'Caixa de Som ... com Microfone Integrado' — o microfone é embutido
         # na caixa de som (handsfree), não um microfone avulso.
-        if re.search(r'\b(?:caixa\s*de\s*som|caixa\s*som|soundbar|alto[ -]?falante|altofalante|speaker|bluetooth)\b', alvo_norm):
+        if re.search(r'\b(?:caixas?\s*de\s*som|caixas?\s*som|soundbar|alto[ -]?falantes?|altofalantes?|speaker|bluetooth)\b', alvo_norm):
             continue
         if re.search(r'\bmicrofone\b', alvo_norm) and \
            re.search(r'\b(?:microfone|usb|condensador|gamer|streaming|gravac|fifine|modmic|de\s*lapela)\b', alvo_norm):
@@ -615,10 +615,10 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        if re.search(r'\b(?:caixa\s*de\s*som|soundbar|caixa\s*som|microfone|headset|fone\s*de\s*ouvido)\b', alvo_norm) and \
+        if re.search(r'\b(?:caixas?\s*de\s*som|soundbar|caixas?\s*som|microfone|headset|fone\s*de\s*ouvido)\b', alvo_norm) and \
            re.search(r'\b(?:pc|notebook|laptop)\b', alvo_norm):
             # É um produto de áudio, e 'notebook' aparece só como compatibilidade
-            if re.search(r'caixa\s*de\s*som|soundbar|caixa\s*som', alvo_norm):
+            if re.search(r'caixas?\s*de\s*som|soundbar|caixas?\s*som', alvo_norm):
                 return 'caixa_som'
             if re.search(r'\bmicrofone\b', alvo_norm):
                 return 'microfone'
