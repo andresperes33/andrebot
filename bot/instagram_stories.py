@@ -183,7 +183,12 @@ def post_instagram_story(texto, photo_path=None, pagina_url=''):
         logger.warning("⚠️ Instagram: nenhuma imagem disponível para o Story.")
         return False
 
-    caption = "🚨 Acesse o link da promoção na nossa bio!"
+    # Monta a legenda do Story
+    caption = titulo or "Promoção imperdível"
+    if preco:
+        caption += f" — {preco}"
+    if link:
+        caption += f"\n\n{link}"
 
     publicou = False
     for conta in contas:

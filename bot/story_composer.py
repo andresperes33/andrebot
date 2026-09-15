@@ -131,9 +131,15 @@ def compor_story_card(foto_path, mensagem, output_path=None):
         _desenhar_texto_multilinha(draw, mensagem, (60, 890, W - 60, 1600), fonte_texto, (40, 40, 40))
 
     # "LINK NA BIO" no rodapé da área branca (final do card), sem barra externa
-    fonte_bio = _carregar_fonte(58, bold=True)
+    marcador = '🚨  ACESSE O LINK DA PROMOÇÃO NA NOSSA BIO!'
+    fonte_bio = None
+    max_larg = W - 120
+    for tamanho in range(58, 24, -1):
+        fonte_bio = _carregar_fonte(tamanho, bold=True)
+        if fonte_bio:
+            if draw.textlength(marcador, font=fonte_bio) <= max_larg:
+                break
     if fonte_bio:
-        marcador = '🔗  LINK DO SITE NA BIO!'
         larg = draw.textlength(marcador, font=fonte_bio)
         x = (W - larg) / 2
         # selo discreto: fundo escuro arredondado só em volta do texto
