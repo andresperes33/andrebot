@@ -727,7 +727,7 @@ _TERMOS_PRODUTO = [
     'filtro', 'regua', 'tomadas', 'tomada', 'extensao', 'extensão',
     'iphone', 'xiaomi', 'redmi', 'poco', 'realme', 'samsung', 'galaxy', 'motorola',
     'tablet', 'ipad', 'ar condicionado', 'condicionador', 'smart tv', 'qled', 'oled',
-    'starlink',
+    'starlink', 'soprador',
 ]
 
 
