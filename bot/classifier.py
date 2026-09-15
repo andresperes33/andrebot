@@ -210,7 +210,7 @@ _REGEX_CATEGORIA = [
         r'\bwebcam\b', r'\bweb\s*cam\b', r'\bvideocam\b',
     ]),
     ('roteador', [
-        r'\broteador\b', r'\brouter\b',
+        r'\broteador\b', r'\brouter\b', r'\bstarlink\b',
     ]),
     ('cadeira', [
         r'\bcadeira\b', r'\bgamer\s*chair\b', r'\bchair\b',
@@ -332,7 +332,7 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        if re.search(r'\b(?:roteador|router)\b', alvo_norm):
+        if re.search(r'\b(?:roteador|router|starlink)\b', alvo_norm):
             return 'roteador'
 
     # Controle/gamepad tem prioridade — 'Controle GameSir ... iPhone/Android'
