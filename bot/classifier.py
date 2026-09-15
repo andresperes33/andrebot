@@ -183,7 +183,8 @@ _REGEX_CATEGORIA = [
         r'\bmouse\b',
     ]),
     ('caixa_som', [
-        r'caixas?\s*de\s*som', r'caixinha\s*de\s*som', r'\bsoundbar\b', r'\bcaixas?\s*som\b',
+        r'caixas?\s*de\s*som', r'caixinha\s*de\s*som',
+        r'\bcaixinha\b\s*(?:de\s*som|bluetooth|tws|bt\b|portatil|speaker)', r'\bsoundbar\b', r'\bcaixas?\s*som\b',
         r'\balto[ -]?falantes?\b', r'\baltofalantes?\b', r'\bspeaker\b', r'\bmini\s*caixa\b',
         r'\bcx\s*\d{3,4}\b', r'\bbritania\b',
     ]),
@@ -351,9 +352,11 @@ def detectar_categoria(texto, titulo=None):
         # RGB') — o 'controle' é um botão do microfone, não um gamepad avulso.
         if re.search(r'\bmicrofone\b', alvo_norm) and re.search(r'\bcontrole\b', alvo_norm):
             continue
-        # Caixa de som com 'controle por aplicativo' — o 'controle' é um
-        # recurso do app da caixa, não um gamepad avulso.
-        if re.search(r'\b(?:caixas?\s*de\s*som|caixas?\s*som|soundbar|speaker|bluetooth)\b', alvo_norm) and \
+        # Caixa de som com 'controle por aplicativo/bluetooth' — o 'controle'
+        # é um recurso da caixa, não um gamepad avulso. 'bluetooth' sozinho
+        # NÃO caracteriza caixa de som ('Controle Sem Fio ... Bluetooth' é
+        # um gamepad sem fio, não uma caixa).
+        if re.search(r'\b(?:caixas?\s*de\s*som|caixas?\s*som|caixinha\s*(?:de\s*som|bluetooth|tws|bt\b|portatil|speaker)|soundbar|speaker)\b', alvo_norm) and \
            re.search(r'\bcontrole\b', alvo_norm):
             continue
         if re.search(r'\b(?:controle|gamepad|joystick|joypad|gamepad\s*controller)\b', alvo_norm):
@@ -579,7 +582,7 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
-        if re.search(r'\b(?:caixas?\s*de\s*som|caixas?\s*som|soundbar|alto[ -]?falantes?|altofalantes?|speaker)\b', alvo_norm):
+        if re.search(r'\b(?:caixas?\s*de\s*som|caixas?\s*som|caixinha\s*(?:de\s*som|bluetooth|tws|bt\b|portatil|speaker)|soundbar|alto[ -]?falantes?|altofalantes?|speaker)\b', alvo_norm):
             return 'caixa_som'
 
     # Microfone tem prioridade sobre 'headset'/'fone de ouvido' citados como
