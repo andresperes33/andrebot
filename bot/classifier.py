@@ -277,6 +277,13 @@ def detectar_categoria(texto, titulo=None):
             continue
         if re.search(r'\bpc\s*gamer\b|\bcomputador\s*gamer\b|\bdesktop\s*gamer\b', alvo_norm):
             return 'pc_gamer'
+        # PC completo SEM a palavra 'gamer' (ex.: 'PC Home Essential S, Intel
+        # Core i3, 8GB RAM, SSD 120GB'): começa com PC/Computador/Desktop e
+        # traz especificação de hardware (RAM/SSD/HDD) → é um PC, não só o
+        # processador. Uso âncora no início para não capturar 'cabo para PC'.
+        if re.match(r'^\s*(?:pc|computador|desktop)\b', alvo_norm) and \
+           re.search(r'\b\d+\s*(?:gb|tb)\b|\bssd\b|\bhdd\b', alvo_norm):
+            return 'pc_gamer'
 
     # Tablet tem prioridade — 'Galaxy Tab S10 Lite ... Tela 10.9"' é um tablet,
     # não um celular (mesmo vindo 'Galaxy'/'Samsung').
