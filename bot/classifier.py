@@ -646,6 +646,35 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:notebook|laptop|macbook|ultrabook|chromebook|galaxy\s*book)\b', alvo_norm):
             return 'notebook'
 
+    # Jogo tem prioridade sobre console: 'Jogo Grand Theft Auto GTA VI PS5' é
+    # um JOGO (o 'ps5'/'console' aí é só a plataforma/mídia), mesmo com a
+    # palavra 'console' ou 'ps5' no texto. Console bundle ('PlayStation 5 +
+    # GTA VI', 'PS5 com 2 jogos inclusos') NÃO vira jogo — segue como console
+    # no bloco abaixo.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(
+            r'\b(?:playstation|ps[0-9]|xbox|nintendo|switch|console|handheld)\b.{0,50}?'
+            r'(?:com\s+\d+\s*jogos?|jogos?\s*inclus\w*|bundle|pacote|'
+            r'\+\s*(?:gta|grand\s*theft|forza|god\s*of\s*war|zelda|mario|red\s*dead|'
+            r'fifa|call\s*of\s*duty|elden\s*ring|cyberpunk|dragon\s*ball)\b)',
+            alvo_norm,
+        ):
+            continue  # é bundle/pacote de console, não um jogo avulso
+        if re.search(r'\bjogo\s+(?:de|do|da|d[aeo]?\s+)?[a-z0-9]', alvo_norm):
+            return 'jogo'
+        if re.search(
+            r'\b(?:gta\b|grand\s*theft\s*auto\b|forza\b|god\s*of\s*war\b|zelda\b|'
+            r'mario\b|red\s*dead\b|call\s*of\s*duty\b|elden\s*ring\b|cyberpunk\b|'
+            r'fifa\b|ea\s*sports\b|dragon\s*ball\b|midia\s*fisica\b|blu-?ray\b)',
+            alvo_norm,
+        ) and re.search(r'\b(?:ps[0-9]|playstation|xbox|nintendo|switch|pc\b|steam)\b', alvo_norm):
+            return 'jogo'
+
     # CONSOLE tem prioridade sobre 'oled'/'qled' da TV: 'Nintendo Switch
     # Console OLED 64gb' é um CONSOLE, não uma TV, mesmo com 'OLED' no título.
     # Ignora acessórios ('controle/fone/headset para PS5', 'capa Xbox').
