@@ -293,26 +293,45 @@
             seg = 30;
             exibir();
             var wrapper = document.getElementById('resultado');
-            if (wrapper) {
+            var grid = document.getElementById('grid');
+            if (wrapper && grid) {
                 try {
-                    // Preserva os cards carregados pelo "Ver mais": usa o
-                    // offset acumulado no botão, senão o refresh de 30s
-                    // volta para a 1ª página e "fecha" os produtos.
                     var btnVM = document.getElementById('btn-ver-mais');
-                    var url = window.location.pathname + window.location.search;
-                    if (btnVM && btnVM.dataset.offset && btnVM.dataset.offset !== '0') {
-                        var pR = new URLSearchParams(window.location.search);
-                        pR.set('offset', btnVM.dataset.offset);
-                        url = window.location.pathname + '?' + pR.toString();
+                    // Páginas extras já carregadas pelo "Ver mais" (mantém a
+                    // mesma quantidade de cards, sem "fechar" os produtos).
+                    var acumulado = btnVM ? (parseInt(btnVM.dataset.offset, 10) || 0) : 0;
+                    var limite = (btnVM && btnVM.dataset.limite) ? parseInt(btnVM.dataset.limite, 10) : 12;
+                    var base = new URLSearchParams(window.location.search);
+                    base.delete('offset');
+                    var urls = [window.location.pathname + '?' + base.toString()];
+                    for (var o = limite; o <= acumulado; o += limite) {
+                        var pE = new URLSearchParams(base);
+                        pE.set('offset', String(o));
+                        urls.push(window.location.pathname + '?' + pE.toString());
                     }
-                    var res = await fetch(url, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    });
-                    if (res.ok) {
-                        var html = await res.text();
-                        var doc = new DOMParser().parseFromString(html, 'text/html');
-                        var novo = doc.getElementById('resultado');
-                        if (novo) wrapper.innerHTML = novo.innerHTML;
+                    // Busca a 1ª página fresca (com as ofertas novas) + as extras
+                    var resps = await Promise.all(urls.map(function (u) {
+                        return fetch(u, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    }));
+                    if (resps.some(function (r) { return !r.ok; })) return;
+                    var docs = await Promise.all(resps.map(function (r) { return r.text(); }))
+                        .then(function (ts) {
+                            return ts.map(function (t) { return new DOMParser().parseFromString(t, 'text/html'); });
+                        });
+                    var novoGrid = docs[0].getElementById('grid');
+                    if (!novoGrid) return;
+                    var html = novoGrid.innerHTML;
+                    for (var i = 1; i < docs.length; i++) {
+                        var eg = docs[i].getElementById('grid');
+                        if (eg) html += eg.innerHTML;
+                    }
+                    grid.innerHTML = html;
+                    // Atualiza o total de ofertas (se a 1ª página tiver a contagem)
+                    var novoResultado = docs[0].getElementById('resultado');
+                    if (novoResultado) {
+                        var novoTotal = novoResultado.querySelector('.stats-count');
+                        var meuTotal = wrapper.querySelector('.stats-count');
+                        if (novoTotal && meuTotal) meuTotal.innerHTML = novoTotal.innerHTML;
                     }
                 } catch (e) { /* mantém o conteúdo se a rede falhar */ }
             }
