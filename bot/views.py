@@ -164,6 +164,8 @@ def promos_view(request):
     Suporta paginação por "Ver mais" (offset) e resposta AJAX parcial
     para carregar mais cards sem recarregar a página.
     """
+    import unicodedata as _uni
+
     LIMITE = 12
     promos = Promo.objects.all()
 
@@ -187,6 +189,12 @@ def promos_view(request):
     lojas_bd = list(promos.exclude(loja='').order_by('loja').values_list('loja', flat=True).distinct())
     # As lojas fixas (KaBuM etc.) sempre aparecem, mesmo sem promoções no período.
     lojas = list(_LOJAS_FIXAS) + [l for l in lojas_bd if l not in _LOJAS_FIXAS]
+    # Dropdown de lojas em ordem alfabética (ignorando acentos)
+    lojas = sorted(
+        lojas,
+        key=lambda l: _uni.normalize('NFD', l.casefold())
+        .encode('ascii', 'ignore').decode('ascii'),
+    )
 
     # Filtro por loja
     loja = request.GET.get('loja', '')
@@ -226,7 +234,6 @@ def promos_view(request):
         if _CATEGORIA_DESCRICOES.get(slug, '')
     ]
     # Dropdown de categorias em ordem alfabética (ignorando acentos)
-    import unicodedata as _uni
     categorias = sorted(
         categorias,
         key=lambda c: _uni.normalize('NFD', c[1].casefold())
