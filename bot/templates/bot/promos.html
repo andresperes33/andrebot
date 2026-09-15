@@ -295,7 +295,17 @@
             var wrapper = document.getElementById('resultado');
             if (wrapper) {
                 try {
-                    var res = await fetch(window.location.pathname + window.location.search, {
+                    // Preserva os cards carregados pelo "Ver mais": usa o
+                    // offset acumulado no botão, senão o refresh de 30s
+                    // volta para a 1ª página e "fecha" os produtos.
+                    var btnVM = document.getElementById('btn-ver-mais');
+                    var url = window.location.pathname + window.location.search;
+                    if (btnVM && btnVM.dataset.offset && btnVM.dataset.offset !== '0') {
+                        var pR = new URLSearchParams(window.location.search);
+                        pR.set('offset', btnVM.dataset.offset);
+                        url = window.location.pathname + '?' + pR.toString();
+                    }
+                    var res = await fetch(url, {
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     });
                     if (res.ok) {
