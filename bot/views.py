@@ -222,9 +222,16 @@ def promos_view(request):
     categorias = Promo.CATEGORIA_CHOICES
     categorias_guia = [
         {'slug': slug, 'nome': nome, 'desc': _CATEGORIA_DESCRICOES.get(slug, '')}
-        for slug, nome in categorias
+        for slug, nome in Promo.CATEGORIA_CHOICES
         if _CATEGORIA_DESCRICOES.get(slug, '')
     ]
+    # Dropdown de categorias em ordem alfabética (ignorando acentos)
+    import unicodedata as _uni
+    categorias = sorted(
+        categorias,
+        key=lambda c: _uni.normalize('NFD', c[1].casefold())
+        .encode('ascii', 'ignore').decode('ascii'),
+    )
 
     # Artigos recentes do Blog (destaque na home, acima do guia de categorias)
     artigos_blog = list(Artigo.objects.filter(publicado=True)[:4])
