@@ -686,6 +686,20 @@ def detectar_categoria(texto, titulo=None):
             continue
         if re.search(r'\b(?:headset|headphone|fone\b|fones\b|auricular|earbuds?)\b', alvo_norm):
             continue  # fone/headset para console não é console (é acessório de áudio)
+        # 'Smart TV 4K 55  LG QNED ... Xbox Bluetooth ...' — a TV é o produto;
+        # 'xbox'/'console' aí é só compatibilidade/modo de jogo. Mas console
+        # OLED/QLED ('Nintendo Switch Console OLED 64gb') NÃO é TV — o console
+        # vem ANTES do marcador de TV.
+        tv_marca = re.search(
+            r'\b(?:smart\s*tv|televis|tv\s*\d{2}|qned|qled|oled|miniled|mini\s*led|neo\s*qled)\b',
+            alvo_norm,
+        )
+        console_info = re.search(
+            r'\b(?:playstation|ps[0-9]|xbox|nintendo|switch|handheld)\b',
+            alvo_norm,
+        )
+        if tv_marca and (not console_info or tv_marca.start() <= console_info.start()):
+            continue  # é TV; console citado vem depois (é compatibilidade)
         eh_console = re.search(
             r'(?:\bnintendo\s*switch\b'
             r'|\bnintendo\b(?!\s*(?:para|compat[ií]vel|fone|controle|acess[oó]rio))'
