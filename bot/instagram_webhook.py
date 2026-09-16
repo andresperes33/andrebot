@@ -148,9 +148,11 @@ def _processar_comentario(value):
 
     # Reply que nós mesmos postamos → ignora (evita loop)
     if value.get('parent_id') or not comment_id:
+        logger.info(f"🔍 IG webhook: comentário ignorado (parent={value.get('parent_id')}, id={comment_id}).")
         return
 
     if 'quero' not in _norm(text):
+        logger.info(f"🔍 IG webhook: comentário sem 'quero' (text={text[:40]!r}).")
         return
 
     if _ja_processada(f'comentario:{comment_id}'):
@@ -256,6 +258,7 @@ def processar_evento_instagram(payload):
 def instagram_webhook_view(request):
     """View do webhook: GET = validação (handshake), POST = eventos."""
     if request.method == 'GET':
+        logger.info(f"🔔 IG webhook: GET de verificação recebido (mode={request.GET.get('hub.mode')}).")
         mode = request.GET.get('hub.mode')
         token = request.GET.get('hub.verify_token')
         challenge = request.GET.get('hub.challenge')
@@ -271,6 +274,7 @@ def instagram_webhook_view(request):
             logger.error(f"❌ IG webhook: JSON inválido: {e}")
             return JsonResponse({'status': 'error'}, status=400)
 
+        logger.info(f"🔔 IG webhook: POST recebido (object={payload.get('object')}), entries={len(payload.get('entry') or [])}")
         if payload.get('object') == 'instagram':
             processar_evento_instagram(payload)
         return JsonResponse({'status': 'ok'})
