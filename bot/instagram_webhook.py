@@ -20,8 +20,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
 
-GRAPH_URL = "https://graph.instagram.com/v19.0"
-FB_GRAPH_URL = "https://graph.facebook.com/v19.0"
+GRAPH_URL = "https://graph.instagram.com/v26.0"
+FB_GRAPH_URL = "https://graph.facebook.com/v26.0"
 
 # Evita responder 2x o mesmo comentário/mensagem (webhooks reentregam eventos)
 _processadas = {}
