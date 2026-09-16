@@ -103,8 +103,7 @@ def _enviar_dm(token, ig_user_id, recipient_id, texto):
 def _texto_resposta(link, modo):
     link = (link or '').strip()
     if link:
-        return f"✅ Te mandei o link na sua DM!\n\n🔗 {link}" if modo == 'comentario' \
-            else f"✅ Aproveite a promoção!\n\n🔗 {link}"
+        return f"✅ Aproveite a promoção!\n\n🔗 {link}"
     site = (getattr(settings, 'SITE_URL', '') or 'https://www.nitrotech.store').rstrip('/')
     return f"✅ Promo confirmada! Confira no nosso site:\n{site}"
 
