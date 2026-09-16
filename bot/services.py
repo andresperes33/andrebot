@@ -576,6 +576,10 @@ _TERMOS_CABECALHO = [
     'para primeira', 'na amazon e conta', 'na shopee e conta',
     'use o cupom', 'usar o cupom', 'aplique o cupom',
     'valido em selecionados', 'válido em selecionados', 'selecionados na lista',
+    'promocao pode encerrar', 'promoção pode encerrar', 'pode encerrar a qualquer momento',
+    'encerrar a qualquer momento', 'a promoção pode encerrar', 'a promocao pode encerrar',
+    'imagem da postagem', 'imagem da publicação', 'imagens da postagem',
+    'compartilhar', 'compartilhe',
 ]
 _LOJAS = [
     'aliexpress', 'mercadolivre', 'mercado livre', 'amazon', 'shopee',
@@ -811,9 +815,16 @@ def _linha_titulo(texto):
         if _eh_linha_quantidade(baixa):
             continue  # quantidade de itens (ex.: '2 Peças!') — não é o produto
         # Data/hora (ex.: '11/09 às 07:58', 'hoje 09:00') não é título de produto.
-        if re.search(r'\b\d{1,2}[/:][0-9]{1,2}\b', linha) or \
-           re.search(r'\b(?:\d{1,2}\s+de\s+[a-záéíóúç]+|\d{1,2}/\d{1,2}/\d{2,4})\b', baixa) and \
-           not re.search(r'\b(?:rtx|gpu|placa|rtx\s?\d|monitor|notebook|ssd)\b', baixa):
+        # Mas modelos de produto (ex.: 'iPhone 15/16', 'Galaxy S24/25') NÃO são datas.
+        _eh_produto_modelo = re.search(
+            r'\b(?:iphone|ipad|galaxy|celular|phone|samsung|xiaomi|realme|poco|motorola|'
+            r'notebook|monitor|mouse|teclado|headset|fone|gpu|rtx|ssd|placa)\b', baixa
+        )
+        if not _eh_produto_modelo and (
+            re.search(r'\b\d{1,2}[/:][0-9]{1,2}\b', linha) or
+            (re.search(r'\b(?:\d{1,2}\s+de\s+[a-záéíóúç]+|\d{1,2}/\d{1,2}/\d{2,4})\b', baixa) and
+             not re.search(r'\b(?:rtx|gpu|placa|rtx\s?\d|monitor|notebook|ssd)\b', baixa))
+        ):
             continue
         if any(prefixo in baixa for prefixo in _TERMOS_CABECALHO):
             continue
@@ -839,8 +850,16 @@ def _linha_titulo(texto):
     # o card sem título.
     for linha in texto.split('\n'):
         limpa = re.sub(r'[^\w\s.,!?%-]', '', linha).strip()
-        if len(limpa) > 6 and re.search(r'\s', limpa):
-            return limpa
+        baixa_fb = limpa.casefold()
+        if len(limpa) <= 6 or not re.search(r'\s', limpa):
+            continue
+        if any(loja in baixa_fb for loja in _LOJAS) and len(limpa) < 30:
+            continue
+        if any(p in baixa_fb for p in _TERMOS_CABECALHO):
+            continue
+        if _eh_linha_nota(baixa_fb):
+            continue
+        return limpa
     return ''
 
 
