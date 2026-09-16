@@ -491,6 +491,24 @@ class Command(BaseCommand):
                 except Exception as ig_err:
                     logger.error(f"❌ Erro Instagram: {ig_err}")
 
+                # ─── Publica no FEED do Instagram ───────────────────────────
+                try:
+                    from bot.instagram_stories import post_instagram_feed
+                    from bot.story_gate import pode_publicar_story, registrar_publicacao as registrar_feed
+
+                    permitido_feed, motivo_feed = await asyncio.to_thread(
+                        pode_publicar_story, chave='ultima_publicacao_ig_feed'
+                    )
+                    if not permitido_feed:
+                        logger.info(f"⏸️ Instagram feed adiado ({motivo_feed}). Promo segue salva no banco e no Telegram.")
+                    else:
+                        publicou_feed = await asyncio.to_thread(post_instagram_feed, modified_text, photo_path, pagina_url)
+                        if publicou_feed:
+                            await asyncio.to_thread(registrar_feed, chave='ultima_publicacao_ig_feed')
+                            logger.info("🖼️ Oferta publicada no feed do Instagram.")
+                except Exception as igf_err:
+                    logger.error(f"❌ Erro Instagram feed: {igf_err}")
+
                 # ─── Publica na Página do Facebook ─────────────────────────
                 try:
                     from bot.facebook_poster import post_facebook

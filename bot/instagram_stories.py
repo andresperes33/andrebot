@@ -84,15 +84,15 @@ def _contas_instagram():
     return contas
 
 
-def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url):
-    """Publica um Story em UMA conta específica. Retorna True/False."""
+def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type='STORIES'):
+    """Publica um container (Story ou Feed) em UMA conta. Retorna True/False."""
     payload = {
         "image_url": imagem_url,
-        "media_type": "STORIES",
+        "media_type": media_type,
         "caption": caption,
         "access_token": token,
     }
-    if pagina_url:
+    if media_type == 'STORIES' and pagina_url:
         payload["link_url"] = pagina_url
 
     try:
@@ -147,7 +147,8 @@ def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url):
         logger.error(f"❌ Instagram: falha ao publicar: {pub_data}")
         return False
 
-    logger.info(f"✅ Story publicado no Instagram! (media={pub_data['id']})")
+    rotulo = 'Story' if media_type == 'STORIES' else 'Post no feed'
+    logger.info(f"✅ {rotulo} publicado no Instagram! (media={pub_data['id']})")
     return True
 
 
@@ -197,4 +198,40 @@ def post_instagram_story(texto, photo_path=None, pagina_url=''):
                 publicou = True
         except Exception as e:
             logger.error(f"❌ Instagram: erro na conta {conta['user_id']}: {e}")
+    return publicou
+
+
+def post_instagram_feed(texto, photo_path=None, pagina_url=''):
+    """
+    Publica a oferta no FEED do Instagram (publicação normal do perfil) em
+    TODAS as contas configuradas. Usa a foto original (sem card de Story) e o
+    link da página do produto vai na legenda, já que feed não tem link clicável.
+    """
+    contas = _contas_instagram()
+    if not contas:
+        logger.warning("⚠️ Instagram não configurado (IG_ACCESS_TOKEN / IG_USER_ID).")
+        return False
+
+    titulo, preco, link = _titulo_preco_link(texto)
+
+    imagem_url = _url_publica_imagem(photo_path)
+    if not imagem_url:
+        logger.warning("⚠️ Instagram feed: nenhuma imagem disponível.")
+        return False
+
+    caption = titulo or "Promoção imperdível"
+    if preco:
+        caption += f" — {preco}"
+    if pagina_url:
+        caption += f"\n\n{pagina_url}"
+    elif link:
+        caption += f"\n\n{link}"
+
+    publicou = False
+    for conta in contas:
+        try:
+            if _postar_conta(conta['token'], conta['user_id'], imagem_url, caption, pagina_url, media_type='IMAGE'):
+                publicou = True
+        except Exception as e:
+            logger.error(f"❌ Instagram feed: erro na conta {conta['user_id']}: {e}")
     return publicou
