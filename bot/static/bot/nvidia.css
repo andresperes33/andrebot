@@ -852,11 +852,12 @@ body.menu-open { overflow: hidden; }
 .promo-card-link { display: block; color: inherit; }
 .promo-card-thumb {
     position: relative;
+    aspect-ratio: 16 / 9;
     background: var(--surface-soft);
     overflow: hidden;
     border-bottom: 1px solid var(--hairline);
 }
-.promo-card-thumb img { width: 100%; height: auto; display: block; }
+.promo-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .promo-card-thumb .no-img {
     width: 100%;
     min-height: 150px;
