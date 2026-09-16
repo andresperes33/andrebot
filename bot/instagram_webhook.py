@@ -21,7 +21,6 @@ from django.views.decorators.csrf import csrf_exempt
 logger = logging.getLogger(__name__)
 
 GRAPH_URL = "https://graph.instagram.com/v26.0"
-FB_GRAPH_URL = "https://graph.facebook.com/v26.0"
 
 # Evita responder 2x o mesmo comentário/mensagem (webhooks reentregam eventos)
 _processadas = {}
@@ -82,7 +81,7 @@ def _responder_comentario(token, comment_id, texto):
 def _enviar_dm(token, ig_user_id, recipient_id, texto):
     try:
         resp = requests.post(
-            f"{FB_GRAPH_URL}/{ig_user_id}/messages",
+            f"{GRAPH_URL}/{ig_user_id}/messages",
             data={
                 "recipient": json.dumps({"id": str(recipient_id)}),
                 "message": json.dumps({"text": texto}),
