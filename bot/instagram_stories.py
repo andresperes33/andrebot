@@ -252,10 +252,9 @@ def post_instagram_feed(texto, photo_path=None, pagina_url=''):
     caption = titulo or "Promoção imperdível"
     if preco:
         caption += f" — {preco}"
-    if pagina_url:
-        caption += f"\n\n{pagina_url}"
-    elif link:
-        caption += f"\n\n{link}"
+    # Legenda sem o link (gatilho): quem quiser o link comenta/avisa "EU QUERO"
+    # e o bot envia o link na DM. O mapa media→link é salvo no banco na publicação.
+    caption += "\n\nQuer aproveitar a promoção? Digite EU QUERO que te mando o link! 🔗"
 
     publicou = False
     for conta in contas:
