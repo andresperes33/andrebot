@@ -494,11 +494,20 @@ class Command(BaseCommand):
                 # ─── Publica na Página do Facebook ─────────────────────────
                 try:
                     from bot.facebook_poster import post_facebook
-                    publicou_fb = await asyncio.to_thread(post_facebook, modified_text, photo_path, pagina_url)
-                    if publicou_fb:
-                        logger.info("📣 Oferta publicada no Facebook.")
+                    from bot.story_gate import pode_publicar_story, registrar_publicacao
+
+                    permitido_fb, motivo_fb = await asyncio.to_thread(
+                        pode_publicar_story, chave='ultima_publicacao_fb'
+                    )
+                    if not permitido_fb:
+                        logger.info(f"⏸️ Facebook adiado ({motivo_fb}). Promo segue salva no banco e no Telegram.")
                     else:
-                        logger.info("ℹ️ Facebook: nada publicado (não configurado ou falhou).")
+                        publicou_fb = await asyncio.to_thread(post_facebook, modified_text, photo_path, pagina_url)
+                        if publicou_fb:
+                            await asyncio.to_thread(registrar_publicacao, chave='ultima_publicacao_fb')
+                            logger.info("📣 Oferta publicada no Facebook.")
+                        else:
+                            logger.info("ℹ️ Facebook: nada publicado (não configurado ou falhou).")
                 except Exception as fb_err:
                     logger.error(f"❌ Erro Facebook: {fb_err}")
 

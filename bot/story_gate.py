@@ -11,41 +11,41 @@ def _agora():
     return datetime.now()
 
 
-def _ler_ultima_publicacao():
-    """Lê o timestamp da última publicação do Story (persistido no banco)."""
+def _ler_ultima_publicacao(chave='ultima_publicacao_ig'):
+    """Lê o timestamp da última publicação (persistido no banco)."""
     try:
         from django.db import close_old_connections
         close_old_connections()
         from bot.models import BotConfig
-        valor = BotConfig.get('ultima_publicacao_ig', '')
+        valor = BotConfig.get(chave, '')
         if valor:
             return datetime.fromisoformat(valor)
     except Exception as e:
-        logger.warning(f"⚠️ Não foi possível ler última publicação IG: {e}")
+        logger.warning(f"⚠️ Não foi possível ler última publicação ({chave}): {e}")
     return None
 
 
-def _salvar_ultima_publicacao(agora=None):
-    """Persiste o timestamp da última publicação do Story."""
+def _salvar_ultima_publicacao(agora=None, chave='ultima_publicacao_ig'):
+    """Persiste o timestamp da última publicação."""
     agora = agora or _agora()
     try:
         from django.db import close_old_connections
         close_old_connections()
         from bot.models import BotConfig
-        BotConfig.set('ultima_publicacao_ig', agora.isoformat())
+        BotConfig.set(chave, agora.isoformat())
     except Exception as e:
-        logger.error(f"❌ Erro ao persistir última publicação IG: {e}")
+        logger.error(f"❌ Erro ao persistir última publicação ({chave}): {e}")
 
 
-def pode_publicar_story(agora=None):
+def pode_publicar_story(agora=None, chave='ultima_publicacao_ig'):
     """
-    Decide se um Story pode ser publicado agora, respeitando apenas o
-    intervalo mínimo de 30 minutos desde o último (sem janela de horário).
+    Decide se uma publicação pode ser feita agora, respeitando apenas o
+    intervalo mínimo de 30 minutos desde a última (sem janela de horário).
     Retorna (permitido: bool, motivo: str).
     """
     agora = agora or _agora()
 
-    ultima = _ler_ultima_publicacao()
+    ultima = _ler_ultima_publicacao(chave)
     if ultima:
         decorrido_min = (agora - ultima).total_seconds() / 60
         if decorrido_min < INTERVALO_MIN_MINUTOS:
@@ -55,7 +55,7 @@ def pode_publicar_story(agora=None):
     return True, "ok"
 
 
-def registrar_publicacao(agora=None):
-    """Registra que um Story foi publicado agora (atualiza o cooldown)."""
+def registrar_publicacao(agora=None, chave='ultima_publicacao_ig'):
+    """Registra que uma publicação foi feita agora (atualiza o cooldown)."""
     agora = agora or _agora()
-    _salvar_ultima_publicacao(agora)
+    _salvar_ultima_publicacao(agora, chave)
