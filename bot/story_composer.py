@@ -131,7 +131,7 @@ def compor_story_card(foto_path, mensagem, output_path=None):
         _desenhar_texto_multilinha(draw, mensagem, (60, 890, W - 60, 1600), fonte_texto, (40, 40, 40))
 
     # "LINK NA BIO" no rodapé da área branca (final do card), sem barra externa
-    marcador = '💬  COMENTE QUERO QUE TE ENVIO O LINK'
+    marcador = 'Quer o link? Comenta aqui que eu te envio!'
     fonte_bio = None
     max_larg = W - 120
     for tamanho in range(58, 24, -1):
