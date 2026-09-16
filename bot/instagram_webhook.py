@@ -202,22 +202,58 @@ def _processar_comentario(value):
 
 
 def _processar_mensagem(value, entry_id):
-    """DM com 'quero': envia o link direto na conversa."""
-    sender = (value.get('from') or {}).get('id')
-    msg = value.get('message') or {}
-    text = (msg.get('text') or '') if isinstance(msg, dict) else str(msg)
-    mid = (msg.get('mid') or '') if isinstance(msg, dict) else ''
+    """DM com 'quero': envia o link direto na conversa.
+
+    Se a mensagem for uma RESPOSTA a um Story (replies_to.story), prioriza o
+    link da oferta daquele Story postado por nós; senão usa o último link
+    postado."""
+    from bot.instagram_stories import link_por_media
+
+    sender = ''
+    mid = ''
+    text = ''
+    story_id = ''
+    messaging = value.get('messaging') or []
+    if messaging:
+        m = messaging[0]
+        sender = (m.get('sender') or {}).get('id') or ''
+        msg = m.get('message') or {}
+        mid = (msg.get('mid') or '') if isinstance(msg, dict) else ''
+        text = (msg.get('text') or '') if isinstance(msg, dict) else str(msg) or ''
+        replies_to = msg.get('replies_to') if isinstance(msg, dict) else None
+        if isinstance(replies_to, dict):
+            story = replies_to.get('story') or {}
+            story_id = story.get('id') or '' if isinstance(story, dict) else ''
+    else:
+        sender = (value.get('from') or {}).get('id') or ''
+        msg = value.get('message') or {}
+        mid = (msg.get('mid') or '') if isinstance(msg, dict) else ''
+        text = (msg.get('text') or '') if isinstance(msg, dict) else str(msg) or ''
 
     if not sender or not text:
         return
 
     if 'quero' not in _norm(text):
+        logger.info(f"🔍 IG webhook: mensagem sem 'quero' (sender={sender}, texto={text[:40]!r}).")
         return
 
     if _ja_processada(f'dm:{mid or sender}'):
         return
 
+    # Link e credenciais padrão (último postado / conta principal)
     link, token, user_id = _link_da_oferta()
+    origem = 'ultimo' if link else '?'
+
+    # Resposta a Story → usa o mapa daquele Story (fixa qual conta/qual oferta)
+    if story_id:
+        dados = link_por_media(story_id)
+        if dados:
+            link = dados.get('url') or link
+            token = dados.get('token') or token
+            user_id = dados.get('user_id') or user_id
+            origem = 'story-mapa' if dados.get('url') else 'story-mapa-vazio'
+        logger.info(f"🔍 IG webhook: resposta a Story={story_id} origem={origem}")
+
     if not user_id:
         user_id = entry_id
     if not token:
@@ -227,6 +263,7 @@ def _processar_mensagem(value, entry_id):
             logger.warning("⚠️ IG webhook: Instagram não configurado para enviar DM.")
             return
         token = contas[0]['token']
+        user_id = user_id or contas[0]['user_id']
 
     _enviar_dm(token, user_id, sender, _texto_resposta(link, 'dm'))
 

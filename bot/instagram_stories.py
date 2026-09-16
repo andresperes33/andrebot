@@ -224,8 +224,11 @@ def post_instagram_story(texto, photo_path=None, pagina_url=''):
     publicou = False
     for conta in contas:
         try:
-            if _postar_conta(conta['token'], conta['user_id'], imagem_url, caption, pagina_url):
+            media_id = _postar_conta(conta['token'], conta['user_id'], imagem_url, caption, pagina_url)
+            if media_id:
                 publicou = True
+                # Mapa story → oferta: quem responder o Story recebe o link na DM.
+                _guardar_link_por_media(media_id, pagina_url, conta['token'], conta['user_id'])
         except Exception as e:
             logger.error(f"❌ Instagram: erro na conta {conta['user_id']}: {e}")
     return publicou
