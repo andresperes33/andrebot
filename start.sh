@@ -16,9 +16,9 @@ python manage.py collectstatic --noinput
 echo "🌐 Iniciando servidor web na porta 8000..."
 gunicorn setup.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120 &
 
-# 4. Iniciar o Bot de Alertas em background
-echo "🤖 Iniciando Bot de Alertas (@alertas_andre_bot)..."
-python manage.py run_alert_bot &
+# 4. Iniciar o Bot único (alertas + ofertas) em background — evita Conflict de getUpdates
+echo "🤖 Iniciando Bot único (@alertas_andre_bot)..."
+python manage.py run_single_bot &
 
 # 5. Iniciar o Monitor de Ofertas (Processo Principal)
 echo "🎯 Iniciando Monitor do canal de promoções..."
