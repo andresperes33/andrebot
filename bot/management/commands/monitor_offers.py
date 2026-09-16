@@ -469,16 +469,16 @@ class Command(BaseCommand):
                     logger.error(f"❌ Erro no Nitro Alerta: {site_err}")
 
                 # ─── Publica Story no Instagram ─────────────────────────────
+                # Link da página do produto no site (sticker clicável no Story /
+                # link compartilhado no Facebook)
+                pagina_url = ''
+                if promo_id:
+                    base_site = (getattr(settings, 'SITE_URL', '') or '').rstrip('/')
+                    if base_site:
+                        pagina_url = f"{base_site}/promos/{promo_id}/"
                 try:
                     from bot.instagram_stories import post_instagram_story
                     from bot.story_gate import pode_publicar_story, registrar_publicacao
-
-                    # Link da página do produto no site (sticker clicável no Story)
-                    pagina_url = ''
-                    if promo_id:
-                        base_site = (getattr(settings, 'SITE_URL', '') or '').rstrip('/')
-                        if base_site:
-                            pagina_url = f"{base_site}/promos/{promo_id}/"
 
                     permitido, motivo = await asyncio.to_thread(pode_publicar_story)
                     if not permitido:
@@ -490,6 +490,17 @@ class Command(BaseCommand):
                             logger.info("📸 Story publicado no Instagram (dentro da janela/cooldown).")
                 except Exception as ig_err:
                     logger.error(f"❌ Erro Instagram: {ig_err}")
+
+                # ─── Publica na Página do Facebook ─────────────────────────
+                try:
+                    from bot.facebook_poster import post_facebook
+                    publicou_fb = await asyncio.to_thread(post_facebook, modified_text, photo_path, pagina_url)
+                    if publicou_fb:
+                        logger.info("📣 Oferta publicada no Facebook.")
+                    else:
+                        logger.info("ℹ️ Facebook: nada publicado (não configurado ou falhou).")
+                except Exception as fb_err:
+                    logger.error(f"❌ Erro Facebook: {fb_err}")
 
                 # ─── Limpa foto após 90s ─────────────────────────────────────
                 if photo_path:
