@@ -204,31 +204,49 @@ def _processar_comentario(value):
 def _processar_mensagem(value, entry_id):
     """DM com 'quero': envia o link direto na conversa.
 
-    Se a mensagem for uma RESPOSTA a um Story (replies_to.story), prioriza o
-    link da oferta daquele Story postado por nós; senão usa o último link
-    postado."""
+    Se a mensagem for uma RESPOSTA a um Story (replies_to.story/shares),
+    prioriza o link da oferta daquele Story postado por nós; senão usa o
+    último link postado.
+
+    Suporta os dois formatos de payload do Meta:
+    - value.messaging[0] (messenger antigo)
+    - value.sender/recipient/message (formato direto dos webhooks do IG)."""
     from bot.instagram_stories import link_por_media
 
     sender = ''
     mid = ''
     text = ''
     story_id = ''
+
     messaging = value.get('messaging') or []
     if messaging:
         m = messaging[0]
         sender = (m.get('sender') or {}).get('id') or ''
         msg = m.get('message') or {}
-        mid = (msg.get('mid') or '') if isinstance(msg, dict) else ''
-        text = (msg.get('text') or '') if isinstance(msg, dict) else str(msg) or ''
-        replies_to = msg.get('replies_to') if isinstance(msg, dict) else None
+    else:
+        # Formato direto: sender/recipient/message vêm direto no value
+        sender = (value.get('sender') or {}).get('id') or (value.get('from') or {}).get('id') or ''
+        msg = value.get('message') or {}
+
+    if isinstance(msg, dict):
+        mid = (msg.get('mid') or '').strip()
+        text = (msg.get('text') or '').strip()
+        # Resposta a Story → replies_to.story
+        replies_to = msg.get('replies_to')
         if isinstance(replies_to, dict):
             story = replies_to.get('story') or {}
-            story_id = story.get('id') or '' if isinstance(story, dict) else ''
+            if isinstance(story, dict):
+                story_id = (story.get('id') or '').strip()
+        if not story_id:
+            # Outro formato: shares com type='story'
+            shares = msg.get('shares') or []
+            if isinstance(shares, list):
+                for s in shares:
+                    if isinstance(s, dict) and s.get('type') == 'story':
+                        story_id = (s.get('id') or '').strip()
+                        break
     else:
-        sender = (value.get('from') or {}).get('id') or ''
-        msg = value.get('message') or {}
-        mid = (msg.get('mid') or '') if isinstance(msg, dict) else ''
-        text = (msg.get('text') or '') if isinstance(msg, dict) else str(msg) or ''
+        text = str(msg or '').strip()
 
     if not sender or not text:
         return
@@ -237,7 +255,7 @@ def _processar_mensagem(value, entry_id):
         logger.info(f"🔍 IG webhook: mensagem sem 'quero' (sender={sender}, texto={text[:40]!r}).")
         return
 
-    if _ja_processada(f'dm:{mid or sender}'):
+    if _ja_processada(f'dm:{mid or (sender + ":" + story_id)}'):
         return
 
     # Link e credenciais padrão (último postado / conta principal)
