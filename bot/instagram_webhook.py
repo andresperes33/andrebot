@@ -78,12 +78,22 @@ def _responder_comentario(token, comment_id, texto):
     return True
 
 
-def _enviar_dm(token, ig_user_id, recipient_id, texto):
+def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None):
+    """
+    Envia uma DM. Se comment_id for passado, usa o mecanismo de Private Reply
+    do Instagram: inicia uma DM a partir de um comentário no post
+    (recipient = {"comment_id": ...}). Sem comment_id, responde numa conversa
+    já existente (recipient = {"id": ...}).
+    """
+    if comment_id:
+        recipient = {"comment_id": str(comment_id)}
+    else:
+        recipient = {"id": str(recipient_id)}
     try:
         resp = requests.post(
             f"{GRAPH_URL}/{ig_user_id}/messages",
             data={
-                "recipient": json.dumps({"id": str(recipient_id)}),
+                "recipient": json.dumps(recipient),
                 "message": json.dumps({"text": texto}),
                 "access_token": token,
             },
@@ -96,7 +106,7 @@ def _enviar_dm(token, ig_user_id, recipient_id, texto):
     if resp.status_code != 200 or 'error' in dados:
         logger.error(f"❌ IG webhook: falha ao enviar DM: {dados}")
         return False
-    logger.info(f"✅ IG webhook: DM enviado para {recipient_id}.")
+    logger.info(f"✅ IG webhook: DM enviado para {recipient_id} (comment_id={comment_id or '-'}).")
     return True
 
 
@@ -139,9 +149,18 @@ def _processar_comentario(value):
         contas = _contas_instagram()
         user_id = contas[0]['user_id'] if contas else ''
 
-    # 1ª tentativa: enviar o link NA DM do comentador
-    if sender_id and user_id:
-        if _enviar_dm(token, user_id, sender_id, _texto_resposta(link, 'dm')):
+    # 1ª tentativa: Private Reply — inicia a DM a partir do comentário
+    # (recipient.comment_id). É a forma oficial de mandar DM pra quem comentou.
+    if token and user_id:
+        dm_enviado = False
+        try:
+            dm_enviado = _enviar_dm(token, user_id, sender_id, _texto_resposta(link, 'dm'), comment_id=comment_id)
+        except Exception as e:
+            logger.error(f"❌ IG webhook: erro no Private Reply: {e}")
+
+        if dm_enviado:
+            # Avisa no comentário que o link foi para a DM (agora é verdade)
+            _responder_comentario(token, comment_id, "✅ Prontinho! Te mandei o link na sua DM 📩")
             return
 
     # 2ª tentativa (fallback): responder o comentário com o link
