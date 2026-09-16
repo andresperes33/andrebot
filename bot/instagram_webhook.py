@@ -44,20 +44,54 @@ def _ja_processada(chave, janela_seg=300):
     return False
 
 
-def _link_da_oferta(media_id=None):
-    """Busca o link. Prioriza o media do post; senão, o último postado."""
+def _link_da_oferta(media_id=None, token=None):
+    """Busca o link da oferta do post. Prioriza o mapa salvo; depois tenta ler a
+    legenda do post (onde fica o link do produto do site); por fim, último postado."""
     from bot.instagram_stories import link_por_media
     dados = link_por_media(media_id) if media_id else None
     if dados and dados.get('url'):
         return dados['url'], dados.get('token'), dados.get('user_id')
+
+    link = _link_da_caption(media_id, token) if (media_id and token) else ''
+    if link:
+        return link, token, ''
     try:
         from django.db import close_old_connections
         from bot.models import BotConfig
         close_old_connections()
         ultimo = BotConfig.get('ig_ultimo_pagina_url', '')
-        return (ultimo, None, None) if ultimo else ('', None, None)
+        return (ultimo, token, '') if ultimo else ('', token, '')
     except Exception:
-        return ('', None, None)
+        return ('', token, '')
+
+
+def _link_da_caption(media_id, token):
+    """Lê a legenda do post no Instagram e extrai o link do produto (e guarda em cache)."""
+    import json as _json
+    try:
+        resp = requests.get(
+            f"{GRAPH_URL}/{media_id}",
+            params={"fields": "caption", "access_token": token},
+            timeout=30,
+        )
+        dados = resp.json()
+    except Exception as e:
+        logger.warning(f"⚠️ IG webhook: erro ao ler legenda do media {media_id}: {e}")
+        return ''
+    caption = (dados.get('caption') or '')
+    links = re.findall(r'(https?://\S+)', caption)
+    if not links:
+        return ''
+    link = links[0].rstrip('.,;|)')
+    try:
+        from django.db import close_old_connections
+        from bot.models import BotConfig
+        close_old_connections()
+        from bot.instagram_stories import _guardar_link_por_media
+        _guardar_link_por_media(media_id, link, token, '')
+    except Exception:
+        pass
+    return link
 
 
 def _responder_comentario(token, comment_id, texto):
@@ -148,6 +182,9 @@ def _processar_comentario(value):
         from bot.instagram_stories import _contas_instagram
         contas = _contas_instagram()
         user_id = contas[0]['user_id'] if contas else ''
+    # Se ainda não tem link (post antigo sem mapa), tenta ler a legenda do post
+    if not link:
+        link, token, user_id = _link_da_oferta(media_id, token)
 
     # 1ª tentativa: Private Reply — inicia a DM a partir do comentário
     # (recipient.comment_id). É a forma oficial de mandar DM pra quem comentou.
