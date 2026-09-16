@@ -172,9 +172,14 @@ def _processar_comentario(value):
     # Link da DM: prioriza o mapa do post; se não houver (post antigo), lê a
     # legenda do post, onde fica o link da página do produto.
     dm_link = link
+    origem = 'mapa' if dm_link else '?'
     if not dm_link and media_id and token:
         dm_link = _link_da_caption(media_id, token)
+        origem = 'legenda' if dm_link else 'legenda-vazia'
     dm_link = dm_link or link
+    if not dm_link:
+        origem = 'site'
+    logger.info(f"🔍 IG webhook: media={media_id} link_origem={origem}")
 
     # 1ª tentativa: Private Reply — inicia a DM a partir do comentário
     # (recipient.comment_id). É a forma oficial de mandar DM pra quem comentou.
