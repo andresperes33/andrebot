@@ -111,10 +111,12 @@ def _texto_resposta(link, modo):
 
 
 def _processar_comentario(value):
-    """Comentário no feed: responde no próprio comentário avisando o link."""
+    """Comentário no feed: tenta mandar o link na DM do comentador; se o
+    Instagram recusar (nem toda conta libera), responde no próprio comentário."""
     comment_id = value.get('id')
     text = value.get('text') or ''
     media_id = value.get('media_id')
+    sender_id = (value.get('from') or {}).get('id')
 
     # Reply que nós mesmos postamos → ignora (evita loop)
     if value.get('parent_id') or not comment_id:
@@ -134,7 +136,17 @@ def _processar_comentario(value):
             logger.warning("⚠️ IG webhook: Instagram não configurado para responder.")
             return
         token = contas[0]['token']
+    if not user_id:
+        from bot.instagram_stories import _contas_instagram
+        contas = _contas_instagram()
+        user_id = contas[0]['user_id'] if contas else ''
 
+    # 1ª tentativa: enviar o link NA DM do comentador
+    if sender_id and user_id:
+        if _enviar_dm(token, user_id, sender_id, _texto_resposta(link, 'dm')):
+            return
+
+    # 2ª tentativa (fallback): responder o comentário com o link
     _responder_comentario(token, comment_id, _texto_resposta(link, 'comentario'))
 
 
