@@ -205,6 +205,8 @@ IG_USER_ID = os.getenv('IG_USER_ID')
 # Formato: 'token1|user_id1,token2|user_id2' — separados por vírgula; cada
 # conta separa token e user_id por '|'.
 IG_ACCOUNTS_EXTRA = os.getenv('IG_ACCOUNTS_EXTRA', '')
+# Token de verificação do webhook do Instagram (mesmo valor usado no Meta app)
+IG_WEBHOOK_VERIFY_TOKEN = os.getenv('IG_WEBHOOK_VERIFY_TOKEN', '')
 # Facebook (Página Nitro Tech)
 FB_ACCESS_TOKEN = os.getenv('FB_ACCESS_TOKEN')
 FB_PAGE_ID = os.getenv('FB_PAGE_ID')

@@ -84,6 +84,36 @@ def _contas_instagram():
     return contas
 
 
+def _guardar_link_por_media(media_id, pagina_url, token, ig_user_id):
+    """Persiste o link da oferta para um post do feed, para responder 'quero'."""
+    import json
+    try:
+        from django.db import close_old_connections
+        from bot.models import BotConfig
+        close_old_connections()
+        dados = {'url': pagina_url or '', 'token': token, 'user_id': str(ig_user_id)}
+        BotConfig.set(f'ig_media_{media_id}', json.dumps(dados))
+        if pagina_url:
+            BotConfig.set('ig_ultimo_pagina_url', pagina_url)
+    except Exception as e:
+        logger.error(f"❌ Instagram: erro ao guardar link do media {media_id}: {e}")
+
+
+def link_por_media(media_id):
+    """Recupera o link da oferta de um post do feed (dict url/token/user_id)."""
+    import json
+    try:
+        from django.db import close_old_connections
+        from bot.models import BotConfig
+        close_old_connections()
+        valor = BotConfig.get(f'ig_media_{media_id}', '')
+        if valor:
+            return json.loads(valor)
+    except Exception as e:
+        logger.warning(f"⚠️ Instagram: erro ao ler link do media {media_id}: {e}")
+    return None
+
+
 def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type='STORIES'):
     """Publica um container (Story ou Feed) em UMA conta. Retorna True/False."""
     payload = {
@@ -149,7 +179,7 @@ def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type
 
     rotulo = 'Story' if media_type == 'STORIES' else 'Post no feed'
     logger.info(f"✅ {rotulo} publicado no Instagram! (media={pub_data['id']})")
-    return True
+    return pub_data['id']
 
 
 def post_instagram_story(texto, photo_path=None, pagina_url=''):
@@ -230,8 +260,12 @@ def post_instagram_feed(texto, photo_path=None, pagina_url=''):
     publicou = False
     for conta in contas:
         try:
-            if _postar_conta(conta['token'], conta['user_id'], imagem_url, caption, pagina_url, media_type='IMAGE'):
+            media_id = _postar_conta(conta['token'], conta['user_id'], imagem_url, caption, pagina_url, media_type='IMAGE')
+            if media_id:
                 publicou = True
+                # Guarda o link da oferta no banco: quando alguém comentar
+                # "quero" ou mandar DM, o bot sabe qual link responder.
+                _guardar_link_por_media(media_id, pagina_url, conta['token'], conta['user_id'])
         except Exception as e:
             logger.error(f"❌ Instagram feed: erro na conta {conta['user_id']}: {e}")
     return publicou
