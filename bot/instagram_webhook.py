@@ -118,6 +118,26 @@ def _texto_resposta(link, modo):
     return f"✅ Promo confirmada! Confira no nosso site:\n{site}"
 
 
+def _link_da_caption(media_id, token):
+    """Lê a legenda do post no Instagram e extrai o link do produto (a página
+    do produto do site já é postada na legenda do feed)."""
+    try:
+        resp = requests.get(
+            f"{GRAPH_URL}/{media_id}",
+            params={"fields": "caption", "access_token": token},
+            timeout=30,
+        )
+        dados = resp.json()
+    except Exception as e:
+        logger.warning(f"⚠️ IG webhook: erro ao ler legenda do media {media_id}: {e}")
+        return ''
+    caption = (dados.get('caption') or '')
+    links = re.findall(r'(https?://\S+)', caption)
+    if not links:
+        return ''
+    return links[0].rstrip('.,;|)')
+
+
 def _processar_comentario(value):
     """Comentário no feed: tenta mandar o link na DM do comentador; se o
     Instagram recusar (nem toda conta libera), responde no próprio comentário."""
@@ -149,12 +169,19 @@ def _processar_comentario(value):
         contas = _contas_instagram()
         user_id = contas[0]['user_id'] if contas else ''
 
+    # Link da DM: prioriza o mapa do post; se não houver (post antigo), lê a
+    # legenda do post, onde fica o link da página do produto.
+    dm_link = link
+    if not dm_link and media_id and token:
+        dm_link = _link_da_caption(media_id, token)
+    dm_link = dm_link or link
+
     # 1ª tentativa: Private Reply — inicia a DM a partir do comentário
     # (recipient.comment_id). É a forma oficial de mandar DM pra quem comentou.
     if token and user_id:
         dm_enviado = False
         try:
-            dm_enviado = _enviar_dm(token, user_id, sender_id, _texto_resposta(link, 'dm'), comment_id=comment_id)
+            dm_enviado = _enviar_dm(token, user_id, sender_id, _texto_resposta(dm_link, 'dm'), comment_id=comment_id)
         except Exception as e:
             logger.error(f"❌ IG webhook: erro no Private Reply: {e}")
 
