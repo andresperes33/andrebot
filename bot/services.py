@@ -955,6 +955,37 @@ def promo_ja_postada(texto):
         return False
 
 
+def promo_repetida_recente(texto, janela_minutos=60):
+    """
+    Verifica se uma promoção IGUAL já foi capturada recentemente (mesmo
+    link + mesmo preço) dentro de uma janela curta. Evita spam quando o
+    canal da fonte publica a MESMA oferta repetida em pouco tempo.
+
+    Retorna True se já existir uma promo com a MESMA chave criada dentro
+    da janela (deve ignorar/oferta).
+    """
+    from django.db import close_old_connections
+    from datetime import timedelta
+    from django.utils import timezone
+    close_old_connections()
+    from bot.models import Promo
+
+    chave = _chave_dedup(texto)
+    if not chave:
+        return False
+
+    try:
+        limite = timezone.now() - timedelta(minutes=janela_minutos)
+        return Promo.objects.filter(
+            url_chave=chave,
+            criado_em__gte=limite,
+        ).exists()
+    except Exception as db_err:
+        logger = logging.getLogger(__name__)
+        logger.warning(f"⚠️ Erro ao verificar promo repetida recente: {db_err}")
+        return False
+
+
 def eh_cupom_mercado_livre(texto):
     """True se o anúncio é um cupom do Mercado Livre (categoria 'cupom' + loja
     'Mercado Livre' ou o texto mencionando 'mercado livre')."""

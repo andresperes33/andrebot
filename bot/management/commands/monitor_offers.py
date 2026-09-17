@@ -169,6 +169,18 @@ class Command(BaseCommand):
 
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
+                # ─── Trava anti-repetição (janela curta de 1 hora) ────────
+                # Se a MESMA oferta (mesmo link + preço) já foi capturada nos
+                # últimos 60 minutos, ignora — o canal costuma repostar.
+                try:
+                    from bot.services import promo_repetida_recente
+                    repetida = await asyncio.to_thread(promo_repetida_recente, msg_text)
+                    if repetida:
+                        logger.info("⏭️ Oferta já capturada na última hora, ignorada.")
+                        return True
+                except Exception as repetida_err:
+                    logger.error(f"❌ Erro na trava anti-repetição: {repetida_err}")
+
                 # ─── Deduplicação: já foi postada antes? ─────────────────────
                 # DESATIVADO a pedido do usuário: nenhuma oferta é ignorada
                 # como "já postada". Todas passam pelos filtros abaixo.
