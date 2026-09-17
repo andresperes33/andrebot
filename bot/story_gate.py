@@ -4,7 +4,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 # Intervalo mínimo entre Stories (em minutos)
-INTERVALO_MIN_MINUTOS = 30
+INTERVALO_MIN_MINUTOS = 45
 
 
 def _agora():

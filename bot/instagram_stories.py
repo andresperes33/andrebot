@@ -114,6 +114,40 @@ def link_por_media(media_id):
     return None
 
 
+def _erro_cota_esgotada(dados):
+    """True se o erro do Instagram for o limite de publicação de mídia (subcode 2207042)."""
+    if not isinstance(dados, dict):
+        return False
+    err = dados.get('error') or {}
+    return err.get('code') == 9 and err.get('error_subcode') == 2207042
+
+
+def _cota_insta_disponivel(token, ig_user_id):
+    """Checa a cota de publicação de conteúdo do Instagram (janela móvel de 24h).
+
+    Retorna (disponivel: bool, uso: int, total: int). Em caso de falha na
+    consulta, assume que a cota está disponível (não bloqueia a publicação).
+    """
+    try:
+        from django.db import close_old_connections
+        close_old_connections()
+        resp = requests.get(
+            f"{GRAPH_URL}/{ig_user_id}/content_publishing_limit",
+            params={"fields": "config", "access_token": token},
+            timeout=30,
+        )
+        data = resp.json()
+        lista = data.get('data') or []
+        if lista and lista[0].get('config'):
+            cfg = lista[0]['config']
+            uso = int(cfg.get('quota_usage', 0) or 0)
+            total = int(cfg.get('quota_total', 0) or 0)
+            return uso < total, uso, total
+    except Exception as e:
+        logger.warning(f"⚠️ Instagram: erro ao ler cota de publicação ({ig_user_id}): {e}")
+    return True, 0, 0
+
+
 def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type='STORIES'):
     """Publica um container (Story ou Feed) em UMA conta. Retorna True/False."""
     payload = {
@@ -124,6 +158,13 @@ def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type
     }
     if media_type == 'STORIES' and pagina_url:
         payload["link_url"] = pagina_url
+
+    # Consulta a cota de publicação de 24h ANTES de criar o container. Se estiver
+    # esgotada, não queima chamadas tentando publicar (erro 9 / subcode 2207042).
+    disponivel, uso, total = _cota_insta_disponivel(token, ig_user_id)
+    if not disponivel:
+        logger.warning(f"⏸️ Instagram: cota de publicação esgotada na conta {ig_user_id} ({uso}/{total}) — pulando.")
+        return False
 
     try:
         resp = requests.post(
@@ -137,7 +178,10 @@ def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type
         return False
 
     if resp.status_code != 200 or 'id' not in data:
-        logger.error(f"❌ Instagram: falha ao criar media: {data}")
+        if _erro_cota_esgotada(data):
+            logger.warning(f"⏸️ Instagram: cota de publicação esgotada na conta {ig_user_id} — pulando.")
+        else:
+            logger.error(f"❌ Instagram: falha ao criar media: {data}")
         return False
 
     creation_id = data['id']
@@ -174,7 +218,10 @@ def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type
         return False
 
     if pub.status_code != 200 or 'id' not in pub_data:
-        logger.error(f"❌ Instagram: falha ao publicar: {pub_data}")
+        if _erro_cota_esgotada(pub_data):
+            logger.warning(f"⏸️ Instagram: cota de publicação esgotada na conta {ig_user_id} — pulando.")
+        else:
+            logger.error(f"❌ Instagram: falha ao publicar: {pub_data}")
         return False
 
     rotulo = 'Story' if media_type == 'STORIES' else 'Post no feed'
