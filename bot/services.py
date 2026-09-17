@@ -734,6 +734,7 @@ _TERMOS_PRODUTO = [
     'frigobar', 'lavadora', 'coifa', 'multiprocessador', 'espremedor', 'talher', 'talheres',
     'jogo de copos', 'utensilios', 'utensílios', 'porta temperos', 'faqueiro',
     'filtro', 'regua', 'tomadas', 'tomada', 'extensao', 'extensão',
+    'carregador', 'carregadores', 'carregamento', 'power bank', 'powerbank',
     'iphone', 'xiaomi', 'redmi', 'poco', 'realme', 'samsung', 'galaxy', 'motorola',
     'tablet', 'ipad', 'ar condicionado', 'condicionador', 'smart tv', 'qled', 'oled',
     'starlink', 'soprador',
