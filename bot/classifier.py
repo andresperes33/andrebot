@@ -200,7 +200,7 @@ _REGEX_CATEGORIA = [
         r'\bargb\b', r'kit\s*\d+\s*fans?', r'kit\s+ventoinhas?',
     ]),
     ('controle', [
-        r'\bgamepad\b', r'\bjoystick\b', r'\bjoypad\b', r'\bdualsense\b', r'\bcontrole\b',
+        r'\bgamepad\b', r'\bjoystick\b', r'\bjoypad\b', r'\bdualsense\b', r'\bcontrole\b', r'\bcontrolador\b',
     ]),
     ('microfone', [
         r'\bmicrofone\b', r'\bmicrophone\b', r'\bmic\b', r'\bmic\s*din[aâ]mic',
@@ -366,7 +366,7 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:caixas?\s*de\s*som|caixas?\s*som|caixinha\s*(?:de\s*som|bluetooth|tws|bt\b|portatil|speaker)|soundbar|speaker)\b', alvo_norm) and \
            re.search(r'\bcontrole\b', alvo_norm):
             continue
-        if re.search(r'\b(?:controle|gamepad|joystick|joypad|gamepad\s*controller)\b', alvo_norm):
+        if re.search(r'\b(?:controle|controlador|controller|gamepad|joystick|joypad)\b', alvo_norm):
             return 'controle'
 
     # Ar condicionado tem prioridade — 'Ar Condicionado Inverter Hi Wall' é um
