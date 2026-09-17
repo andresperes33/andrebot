@@ -1843,27 +1843,19 @@ _RE_EMOJI_ALL = re.compile(
 )
 
 def normaliza_emoji_inicial(texto):
-    """Força o emoji inicial para 👍 e remove todos os outros emojis do texto."""
+    """Preserva os emojis originais do texto capturado (não força 👍 nem remove
+    os demais). Apenas limpa espaços excedentes e quebras de linha vazias."""
     if not texto:
         return texto
-    t = texto.lstrip()
+    t = texto.strip()
     if not t:
         return texto
-    t_sem = _RE_EMOJI_ALL.sub('', t)
-    t_sem = t_sem.replace('\ufe0f', '').replace('\u200d', '')
-    linhas = t_sem.split('\n')
-    novas = []
-    for linha in linhas:
-        linha = re.sub(r'[ \t]+', ' ', linha).strip()
-        novas.append(linha)
-    t_sem = '\n'.join(novas)
-    t_sem = re.sub(r'\n{3,}', '\n\n', t_sem).strip()
-    t_sem = re.sub(r'^[^\w\s]+', '', t_sem.lstrip(), flags=re.UNICODE).lstrip()
-    while t_sem.startswith('👍'):
-        t_sem = t_sem[1:].lstrip('\ufe0f\u200d \t')
-    if not t_sem:
-        return '👍'
-    return '👍 ' + t_sem
+    linhas = []
+    for linha in t.split('\n'):
+        linhas.append(re.sub(r'[ \t]+', ' ', linha).strip())
+    t = '\n'.join(linhas)
+    t = re.sub(r'\n{3,}', '\n\n', t).strip()
+    return t
 
 
 async def process_offer_to_group(bot_app, text, photo=None):
