@@ -957,12 +957,13 @@ def promo_ja_postada(texto):
 
 def promo_repetida_recente(texto, janela_minutos=60):
     """
-    Verifica se uma promoção IGUAL já foi capturada recentemente (mesmo
-    link + mesmo preço) dentro de uma janela curta. Evita spam quando o
-    canal da fonte publica a MESMA oferta repetida em pouco tempo.
+    Verifica se uma promoção IGUAL já foi capturada recentemente dentro
+    de uma janela curta. Considera IGUAL quando bate o link + preço OU
+    o título + preço. Evita spam quando o canal da fonte publica a MESMA
+    oferta repetida em pouco tempo (às vezes com link novo/diferente).
 
-    Retorna True se já existir uma promo com a MESMA chave criada dentro
-    da janela (deve ignorar/oferta).
+    Retorna True se já existir uma promo igual criada dentro da janela
+    (deve ignorar a oferta).
     """
     from django.db import close_old_connections
     from datetime import timedelta
@@ -970,16 +971,26 @@ def promo_repetida_recente(texto, janela_minutos=60):
     close_old_connections()
     from bot.models import Promo
 
-    chave = _chave_dedup(texto)
-    if not chave:
-        return False
-
+    limite = timezone.now() - timedelta(minutes=janela_minutos)
     try:
-        limite = timezone.now() - timedelta(minutes=janela_minutos)
-        return Promo.objects.filter(
-            url_chave=chave,
-            criado_em__gte=limite,
-        ).exists()
+        # 1) Mesma chave (link + preço)
+        chave = _chave_dedup(texto)
+        if chave:
+            if Promo.objects.filter(url_chave=chave, criado_em__gte=limite).exists():
+                return True
+        # 2) Mesmo título + preço (link pode ter mudado)
+        try:
+            titulo = _linha_titulo(texto)[:500]
+            preco = _preco_do_texto(texto)
+        except Exception:
+            titulo = preco = ''
+        if titulo:
+            q = Promo.objects.filter(titulo=titulo, criado_em__gte=limite)
+            if preco:
+                q = q.filter(preco=preco)
+            if q.exists():
+                return True
+        return False
     except Exception as db_err:
         logger = logging.getLogger(__name__)
         logger.warning(f"⚠️ Erro ao verificar promo repetida recente: {db_err}")
