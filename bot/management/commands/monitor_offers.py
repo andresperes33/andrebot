@@ -480,14 +480,17 @@ class Command(BaseCommand):
                     from bot.instagram_stories import post_instagram_story
                     from bot.story_gate import pode_publicar_story, registrar_publicacao
 
-                    permitido, motivo = await asyncio.to_thread(pode_publicar_story)
-                    if not permitido:
-                        logger.info(f"⏸️ Story adiado ({motivo}). Promo segue salva no banco e no Telegram.")
+                    if categoria_oferta == 'cupom':
+                        logger.info("⏸️ Story não publicado: promoção da categoria 'cupom'.")
                     else:
-                        publicou = await asyncio.to_thread(post_instagram_story, modified_text, photo_path, pagina_url)
-                        if publicou:
-                            await asyncio.to_thread(registrar_publicacao)
-                            logger.info("📸 Story publicado no Instagram (dentro da janela/cooldown).")
+                        permitido, motivo = await asyncio.to_thread(pode_publicar_story)
+                        if not permitido:
+                            logger.info(f"⏸️ Story adiado ({motivo}). Promo segue salva no banco e no Telegram.")
+                        else:
+                            publicou = await asyncio.to_thread(post_instagram_story, modified_text, photo_path, pagina_url)
+                            if publicou:
+                                await asyncio.to_thread(registrar_publicacao)
+                                logger.info("📸 Story publicado no Instagram (dentro da janela/cooldown).")
                 except Exception as ig_err:
                     logger.error(f"❌ Erro Instagram: {ig_err}")
 
@@ -496,16 +499,19 @@ class Command(BaseCommand):
                     from bot.instagram_stories import post_instagram_feed
                     from bot.story_gate import pode_publicar_story, registrar_publicacao as registrar_feed
 
-                    permitido_feed, motivo_feed = await asyncio.to_thread(
-                        pode_publicar_story, chave='ultima_publicacao_ig_feed'
-                    )
-                    if not permitido_feed:
-                        logger.info(f"⏸️ Instagram feed adiado ({motivo_feed}). Promo segue salva no banco e no Telegram.")
+                    if categoria_oferta == 'cupom':
+                        logger.info("⏸️ Feed não publicado: promoção da categoria 'cupom'.")
                     else:
-                        publicou_feed = await asyncio.to_thread(post_instagram_feed, modified_text, photo_path, pagina_url)
-                        if publicou_feed:
-                            await asyncio.to_thread(registrar_feed, chave='ultima_publicacao_ig_feed')
-                            logger.info("🖼️ Oferta publicada no feed do Instagram.")
+                        permitido_feed, motivo_feed = await asyncio.to_thread(
+                            pode_publicar_story, chave='ultima_publicacao_ig_feed'
+                        )
+                        if not permitido_feed:
+                            logger.info(f"⏸️ Instagram feed adiado ({motivo_feed}). Promo segue salva no banco e no Telegram.")
+                        else:
+                            publicou_feed = await asyncio.to_thread(post_instagram_feed, modified_text, photo_path, pagina_url)
+                            if publicou_feed:
+                                await asyncio.to_thread(registrar_feed, chave='ultima_publicacao_ig_feed')
+                                logger.info("🖼️ Oferta publicada no feed do Instagram.")
                 except Exception as igf_err:
                     logger.error(f"❌ Erro Instagram feed: {igf_err}")
 
@@ -514,18 +520,21 @@ class Command(BaseCommand):
                     from bot.facebook_poster import post_facebook
                     from bot.story_gate import pode_publicar_story, registrar_publicacao
 
-                    permitido_fb, motivo_fb = await asyncio.to_thread(
-                        pode_publicar_story, chave='ultima_publicacao_fb'
-                    )
-                    if not permitido_fb:
-                        logger.info(f"⏸️ Facebook adiado ({motivo_fb}). Promo segue salva no banco e no Telegram.")
+                    if categoria_oferta == 'cupom':
+                        logger.info("⏸️ Facebook não publicado: promoção da categoria 'cupom'.")
                     else:
-                        publicou_fb = await asyncio.to_thread(post_facebook, modified_text, photo_path, pagina_url)
-                        if publicou_fb:
-                            await asyncio.to_thread(registrar_publicacao, chave='ultima_publicacao_fb')
-                            logger.info("📣 Oferta publicada no Facebook.")
+                        permitido_fb, motivo_fb = await asyncio.to_thread(
+                            pode_publicar_story, chave='ultima_publicacao_fb'
+                        )
+                        if not permitido_fb:
+                            logger.info(f"⏸️ Facebook adiado ({motivo_fb}). Promo segue salva no banco e no Telegram.")
                         else:
-                            logger.info("ℹ️ Facebook: nada publicado (não configurado ou falhou).")
+                            publicou_fb = await asyncio.to_thread(post_facebook, modified_text, photo_path, pagina_url)
+                            if publicou_fb:
+                                await asyncio.to_thread(registrar_publicacao, chave='ultima_publicacao_fb')
+                                logger.info("📣 Oferta publicada no Facebook.")
+                            else:
+                                logger.info("ℹ️ Facebook: nada publicado (não configurado ou falhou).")
                 except Exception as fb_err:
                     logger.error(f"❌ Erro Facebook: {fb_err}")
 
