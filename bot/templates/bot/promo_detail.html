@@ -10,13 +10,13 @@
 {% block og_meta %}
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="article">
-<meta property="og:url" content="{{ SITE_URL }}{% url 'promo_detail' promo.pk %}">
+<meta property="og:url" content="{{ SITE_URL }}{% url 'promo_detail' promo.pk promo.slug %}">
 <meta property="og:title" content="{{ promo.titulo }}">
 <meta property="og:description" content="{{ promo.preco }} — Promoção de {{ promo.get_categoria_display }} sempre atualizada.">
 {% if promo.imagem_url %}<meta property="og:image" content="{{ promo.imagem_url }}">{% endif %}
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:url" content="{{ SITE_URL }}{% url 'promo_detail' promo.pk %}">
+<meta property="twitter:url" content="{{ SITE_URL }}{% url 'promo_detail' promo.pk promo.slug %}">
 <meta property="twitter:title" content="{{ promo.titulo }}">
 <meta property="twitter:description" content="{{ promo.preco }} — Promoção de {{ promo.get_categoria_display }}.">
 {% if promo.imagem_url %}<meta property="twitter:image" content="{{ SITE_URL }}{{ promo.imagem_url }}">{% endif %}
@@ -71,7 +71,7 @@
                     <span class="detail-store-date"><i class="far fa-clock"></i> {{ promo.criado_em|date:"d/m \à\s H:i" }}</span>
                 </div>
                 <button type="button" class="detail-share-btn detail-share-inline promo-card-share" aria-label="Compartilhar oferta"
-                        data-share-url="{{ SITE_URL }}{% url 'promo_detail' promo.pk %}"
+                        data-share-url="{{ SITE_URL }}{% url 'promo_detail' promo.pk promo.slug %}"
                         data-share-title="{{ promo.titulo|default:''|escapejs }}">
                     <i class="fas fa-share-alt"></i> <span class="detail-share-label">Compartilhar</span>
                 </button>
@@ -100,7 +100,7 @@
                 </div>
                 <div class="price-history-list">
                     {% for item in historico %}
-                    <a class="price-history-row{% if item.pk == promo.pk %} is-current{% endif %}" {% if item.pk == promo.pk %}href="{% url 'promo_detail' promo.pk %}"{% elif item.pk %}href="{% url 'promo_detail' item.pk %}"{% elif item.link_afiliado %}href="{{ item.link_afiliado }}" target="_blank" rel="nofollow sponsored"{% endif %}>
+                    <a class="price-history-row{% if item.pk == promo.pk %} is-current{% endif %}" {% if item.pk == promo.pk %}href="{% url 'promo_detail' promo.pk promo.slug %}"{% elif item.pk %}href="{% url 'promo_detail' item.pk item.slug %}"{% elif item.link_afiliado %}href="{{ item.link_afiliado }}" target="_blank" rel="nofollow sponsored"{% endif %}>
                         <div class="price-history-info">
                             <div class="price-history-date">{{ item.criado_em|date:"d/m/y \à\s H:i" }} {% if item.pk == promo.pk %}<span class="price-history-badge"><i class="fas fa-location-arrow"></i> Você está aqui</span>{% endif %}</div>
                             {% if item.link_afiliado or item.pk %}
@@ -137,7 +137,7 @@
         </div>
         <div class="promos-grid">
             {% for promo in recentes %}
-            <a href="{% url 'promo_detail' promo.pk %}" class="card" style="color:inherit;">
+            <a href="{% url 'promo_detail' promo.pk promo.slug %}" class="card" style="color:inherit;">
                 <span class="corner-square"></span>
                 <div class="card-thumb">
                     {% if promo.imagem_url %}

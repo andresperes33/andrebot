@@ -133,6 +133,17 @@ class Promo(models.Model):
     def __str__(self):
         return f"{self.titulo[:60]} — {self.preco} ({self.criado_em.strftime('%d/%m %H:%M')})"
 
+    @property
+    def slug(self):
+        """
+        Slug gerado a partir do título, usado na URL SEO amigável:
+        /promos/<pk>/<slug>/ — o pk continua resolvendo o registro,
+        então o slug pode ser recalculado sem quebrar links antigos.
+        """
+        from django.utils.text import slugify
+        base = slugify(self.titulo)
+        return base[:120] or 'produto'
+
 
 class Evento(models.Model):
     """

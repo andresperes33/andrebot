@@ -87,14 +87,27 @@ _CATEGORIA_DICAS = {
 }
 
 
-def promo_detail_view(request, pk):
+def promo_detail_redirect_view(request, pk):
+    """URL antiga /promos/<pk>/ → redirect 301 para a URL com slug (SEO)."""
+    from django.http import HttpResponsePermanentRedirect
+    from django.urls import reverse
+    promo = get_object_or_404(Promo, pk=pk)
+    return HttpResponsePermanentRedirect(reverse('promo_detail', args=[promo.pk, promo.slug]))
+
+
+def promo_detail_view(request, pk, slug=None):
     """
     Página individual de uma promoção.
     Mostra foto, preço, cupom, texto original com links e meta tags de compartilhamento.
+    Se o slug não bater (título alterado/link legado), redireciona 301 para a URL canônica.
     """
     import re
     from bot.services import _RODAPE_CANAIS_HTML
     promo = get_object_or_404(Promo, pk=pk)
+    if slug is None or promo.slug != slug:
+        from django.http import HttpResponsePermanentRedirect
+        from django.urls import reverse
+        return HttpResponsePermanentRedirect(reverse('promo_detail', args=[promo.pk, promo.slug]))
     recentes = Promo.objects.exclude(pk=pk)[:3]
 
     # Histórico de preços: mesmas promoções do mesmo produto (mesmo link),
@@ -116,17 +129,23 @@ def promo_detail_view(request, pk):
             return None
 
     if promo.produto_chave:
+        from django.utils.text import slugify as _slugify
+
+        def _slug_de(item):
+            return _slugify(item.get('titulo', ''))[:120] or 'produto'
+
         linhas = list(
             Promo.objects
             .filter(produto_chave=promo.produto_chave)
             .exclude(preco='')
             .order_by('criado_em')
-            .values('preco', 'criado_em', 'pk', 'loja', 'link_afiliado')
+            .values('preco', 'criado_em', 'pk', 'loja', 'link_afiliado', 'titulo')
         )
         if promo.preco:
             linhas.append({
                 'preco': promo.preco, 'criado_em': promo.criado_em,
-                'pk': promo.pk, 'loja': promo.loja, 'link_afiliado': promo.link_afiliado,
+                'pk': promo.pk, 'loja': promo.loja,
+                'link_afiliado': promo.link_afiliado, 'titulo': promo.titulo,
             })
 
         # Agrupa por valor numérico; mantém a entrada mais recente.
@@ -141,6 +160,7 @@ def promo_detail_view(request, pk):
 
         # Ordena pela data da ocorrência mais recente de cada valor.
         for item in sorted(por_valor.values(), key=lambda it: it['criado_em']):
+            item['slug'] = _slug_de(item)
             historico.append(item)
             chart_data.append({
                 'data': item['criado_em'].isoformat(),
@@ -409,7 +429,7 @@ def sitemap_xml_view(request):
     # Cada promo vira uma página individual indexável
     for promo in Promo.objects.all()[:500]:
         pages.append({
-            "loc": f"{base_url}/promos/{promo.pk}/",
+            "loc": f"{base_url}/promos/{promo.pk}/{promo.slug}/",
             "changefreq": "weekly",
             "priority": "0.8",
         })

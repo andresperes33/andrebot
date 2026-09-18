@@ -7,13 +7,13 @@
             <span class="card-date">{{ promo.criado_em|date:"d/m \à\s H:i" }}</span>
         </div>
         <button type="button" class="promo-card-share" aria-label="Compartilhar oferta"
-                data-share-url="{{ SITE_URL }}{% url 'promo_detail' promo.pk %}"
+                data-share-url="{{ SITE_URL }}{% url 'promo_detail' promo.pk promo.slug %}"
                 data-share-title="{{ promo.titulo|default:''|escapejs }}">
             <i class="fas fa-share-alt"></i>
         </button>
     </div>
 
-    <a href="{% url 'promo_detail' promo.pk %}" class="promo-card-link">
+    <a href="{% url 'promo_detail' promo.pk promo.slug %}" class="promo-card-link">
         <div class="promo-card-thumb">
             {% if promo.imagem_url %}
                 <img src="{{ promo.imagem_url }}" alt="{{ promo.titulo }}"
@@ -36,7 +36,7 @@
     </a>
 
     <div class="promo-card-actions">
-        <a href="{% url 'promo_detail' promo.pk %}" class="card-cta">Ver oferta <i class="fas fa-arrow-right"></i></a>
+        <a href="{% url 'promo_detail' promo.pk promo.slug %}" class="card-cta">Ver oferta <i class="fas fa-arrow-right"></i></a>
     </div>
 </div>
 {% endfor %}
