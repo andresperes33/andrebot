@@ -209,51 +209,6 @@ def _nome_loja_por_url(url):
     return ''
 
 
-def parse_produtos_artigo(texto):
-    """Converte o texto de produtos da barra lateral do artigo em uma lista
-    estruturada.
-
-    Formato (uma linha por produto):
-      'Nome do produto | Loja: https://link | Loja2: https://link2'
-      'Nome do produto | Loja https://link | Loja2 https://link2'
-      'Nome do produto | https://link | https://link2'  (nome da loja inferido)
-
-    Retorna:
-      [{'nome': 'Nome', 'lojas': [{'loja': 'AliExpress', 'url': 'https://...'}, ...]}, ...]
-    """
-    if not texto:
-        return []
-    _URL = re.compile(r'https?://\S+')
-    produtos = []
-    for linha in texto.splitlines():
-        linha = linha.strip()
-        if not linha:
-            continue
-        partes = [p.strip() for p in linha.split('|')]
-        nome = partes[0].strip()
-        if not nome:
-            continue
-        lojas = []
-        for parte in partes[1:]:
-            if not parte:
-                continue
-            # Extrai a URL da parte (pode ser 'Loja: link' ou 'Loja link').
-            m = _URL.search(parte)
-            if not m:
-                continue
-            url = m.group(0).rstrip('.,;:!?)')
-            # Nome da loja = texto antes da URL, sem ':'/' ' finais.
-            loja_nome = parte[:m.start()].strip().rstrip(':,; ')
-            if not loja_nome:
-                loja_nome = _nome_loja_por_url(url)
-            if not loja_nome:
-                continue
-            lojas.append({'loja': loja_nome, 'url': url})
-        if lojas:
-            produtos.append({'nome': nome, 'lojas': lojas})
-    return produtos
-
-
 def _converter_links_afiliado_texto(texto):
     """Converte cada URL de loja do texto para o link de afiliado.
 

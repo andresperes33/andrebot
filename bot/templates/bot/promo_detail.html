@@ -116,17 +116,6 @@
         </div>
         {% endif %}
 
-        {% if guias_blog %}
-        <div class="card">
-            <div class="detail-label"><i class="fas fa-newspaper" style="color:var(--primary);"></i> Leia também no Blog</div>
-            <div class="detail-guides">
-                {% for guia in guias_blog %}
-                <a href="{% url 'blog_artigo' guia.slug %}"><i class="fas fa-arrow-right" style="color:var(--primary);"></i> {{ guia.titulo }}</a>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
         <p class="detail-affiliate">🔗 Alguns links desta página são de afiliados — se você comprar por eles, a Nitro Tech pode receber uma comissão, sem nenhum custo extra para você. Comprando por esses links, você ajuda a manter o site no ar.</p>
 
         <div class="detail-meta">

@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.db import models as _db_models
 from django.conf import settings
 from datetime import timedelta
-from .models import Promo, Artigo, Evento
+from .models import Promo, Evento
 from bot.instagram_webhook import instagram_webhook_view
 
 # Lojas sempre exibidas no filtro, mesmo sem promoções no período atual.
@@ -154,7 +154,6 @@ def promo_detail_view(request, pk):
         'chart_data': chart_data,
         'rodape_canais': _RODAPE_CANAIS_HTML,
         'dicas_categoria': _CATEGORIA_DICAS.get(promo.categoria, _CATEGORIA_DICAS.get('outros', '')),
-        'guias_blog': list(Artigo.objects.filter(publicado=True)[:3]),
     })
 
 
@@ -241,9 +240,6 @@ def promos_view(request):
         .encode('ascii', 'ignore').decode('ascii'),
     )
 
-    # Artigos recentes do Blog (destaque na home, acima do guia de categorias)
-    artigos_blog = list(Artigo.objects.filter(publicado=True)[:4])
-
     # Eventos em destaque (Quadro de Eventos) — publicados e com 'destaque' ativo
     eventos_destaque = list(Evento.objects.filter(publicado=True, destaque=True)[:3])
 
@@ -279,7 +275,6 @@ def promos_view(request):
         'carrossel_mobile_imgs': carrossel_mobile_imgs,
         'carrossel_slides': carrossel_slides,
         'categorias_guia': categorias_guia,
-        'artigos_blog': artigos_blog,
         'eventos_destaque': eventos_destaque,
     })
 
@@ -310,93 +305,6 @@ def termos_view(request):
     Página 'Termos de Uso' do site Nitro Tech.
     """
     return render(request, 'bot/termos.html')
-
-
-def guia_view(request):
-    """
-    Lista de artigos/guias originais (conteúdo exclusivo para SEO e AdSense).
-    Suporta busca por texto e filtro por categoria (com resposta AJAX).
-    """
-    from .models import Artigo
-
-    artigos = Artigo.objects.filter(publicado=True)
-
-    # Busca por texto (título/conteúdo)
-    q = request.GET.get('q', '').strip()
-    if q:
-        artigos = artigos.filter(
-            _db_models.Q(titulo__icontains=q) | _db_models.Q(conteudo__icontains=q)
-        )
-
-    # Filtro por categoria
-    categoria = request.GET.get('cat', '').strip()
-    if categoria:
-        artigos = artigos.filter(categoria=categoria)
-
-    artigos = artigos.order_by('-criado_em')
-
-    # Resposta AJAX (busca/filtro) — só o grid
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render(request, 'bot/_blog_grid.html', {'artigos': artigos})
-
-    categorias = list(
-        Artigo.objects.filter(publicado=True)
-        .exclude(categoria='')
-        .order_by('categoria')
-        .values_list('categoria', flat=True)
-        .distinct()
-    )
-
-    return render(request, 'bot/guia.html', {
-        'artigos': artigos,
-        'categorias': categorias,
-        'categoria_ativa': categoria,
-        'q': q,
-    })
-
-
-def guia_artigo_view(request, slug):
-    """
-    Página individual de um artigo/guiu + artigos relacionados (mesma categoria).
-    """
-    from .models import Artigo, ComentarioArtigo
-    artigo = get_object_or_404(Artigo, slug=slug, publicado=True)
-    relacionados = Artigo.objects.filter(
-        publicado=True, categoria=artigo.categoria
-    ).exclude(pk=artigo.pk)[:4]
-    from bot.services import parse_produtos_artigo
-    produtos = parse_produtos_artigo(artigo.produtos_texto)
-
-    # ─── Comentários ─────────────────────────────────────────────
-    mensagem = ''
-    erro = ''
-    if request.method == 'POST':
-        nome = (request.POST.get('nome') or '').strip()
-        email = (request.POST.get('email') or '').strip()
-        texto = (request.POST.get('texto') or '').strip()
-        if not nome or not texto:
-            erro = 'Preencha pelo menos o nome e o comentário.'
-        elif len(texto) < 3:
-            erro = 'O comentário está muito curto.'
-        else:
-            ComentarioArtigo.objects.create(
-                artigo=artigo, nome=nome[:100], email=email[:254], texto=texto,
-            )
-            mensagem = 'Comentário enviado! Ele aparecerá após a aprovação.'
-            # mantém o form preenchido (nome/email) após envio
-    comentarios = artigo.comentarios.filter(publicado=True)
-
-    return render(request, 'bot/guia_artigo.html', {
-        'artigo': artigo,
-        'relacionados': relacionados,
-        'produtos': produtos,
-        'comentarios': comentarios,
-        'mensagem': mensagem,
-        'erro': erro,
-    })
-
-
-from django.http import HttpResponse
 
 
 def nitroalerta_view(request):
@@ -491,21 +399,12 @@ def sitemap_xml_view(request):
     base_url = site_base_url(request)
     pages = [
         {"loc": f"{base_url}/promos/", "changefreq": "always", "priority": "1.0"},
-        {"loc": f"{base_url}/blog/", "changefreq": "weekly", "priority": "0.7"},
         {"loc": f"{base_url}/nitro-alerta/", "changefreq": "monthly", "priority": "0.5"},
         {"loc": f"{base_url}/sobre/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/contato/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/termos-de-uso/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/politica-de-privacidade/", "changefreq": "monthly", "priority": "0.3"},
     ]
-
-    # Artigos/Guia do site (conteúdo original indexável)
-    for artigo in Artigo.objects.filter(publicado=True):
-        pages.append({
-            "loc": f"{base_url}/blog/{artigo.slug}/",
-            "changefreq": "monthly",
-            "priority": "0.7",
-        })
 
     # Cada promo vira uma página individual indexável
     for promo in Promo.objects.all()[:500]:
