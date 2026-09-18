@@ -237,35 +237,9 @@ def detectar_categoria(texto, titulo=None):
     # 'compatível com laptop/notebook' não é confundido com o produto.
     haystack = _norm(_limpar_compat(texto))
 
-    # Detecta se o texto tem um PRODUTO real (ex.: 'Water Cooler').
-    # Se tiver, um 'Cupom: X' presente é só cupom do produto → não é cupom puro.
-    # Importante: iterar sobre linhas RAW do texto (não o texto colapsado por
-    # _norm, que junta tudo em uma linha e causa falsos negativos quando a
-    # primeira linha é 'Cupom').
-    from bot.services import _eh_anuncio_cupom, _eh_linha_titulo_produto
-    tem_produto_real = False
-    for alvo in (titulo, texto,):
-        if not alvo:
-            continue
-        for linha_raw in alvo.split('\n'):
-            linha_norm = _norm(linha_raw)
-            if linha_norm and _eh_linha_titulo_produto(linha_norm):
-                tem_produto_real = True
-                break
-        if tem_produto_real:
-            break
-
-    # Postagem só de cupom: QUALQUER linha que seja claramente um anúncio
-    # curto de cupom (ex.: 'NOVO Cupom Mercado Livre') torna o anúncio cupom.
-    # Só quando NÃO há um produto real (senão 'Cooler + Cupom' viraria cupom).
-    if not tem_produto_real:
-        for alvo in (titulo, texto,):
-            if not alvo:
-                continue
-            for linha_raw in alvo.split('\n'):
-                linha_norm = _norm(linha_raw)
-                if linha_norm and _eh_anuncio_cupom(linha_norm):
-                    return 'cupom'
+    # Sem produto identificado, a postagem NÃO vira cupom automaticamente:
+    # cai para 'outros' (a menção a 'cupom' no texto não caracteriza a
+    # postagem como cupom — só um produto real define a categoria).
 
     # PC Gamer tem prioridade sobre componentes — 'PC Gamer ... Fonte 500W'
     # é um PC GAMER completo; 'Fonte 500W' ali é só a especificação do build.
@@ -780,44 +754,10 @@ def detectar_categoria(texto, titulo=None):
         if eh_console and eh_bundle:
             return 'console'
 
-    # Cupom genérico SEM a palavra 'cupom' no título (ex.: 'AUMENTOU O
-    # LIMITE!!', '10% OFF', 'Limite de R$ 200,00 OFF', 'Compra mínima').
-    # Só é cupom se o título NÃO for nome de produto (nenhuma categoria
-    # casa), senão 'Notebook 10% OFF' viraria cupom.
+    # Sem produto identificado, NÃO vira cupom: vai para 'outros'.
+    # (Antes: 'AUMENTOU O LIMITE!!', '10% OFF', 'Compra mínima' forçavam
+    # a categoria cupom mesmo sem produto real.)
     alvo_titulo = titulo or texto
-    if alvo_titulo:
-        t_limpo = _norm(_limpar_compat(alvo_titulo))
-        # Verifica se o título OU o texto inteiro é um produto real.
-        # Assim 'Positivo Infinix ... 15% OFF' e 'RTX 5070 Ti Placa de Video
-        # ... Cupom R$100 OFF' não viram cupom.
-        eh_produto = any(
-            re.search(p, t_limpo)
-            for _, padroes in _REGEX_CATEGORIA
-            for p in padroes
-        )
-        if not eh_produto and texto:
-            texto_limpo = _norm(_limpar_compat(texto))
-            eh_produto = any(
-                re.search(p, texto_limpo)
-                for _, padroes in _REGEX_CATEGORIA
-                for p in padroes
-            )
-        if not eh_produto:
-            texto_baixo = _norm(texto)
-            tem_off = re.search(r'\b\d+\s*%?\s*(?:off|de desconto)\b', texto_baixo)
-            tem_limite = re.search(r'\b(?:limite|compra\s*m[ií]nima)\b', texto_baixo)
-            tem_cupom = 'cupom' in texto_baixo or 'cupons' in texto_baixo or 'desconto' in texto_baixo
-            # Anúncio de cupom que fala de resgate de cupons (sem % OFF no texto):
-            # 'Teremos vários cupons no Mercado Livre hoje...', 'cupons sairão
-            # nos horários', 'ative a notificação e resgate' → é um cupom.
-            eh_anuncio_cupom_env = re.search(
-                r'cupons?\b.{0,80}\b(?:mercado livre|hoje|sair[aá]o|horari|notifica|resgate|dispon[ií]vel|ativo)',
-                texto_baixo,
-            )
-            if tem_off and (tem_limite or tem_cupom):
-                return 'cupom'
-            if tem_cupom and eh_anuncio_cupom_env:
-                return 'cupom'
 
     # Se houver título do produto, busca nele primeiro. A primeira palavra
     # tem prioridade (ex.: 'Processador ... Radeon' é processador). Se a

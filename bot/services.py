@@ -998,29 +998,6 @@ def promo_repetida_recente(texto, janela_minutos=60):
         return False
 
 
-def eh_cupom_mercado_livre(texto):
-    """True se o anúncio é um cupom do Mercado Livre (categoria 'cupom' + loja
-    'Mercado Livre' ou o texto mencionando 'mercado livre')."""
-    if not texto:
-        return False
-    from bot.classifier import detectar_categoria, detectar_loja
-    titulo = _linha_titulo(texto)[:250]
-    categoria = detectar_categoria(texto, titulo=titulo)
-    if categoria != 'cupom':
-        return False
-    link_afiliado = ''
-    links = re.findall(r'(https?://\S+)', texto)
-    if links:
-        link_afiliado = links[0].rstrip(')')
-    loja = detectar_loja(link_afiliado)
-    return loja == 'Mercado Livre' or 'mercado livre' in texto.casefold()
-
-
-def caminho_imagem_cupom_ml():
-    """Caminho da imagem fixa padrão de cupom do Mercado Livre."""
-    return os.path.join(settings.MEDIA_ROOT, 'cupom', 'cupom_mercado_livre.jpg')
-
-
 def _converter_para_webp(origem, destino_dir, prefixo='promo', max_lado=900, qualidade=82):
     """Converte a imagem 'origem' para WebP (redimensionada para max_lado) e
     salva em destino_dir com nome '<prefixo>_<timestamp>_<nome>.webp'.
@@ -1092,12 +1069,8 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     # Preço básico para filtro
     preco = _preco_do_texto(texto)
 
-    # Imagem padrão de CUPOM do Mercado Livre: quando o anúncio é um cupom
-    # da loja, o site usa uma imagem fixa (media/cupom/cupom_mercado_livre.jpg)
-    # em vez da foto do Telegram. Texto continua o mesmo.
-    eh_cupom_ml = eh_cupom_mercado_livre(texto)
-
-    # Processa imagem
+    # Processa imagem. Sempre usa a foto original da postagem (não há mais
+    # substituição por imagem fixa de cupom do Mercado Livre).
     imagem_url = ''
     media_promos_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
 
@@ -1113,15 +1086,6 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
         shutil.copy2(origem, os.path.join(media_promos_dir, filename))
         return filename
 
-    if eh_cupom_ml:
-        img_cupom = caminho_imagem_cupom_ml()
-        if os.path.exists(img_cupom):
-            try:
-                filename = _salvar_imagem_site(img_cupom, 'cupom_ml')
-                imagem_url = f"{settings.MEDIA_URL}promos/{filename}"
-                print(f"🎫 Cupom ML: imagem fixa aplicada -> {imagem_url}")
-            except Exception as cupom_img_err:
-                print(f"Erro ao aplicar imagem fixa do cupom ML: {cupom_img_err}")
     if not imagem_url and photo_path:
         try:
             if isinstance(photo_path, str) and photo_path.startswith('http'):
