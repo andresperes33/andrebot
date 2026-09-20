@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Nitro Tech — Promoções de Tech{% endblock %}</title>
+    <title>{% block title %}André Indica — Promoções de Tech{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{% static 'bot/favicon.svg' %}">
     <link rel="icon" type="image/png" href="{% static 'bot/favicon.png' %}">
     <link rel="manifest" href="{% static 'bot/manifest.json' %}">
@@ -12,22 +12,27 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Nitro Tech">
+    <meta name="apple-mobile-web-app-title" content="André Indica">
     <link rel="apple-touch-icon" href="{% static 'bot/icon-192.png' %}">
-    <meta name="description" content="{% block description %}As melhores promoções de tecnologia encontradas pelo bot Nitro Tech. SSD, placa de vídeo, notebooks e muito mais com cupons e links de afiliado.{% endblock %}">
-    
+    <meta name="description" content="{% block description %}As melhores promoções de tecnologia curadas por André Indica. SSD, placa de vídeo, notebooks e muito mais com cupons e links de afiliado.{% endblock %}">
+    <meta name="author" content="André Indica">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <link rel="alternate" hreflang="pt-BR" href="{{ SITE_URL }}{{ request.path }}">
+
     {% block og_meta %}
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ SITE_URL }}/">
-    <meta property="og:title" content="Nitro Tech — Promoções de Tech">
-    <meta property="og:description" content="As melhores ofertas de hardware e tecnologia monitoradas 24h por dia.">
+    <meta property="og:url" content="{{ SITE_URL }}{{ request.path }}">
+    <meta property="og:title" content="André Indica — Promoções de Tech">
+    <meta property="og:description" content="As melhores ofertas de hardware e tecnologia, curadas 24h por dia por André Indica. Economize com cupons verificados e links de afiliado.">
     <meta property="og:image" content="{{ SITE_URL }}{% static 'bot/favicon-og.png' %}">
+    <meta property="og:site_name" content="André Indica">
+    <meta property="og:locale" content="pt_BR">
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="{{ SITE_URL }}/">
-    <meta property="twitter:title" content="Nitro Tech — Promoções de Tech">
-    <meta property="twitter:description" content="As melhores ofertas de hardware e tecnologia monitoradas 24h por dia.">
+    <meta property="twitter:url" content="{{ SITE_URL }}{{ request.path }}">
+    <meta property="twitter:title" content="André Indica — Promoções de Tech">
+    <meta property="twitter:description" content="As melhores ofertas de hardware e tecnologia, curadas 24h por dia por André Indica. Economize com cupons verificados e links de afiliado.">
     <meta property="twitter:image" content="{{ SITE_URL }}{% static 'bot/favicon-og.png' %}">
     {% endblock %}
 
@@ -42,9 +47,16 @@
     {
         "@context": "https://schema.org",
         "@type": "Organization",
-        "name": "Nitro Tech",
+        "name": "André Indica",
         "url": "{{ SITE_URL }}",
-        "logo": "{{ SITE_URL }}{% static 'bot/icon-512.png' %}"
+        "logo": "{{ SITE_URL }}{% static 'bot/icon-512.png' %}",
+        "description": "Promoções de tecnologia curadas 24h por dia. SSD, placa de vídeo, notebook, monitor e muito mais com cupons verificados.",
+        "sameAs": [
+            "https://t.me/Nitro_Tech_1",
+            "https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD",
+            "https://www.instagram.com/nitro_tech_brasil/",
+            "https://www.tiktok.com/@nitrotech.store"
+        ]
     }
     </script>
     {% block extra_head %}{% endblock %}
@@ -101,7 +113,7 @@
             <a href="/promos/" class="brand">
                 <span class="brand-mark"></span>
                 <span class="brand-text">
-                    <span class="brand-name">Promoções <strong>Nitro Tech</strong></span>
+                    <span class="brand-name">Promoções <strong>André Indica</strong></span>
                 </span>
             </a>
 
@@ -147,7 +159,7 @@
 <div class="qr-modal" id="qrModal" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="qr-modal-box">
         <button type="button" class="qr-modal-close" id="qrModalClose" aria-label="Fechar">&times;</button>
-        <h3>Baixar o app Nitro Tech</h3>
+        <h3>Baixar o app André Indica</h3>
         <p class="qr-modal-sub">Instale o app no seu celular e receba as ofertas em um toque.</p>
         <button type="button" class="btn btn-primary qr-install-btn" id="btnInstalarApp"><i class="fas fa-download"></i> Baixar agora</button>
         <p class="qr-modal-hint" id="qrInstallHint">No iPhone/iPad: toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong>.</p>
@@ -181,7 +193,7 @@
 <footer class="footer-section">
     <div class="footer-inner">
         <div>
-            <div class="footer-brand">Nitro<strong>Tech</strong></div>
+            <div class="footer-brand">André<strong>Indica</strong></div>
             <p class="footer-desc">Promoções de tecnologia atualizadas em tempo real, publicadas no Telegram, WhatsApp e aqui no site.</p>
         </div>
         <div>
@@ -207,7 +219,7 @@
         </div>
     </div>
     <div class="footer-legal">
-        <span>© {% now "Y" %} Nitro Tech</span>
+        <span>© {% now "Y" %} André Indica</span>
     </div>
 </footer>
 
@@ -325,7 +337,7 @@ document.addEventListener('click', function (e) {
     e.preventDefault();
     e.stopPropagation();
     var url = btn.getAttribute('data-share-url');
-    var titulo = btn.getAttribute('data-share-title') || 'Nitro Tech';
+    var titulo = btn.getAttribute('data-share-title') || 'André Indica';
     if (navigator.share) {
         navigator.share({ title: titulo, url: url }).catch(function () {});
     } else if (navigator.clipboard) {

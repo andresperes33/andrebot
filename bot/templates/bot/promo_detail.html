@@ -2,7 +2,7 @@
 {% load static %}
 {% load urlize_blank %}
 
-{% block title %}{{ promo.titulo }} | Nitro Tech{% endblock %}
+{% block title %}{{ promo.titulo }} | André Indica{% endblock %}
 {% block description %}{{ promo.titulo }} — {{ promo.preco }}. Promoção de {{ promo.get_categoria_display }} sempre atualizada.{% endblock %}
 
 {% block nav_promos %}active{% endblock %}
@@ -86,7 +86,7 @@
 
         {% if dicas_categoria %}
         <div class="detail-tips">
-            <div class="detail-label"><i class="fas fa-lightbulb"></i> Dicas da Nitro Tech</div>
+            <div class="detail-label"><i class="fas fa-lightbulb"></i> Dicas da André Indica</div>
             <p>{{ dicas_categoria }}</p>
         </div>
         {% endif %}

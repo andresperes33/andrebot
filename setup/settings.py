@@ -39,9 +39,14 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 CSRF_TRUSTED_ORIGINS = [
     o.strip() for o in os.getenv(
         'CSRF_TRUSTED_ORIGINS',
-        'https://www.nitrotech.store,https://nitrotech.store'
+        'https://www.promos.andreindicatech.com.br,https://promos.andreindicatech.com.br,https://www.nitrotech.store,https://nitrotech.store'
     ).split(',') if o.strip()
 ]
+# Novo domínio: www.promos.andreindicatech.com.br
+# Lembre-se de atualizar no servidor (EasyPanel) as variáveis:
+#   SITE_URL=https://www.promos.andreindicatech.com.br
+#   ALLOWED_HOSTS=www.promos.andreindicatech.com.br,promos.andreindicatech.com.br,www.nitrotech.store,nitrotech.store
+#   CSRF_TRUSTED_ORIGINS=https://www.promos.andreindicatech.com.br,https://promos.andreindicatech.com.br,https://www.nitrotech.store,https://nitrotech.store
 
 
 # Application definition
