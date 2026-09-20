@@ -158,6 +158,9 @@ def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type
     }
     if media_type == 'STORIES' and pagina_url:
         payload["link_url"] = pagina_url
+        logger.info(f"🔗 Instagram Story: link_url definido como: {pagina_url}")
+    else:
+        logger.warning(f"⚠️ Instagram Story: pagina_url vazio ou não é Story — link NÃO será adicionado. (media_type={media_type}, pagina_url={pagina_url!r})")
 
     # Consulta a cota de publicação de 24h ANTES de criar o container. Se estiver
     # esgotada, não queima chamadas tentando publicar (erro 9 / subcode 2207042).
@@ -181,8 +184,10 @@ def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type
         if _erro_cota_esgotada(data):
             logger.warning(f"⏸️ Instagram: cota de publicação esgotada na conta {ig_user_id} — pulando.")
         else:
-            logger.error(f"❌ Instagram: falha ao criar media: {data}")
+            logger.error(f"❌ Instagram: falha ao criar media (resposta completa): {data}")
         return False
+
+    logger.info(f"✅ Instagram: container criado com sucesso (id={data.get('id')}, link_url enviado: {'link_url' in payload})")
 
     creation_id = data['id']
 
