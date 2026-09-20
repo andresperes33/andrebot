@@ -260,12 +260,12 @@ def _processar_mensagem(value, entry_id):
     story_id = ''
 
     messaging = value.get('messaging') or []
-    if messaging:
+    if messaging and isinstance(messaging, list):
         m = messaging[0]
         sender = (m.get('sender') or {}).get('id') or ''
         msg = m.get('message') or {}
     else:
-        # Formato direto: sender/recipient/message vêm direto no value
+        # Formato direto: sender/recipient/message vêm direto no item do webhook
         sender = (value.get('sender') or {}).get('id') or (value.get('from') or {}).get('id') or ''
         msg = value.get('message') or {}
 
@@ -339,6 +339,15 @@ def processar_evento_instagram(payload):
     contadas = 0
     for entry in entries:
         entry_id = entry.get('id', '')
+
+        # 1. Formato padrão do Messenger/Instagram Messaging: entry['messaging'] = [ {...} ]
+        # É EXATAMENTE onde chegam as DMs e respostas a Stories!
+        for msg_item in entry.get('messaging') or []:
+            if msg_item:
+                _processar_mensagem(msg_item, entry_id)
+                contadas += 1
+
+        # 2. Formato por mudanças: entry['changes'] = [ {'field': ..., 'value': ...} ]
         for change in entry.get('changes') or []:
             field = change.get('field')
             value = change.get('value') or {}
@@ -348,6 +357,7 @@ def processar_evento_instagram(payload):
             elif field in ('messages', 'messaging') and value:
                 _processar_mensagem(value, entry_id)
                 contadas += 1
+
     if contadas:
         logger.info(f"IG webhook: {contadas} eventos processados.")
 
@@ -372,8 +382,9 @@ def instagram_webhook_view(request):
             logger.error(f"❌ IG webhook: JSON inválido: {e}")
             return JsonResponse({'status': 'error'}, status=400)
 
-        logger.info(f"🔔 IG webhook: POST recebido (object={payload.get('object')}), entries={len(payload.get('entry') or [])}")
-        if payload.get('object') == 'instagram':
+        obj = payload.get('object')
+        logger.info(f"🔔 IG webhook: POST recebido (object={obj}), entries={len(payload.get('entry') or [])}")
+        if obj in ('instagram', 'page'):
             processar_evento_instagram(payload)
         return JsonResponse({'status': 'ok'})
 
