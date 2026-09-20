@@ -62,6 +62,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'setup.middleware.DomainRedirectMiddleware',   # 301: nitrotech.store → andreindicatech.com.br
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
