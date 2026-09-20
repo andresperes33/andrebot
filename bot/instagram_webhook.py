@@ -27,12 +27,26 @@ _processadas = {}
 
 
 def _norm(texto):
-    """Minúsculas sem acentos, para casar com 'quero'."""
+    """Minúsculas sem acentos, para casar com os gatilhos."""
     texto = (texto or '').lower()
     return ''.join(
         c for c in unicodedata.normalize('NFD', texto)
         if unicodedata.category(c) != 'Mn'
     )
+
+
+_GATILHOS_INTERESSE = (
+    'quero', 'eu quero', 'link', 'manda', 'onde', 'qual o link', 'preco',
+    'comprar', 'valor', 'envia', 'passa o link', 'cade o link', 'mandar'
+)
+
+
+def _tem_interesse(texto):
+    """Verifica se o comentário ou mensagem indica interesse no produto/link."""
+    t = _norm(texto)
+    if not t:
+        return False
+    return any(gatilho in t for gatilho in _GATILHOS_INTERESSE)
 
 
 def _ja_processada(chave, janela_seg=300):
@@ -114,7 +128,7 @@ def _texto_resposta(link, modo):
     link = (link or '').strip()
     if link:
         return f"✅ Aproveite a promoção!\n\n🔗 {link}"
-    site = (getattr(settings, 'SITE_URL', '') or 'https://www.nitrotech.store').rstrip('/')
+    site = (getattr(settings, 'SITE_URL', '') or 'https://www.promos.andreindicatech.com.br').rstrip('/')
     return f"✅ Promo confirmada! Confira no nosso site:\n{site}"
 
 
@@ -151,8 +165,8 @@ def _processar_comentario(value):
         logger.info(f"🔍 IG webhook: comentário ignorado (parent={value.get('parent_id')}, id={comment_id}).")
         return
 
-    if 'quero' not in _norm(text):
-        logger.info(f"🔍 IG webhook: comentário sem 'quero' (text={text[:40]!r}).")
+    if not _tem_interesse(text):
+        logger.info(f"🔍 IG webhook: comentário sem palavra de interesse (text={text[:40]!r}).")
         return
 
     if _ja_processada(f'comentario:{comment_id}'):
@@ -251,8 +265,8 @@ def _processar_mensagem(value, entry_id):
     if not sender or not text:
         return
 
-    if 'quero' not in _norm(text):
-        logger.info(f"🔍 IG webhook: mensagem sem 'quero' (sender={sender}, texto={text[:40]!r}).")
+    if not _tem_interesse(text):
+        logger.info(f"🔍 IG webhook: mensagem sem palavra de interesse (sender={sender}, texto={text[:40]!r}).")
         return
 
     if _ja_processada(f'dm:{mid or (sender + ":" + story_id)}'):
