@@ -19,11 +19,11 @@ def site_base_url(request):
 # Rodapé de canais anexado às promoções (Telegram/WhatsApp/site). Em texto puro.
 _RODAPE_CANAIS_TEXTO = (
     "\n\n"
-    "📲 Canais da Nitro Tech:\n"
+    "📲 Canais André Indica:\n"
     "📢 Telegram: https://t.me/Nitro_Tech_1\n"
     "💬 WhatsApp: https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD\n"
     "🤖 Bot: https://t.me/alertas_andre_bot\n"
-    "🌐 Site: https://www.nitrotech.store\n"
+    "🌐 Site: https://promos.andreindicatech.com.br\n"
     "📸 Instagram: https://www.instagram.com/nitro_tech_brasil/\n"
     "🎵 TikTok: https://www.tiktok.com/@nitrotech.store"
 )
@@ -31,11 +31,11 @@ _RODAPE_CANAIS_TEXTO = (
 # Mesmo rodapé em HTML, com links clicáveis (usado na página do produto).
 _RODAPE_CANAIS_HTML = """
 <div class="detail-channels">
-    <div class="detail-label">📲 Canais da Nitro Tech</div>
+    <div class="detail-label">📲 Canais André Indica</div>
     <a href="https://t.me/Nitro_Tech_1" target="_blank" rel="noopener">📢 Grupo no Telegram</a>
     <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" rel="noopener">💬 Grupo no WhatsApp</a>
-    <a href="https://t.me/alertas_andre_bot" target="_blank" rel="noopener">🤖 Bot Nitro Tech</a>
-    <a href="https://www.nitrotech.store" target="_blank" rel="noopener">🌐 Site / App</a>
+    <a href="https://t.me/alertas_andre_bot" target="_blank" rel="noopener">🤖 Bot André Indica</a>
+    <a href="https://promos.andreindicatech.com.br" target="_blank" rel="noopener">🌐 Site / App</a>
     <a href="https://www.instagram.com/nitro_tech_brasil/" target="_blank" rel="noopener">📸 Instagram</a>
     <a href="https://www.tiktok.com/@nitrotech.store" target="_blank" rel="noopener">🎵 TikTok</a>
 </div>

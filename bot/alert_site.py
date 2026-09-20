@@ -26,7 +26,7 @@ def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None):
     if not alertas.exists():
         return
 
-    site_link = getattr(settings, 'SITE_URL', 'https://www.nitrotech.store')
+    site_link = getattr(settings, 'SITE_URL', 'https://promos.andreindicatech.com.br')
 
     for alerta in alertas:
         try:
@@ -40,9 +40,9 @@ def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None):
                 continue
 
             mensagem = (
-                f"🔔 *Nitro Tech Alerta*\n"
+                f"🔔 *André Indica Alerta*\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
-                f"{alerta.nome or 'Olá'}, o Nitro Tech Alerta acabou de encontrar o seu produto "
+                f"{alerta.nome or 'Olá'}, o André Indica Alerta acabou de encontrar o seu produto "
                 f"*{alerta.keyword}*!\n\n"
                 f"*Aqui está a oferta:*\n\n"
                 f"{offer_text}\n\n"
