@@ -37,3 +37,4 @@ class DomainRedirectMiddleware:
             return HttpResponsePermanentRedirect(new_url)
 
         return self.get_response(request)
+

@@ -45,6 +45,14 @@ class Command(BaseCommand):
         offer_filter = ((filters.TEXT & filters.Entity(MessageEntity.URL)) | filters.PHOTO)
         app.add_handler(MessageHandler(offer_filter & filters.ChatType.PRIVATE, offer_handle_message))
 
+        async def error_handler(update, context):
+            if isinstance(context.error, Conflict):
+                logger.warning('⚠️ Telegram 409 Conflict: outra sessão/container estava com getUpdates ativo. Reconectando...')
+            else:
+                logger.error(f'❌ Exceção capturada no bot: {context.error}', exc_info=context.error)
+
+        app.add_error_handler(error_handler)
+
         logger.info('🤖 Bot único do Telegram iniciado (alertas + ofertas).')
 
         # Retry com backoff: durante deploy do Easypanel o container antigo ainda
