@@ -130,26 +130,46 @@ def compor_story_card(foto_path, mensagem, output_path=None, pagina_url=None):
     if fonte_texto and mensagem:
         _desenhar_texto_multilinha(draw, mensagem, (60, 890, W - 60, 1600), fonte_texto, (40, 40, 40))
 
-    # Rodapé: mostra o link do produto se disponível
+    # Rodapé: texto original + badge "Clique aqui!" acima quando tem link
     if pagina_url:
-        marcador = f'🔗 {pagina_url}'
-        fonte_bio = None
+        badge = '🔗 Clique aqui!'
+        fonte_badge = None
         max_larg = W - 120
-        for tamanho in range(58, 24, -1):
-            fonte_bio = _carregar_fonte(tamanho, bold=True)
-            if fonte_bio:
-                if draw.textlength(marcador, font=fonte_bio) <= max_larg:
+        for tamanho in range(52, 24, -1):
+            fonte_badge = _carregar_fonte(tamanho, bold=True)
+            if fonte_badge:
+                if draw.textlength(badge, font=fonte_badge) <= max_larg:
                     break
-        if fonte_bio:
-            larg = draw.textlength(marcador, font=fonte_bio)
-            x = (W - larg) / 2
-            pad_x, pad_y = 30, 18
-            y = 1660
+        if fonte_badge:
+            larg_b = draw.textlength(badge, font=fonte_badge)
+            x_b = (W - larg_b) / 2
+            pad_x, pad_y = 30, 16
+            y_b = 1590
             draw.rounded_rectangle(
-                [(x - pad_x, y - pad_y), (x + larg + pad_x, y + fonte_bio.size + pad_y)],
-                radius=20, fill=(20, 24, 38)
+                [(x_b - pad_x, y_b - pad_y), (x_b + larg_b + pad_x, y_b + fonte_badge.size + pad_y)],
+                radius=20, fill=(255, 200, 0)
             )
-            draw.text((x, y), marcador, font=fonte_bio, fill=(255, 255, 0))
+            draw.text((x_b, y_b), badge, font=fonte_badge, fill=(20, 24, 38))
+
+    # Texto original do rodapé
+    marcador = 'Quer o link? Comenta aqui que eu te envio!'
+    fonte_bio = None
+    max_larg = W - 120
+    for tamanho in range(58, 24, -1):
+        fonte_bio = _carregar_fonte(tamanho, bold=True)
+        if fonte_bio:
+            if draw.textlength(marcador, font=fonte_bio) <= max_larg:
+                break
+    if fonte_bio:
+        larg = draw.textlength(marcador, font=fonte_bio)
+        x = (W - larg) / 2
+        pad_x, pad_y = 30, 18
+        y = 1680
+        draw.rounded_rectangle(
+            [(x - pad_x, y - pad_y), (x + larg + pad_x, y + fonte_bio.size + pad_y)],
+            radius=20, fill=(20, 24, 38)
+        )
+        draw.text((x, y), marcador, font=fonte_bio, fill=(255, 255, 0))
 
     if not output_path:
         output_path = os.path.join(settings.MEDIA_ROOT, 'promos', f'story_{int(__import__("time").time())}.jpg')
