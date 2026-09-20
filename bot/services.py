@@ -1763,19 +1763,73 @@ _RE_EMOJI_ALL = re.compile(
 )
 
 def normaliza_emoji_inicial(texto):
-    """Preserva os emojis originais do texto capturado (não força 👍 nem remove
-    os demais). Apenas limpa espaços excedentes e quebras de linha vazias."""
+    """Troca o PRIMEIRO emoji da mensagem capturada por um emoji de alerta
+    escolhido aleatoriamente. Os demais emojis e o restante do texto são
+    preservados. Também limpa espaços/quebras de linha excedentes.
+
+    Lista de emojis de alerta:
+        🚨 ⚠️ 🔔 📢 📣 ‼️ ❗ ❕ 🔥 ⚡ 👀 🛎️ 🚩 🆘 ⛔ 🛑 🔴 🟠 💥 📍
+    """
+    import random
+
+    _EMOJIS_ALERTA = [
+        '🚨', '⚠️', '🔔', '📢', '📣', '‼️', '❗', '❕',
+        '🔥', '⚡', '👀', '🛎️', '🚩', '🆘', '⛔', '🛑',
+        '🔴', '🟠', '💥', '📍',
+    ]
+
     if not texto:
         return texto
     t = texto.strip()
     if not t:
         return texto
+
+    # Limpa espaços excedentes em cada linha
     linhas = []
     for linha in t.split('\n'):
         linhas.append(re.sub(r'[ \t]+', ' ', linha).strip())
     t = '\n'.join(linhas)
     t = re.sub(r'\n{3,}', '\n\n', t).strip()
+
+    # Encontra e substitui o PRIMEIRO emoji da mensagem
+    # A regex captura qualquer emoji (bloco de caracteres Unicode gráficos)
+    primeiro_emoji_re = re.compile(
+        r'^(\s*)'                       # espaços/quebras iniciais (grupo 1)
+        r'((?:[\U0001F000-\U0001FFFF]'  # emojis suplementares
+        r'|[\U00002600-\U000027FF]'     # símbolos miscelâneos
+        r'|[\U00002B00-\U00002BFF]'     # setas / símbolos
+        r'|[\U00003000-\U00003300]'     # CJK e cercados
+        r'|[\u00A9\u00AE\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9-\u21AA]'
+        r'|[\u231A-\u231B\u2328\u23CF\u23E9-\u23F3\u23F8-\u23FA]'
+        r'|[\u25AA-\u25AB\u25B6\u25C0\u25FB-\u25FE\u2600-\u2604\u260E]'
+        r'|[\u2611\u2614-\u2615\u2618\u261D\u2620\u2622-\u2623\u2626]'
+        r'|[\u262A\u262E-\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653]'
+        r'|[\u265F-\u2660\u2663\u2665-\u2666\u2668\u267B\u267E-\u267F]'
+        r'|[\u2692-\u2697\u2699\u269B-\u269C\u26A0-\u26A1\u26A7]'
+        r'|[\u26AA-\u26AB\u26B0-\u26B1\u26BD-\u26BE\u26C4-\u26C5]'
+        r'|[\u26CE-\u26CF\u26D1\u26D3-\u26D4\u26E9-\u26EA\u26F0-\u26F5]'
+        r'|[\u26F7-\u26FA\u26FD\u2702\u2705\u2708-\u270D\u270F]'
+        r'|[\u2712\u2714\u2716\u271D\u2721\u2728\u2733-\u2734\u2744]'
+        r'|[\u2747\u274C\u274E\u2753-\u2755\u2757\u2763-\u2764]'
+        r'|[\u2795-\u2797\u27A1\u27B0\u27BF\u2934-\u2935\u2B05-\u2B07]'
+        r'|[\u2B1B-\u2B1C\u2B50\u2B55\u3030\u303D\u3297\u3299]'
+        r')[\uFE0F\u20E3]?'             # modificador opcional (VS-16 / keycap)
+        r'(?:\u200D(?:[\U0001F000-\U0001FFFF][\uFE0F]?))*'  # ZWJ sequences
+        r')+',                          # um ou mais emojis/seqs colados
+        re.DOTALL,
+    )
+
+    novo_emoji = random.choice(_EMOJIS_ALERTA)
+    m = primeiro_emoji_re.match(t)
+    if m:
+        # Substitui apenas o bloco de emojis inicial pelo sorteado
+        t = novo_emoji + ' ' + t[m.end():].lstrip()
+    else:
+        # Mensagem sem emoji no início: insere o emoji sorteado no começo
+        t = novo_emoji + ' ' + t
+
     return t
+
 
 
 async def process_offer_to_group(bot_app, text, photo=None):
