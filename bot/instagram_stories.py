@@ -243,13 +243,13 @@ def post_instagram_story(texto, photo_path=None, pagina_url=''):
     titulo, preco, link = _titulo_preco_link(texto)
 
     # Se houver foto local, compõe o Story no estilo do card do site:
-    # foto + texto completo da promoção + faixa "LINK NA BIO".
+    # foto + texto completo da promoção + link do produto no rodapé.
     if photo_path and not (isinstance(photo_path, str) and photo_path.startswith('http')):
         try:
             from bot.story_composer import compor_story_card
             from bot.services import texto_card
             mensagem = texto_card(texto) or titulo
-            story_path = compor_story_card(photo_path, mensagem)
+            story_path = compor_story_card(photo_path, mensagem, pagina_url=pagina_url)
             if story_path and os.path.exists(story_path):
                 photo_path = story_path
         except Exception as e:

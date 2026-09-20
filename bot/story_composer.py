@@ -95,12 +95,12 @@ def _desenhar_texto_multilinha(draw, texto, area, fonte, cor, altura_linha=None)
         y += altura_linha
 
 
-def compor_story_card(foto_path, mensagem, output_path=None):
+def compor_story_card(foto_path, mensagem, output_path=None, pagina_url=None):
     """
     Compõe o Story no estilo 'card do site' (1080x1920):
       - Foto do produto no topo (crop para preencher)
       - Texto completo da promoção logo abaixo (como no card)
-      - Faixa 'LINK NA BIO' no rodapé
+      - Link do produto no rodapé (ou texto padrão se sem link)
     Retorna o caminho da imagem gerada.
     """
     W, H = 1080, 1920
@@ -130,8 +130,8 @@ def compor_story_card(foto_path, mensagem, output_path=None):
     if fonte_texto and mensagem:
         _desenhar_texto_multilinha(draw, mensagem, (60, 890, W - 60, 1600), fonte_texto, (40, 40, 40))
 
-    # "LINK NA BIO" no rodapé da área branca (final do card), sem barra externa
-    marcador = 'Quer o link? Comenta aqui que eu te envio!'
+    # Rodapé: mostra o link do produto se disponível, senão texto padrão
+    marcador = f'🔗 {pagina_url}' if pagina_url else 'Quer o link? Comenta aqui que eu te envio!'
     fonte_bio = None
     max_larg = W - 120
     for tamanho in range(58, 24, -1):
