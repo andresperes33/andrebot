@@ -289,12 +289,12 @@ def _processar_mensagem(value, entry_id):
     else:
         text = str(msg or '').strip()
 
-    if not sender or not text:
+    if not sender:
         return
 
-    if 'quero' not in _norm(text):
-        logger.info(f"🔍 IG webhook: mensagem sem 'quero' (sender={sender}, texto={text[:40]!r}).")
-    if not _tem_interesse(text):
+    # Se a pessoa respondeu diretamente a um Story, ela já está querendo o link daquele Story!
+    # Caso seja uma DM normal, precisa conter uma das palavras de interesse (quero, link, etc.)
+    if not story_id and not _tem_interesse(text):
         logger.info(f"🔍 IG webhook: mensagem sem palavra de interesse (sender={sender}, texto={text[:40]!r}).")
         return
 
