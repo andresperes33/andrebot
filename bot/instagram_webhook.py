@@ -27,6 +27,7 @@ _processadas = {}
 
 
 def _norm(texto):
+    """Minúsculas sem acentos, para casar com 'quero'."""
     """Minúsculas sem acentos, para casar com os gatilhos."""
     texto = (texto or '').lower()
     return ''.join(
@@ -128,13 +129,15 @@ def _texto_resposta(link, modo):
     link = (link or '').strip()
     if link:
         return f"✅ Aproveite a promoção!\n\n🔗 {link}"
-    site = (getattr(settings, 'SITE_URL', '') or 'https://www.promos.andreindicatech.com.br').rstrip('/')
+    site = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
     return f"✅ Promo confirmada! Confira no nosso site:\n{site}"
 
 
 def _link_da_caption(media_id, token):
-    """Lê a legenda do post no Instagram e extrai o link do produto (a página
-    do produto do site já é postada na legenda do feed)."""
+    """Lê o post no Instagram (via Graph API) e busca a promoção correspondente.
+    1. Se a legenda tiver um link direto, retorna o link.
+    2. Se a legenda não tiver link (caso do Feed com 'EU QUERO'), busca no
+       banco de dados a Promo correspondente com base no título da legenda."""
     try:
         resp = requests.get(
             f"{GRAPH_URL}/{media_id}",
@@ -145,11 +148,32 @@ def _link_da_caption(media_id, token):
     except Exception as e:
         logger.warning(f"⚠️ IG webhook: erro ao ler legenda do media {media_id}: {e}")
         return ''
+
     caption = (dados.get('caption') or '')
     links = re.findall(r'(https?://\S+)', caption)
-    if not links:
-        return ''
-    return links[0].rstrip('.,;|)')
+    if links:
+        return links[0].rstrip('.,;|)')
+
+    # Se não há link na legenda, busca a Promo no banco que bata com a primeira linha (título)
+    primeira_linha = caption.split('\n')[0].strip()
+    if primeira_linha:
+        # Remove sufixo de preço se houver (ex: 'Título — R$ 199')
+        titulo_busca = primeira_linha.split(' — ')[0].strip()[:80]
+        if titulo_busca:
+            try:
+                from django.db import close_old_connections
+                from bot.models import Promo
+                close_old_connections()
+                promo = Promo.objects.filter(titulo__icontains=titulo_busca).order_by('-id').first()
+                if promo:
+                    base_site = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
+                    url_encontrada = f"{base_site}/promos/{promo.pk}/"
+                    logger.info(f"✅ IG webhook: Promo #{promo.pk} encontrada no banco a partir da legenda ('{titulo_busca}').")
+                    return url_encontrada
+            except Exception as e:
+                logger.warning(f"⚠️ IG webhook: erro ao buscar Promo por legenda: {e}")
+
+    return ''
 
 
 def _processar_comentario(value):
@@ -157,7 +181,10 @@ def _processar_comentario(value):
     Instagram recusar (nem toda conta libera), responde no próprio comentário."""
     comment_id = value.get('id')
     text = value.get('text') or ''
+    # No webhook do Instagram, o media_id pode vir em value['media_id'] ou value['media']['id']
     media_id = value.get('media_id')
+    if not media_id and isinstance(value.get('media'), dict):
+        media_id = value.get('media', {}).get('id')
     sender_id = (value.get('from') or {}).get('id')
 
     # Reply que nós mesmos postamos → ignora (evita loop)
@@ -185,8 +212,8 @@ def _processar_comentario(value):
         contas = _contas_instagram()
         user_id = contas[0]['user_id'] if contas else ''
 
-    # Link da DM: prioriza o mapa do post; se não houver (post antigo), lê a
-    # legenda do post, onde fica o link da página do produto.
+    # Link da DM: prioriza o mapa do post; se não houver (post antigo ou não mapeado),
+    # lê a legenda do post (caption), onde fica o link da página do produto.
     dm_link = link
     origem = 'mapa' if dm_link else '?'
     if not dm_link and media_id and token:
@@ -195,7 +222,7 @@ def _processar_comentario(value):
     dm_link = dm_link or link
     if not dm_link:
         origem = 'site'
-    logger.info(f"🔍 IG webhook: media={media_id} link_origem={origem}")
+    logger.info(f"🔍 IG webhook: media={media_id} link_origem={origem} url={dm_link}")
 
     # 1ª tentativa: Private Reply — inicia a DM a partir do comentário
     # (recipient.comment_id). É a forma oficial de mandar DM pra quem comentou.
@@ -212,7 +239,7 @@ def _processar_comentario(value):
             return
 
     # 2ª tentativa (fallback): responder o comentário com o link
-    _responder_comentario(token, comment_id, _texto_resposta(link, 'comentario'))
+    _responder_comentario(token, comment_id, _texto_resposta(dm_link, 'comentario'))
 
 
 def _processar_mensagem(value, entry_id):
@@ -265,6 +292,8 @@ def _processar_mensagem(value, entry_id):
     if not sender or not text:
         return
 
+    if 'quero' not in _norm(text):
+        logger.info(f"🔍 IG webhook: mensagem sem 'quero' (sender={sender}, texto={text[:40]!r}).")
     if not _tem_interesse(text):
         logger.info(f"🔍 IG webhook: mensagem sem palavra de interesse (sender={sender}, texto={text[:40]!r}).")
         return
