@@ -1327,20 +1327,46 @@ def convert_mercado_livre_link(url):
         hdrs["Cookie"] = ml_cookie
 
     try:
-        # 1. Expande o link (meli.la → página que contém MLB/redirect)
+        import re as _re
+
+        # 1. Expande o link (meli.la → segue redirects até chegar no produto)
         r = requests.get(url, allow_redirects=True, timeout=12, headers=hdrs)
+        final_url = r.url  # URL real após todos os redirects
         page_html = r.text
 
-        # 2. Extrai URL do produto real no HTML da página
-        import re as _re
-        prod_urls = _re.findall(
-            r'https://www\.mercadolivre\.com\.br/[^"<>\s]+/p/MLB\d+',
-            page_html,
-        )
+        produto_url = None
 
-        if prod_urls:
-            # Pega o primeiro produto e limpa parâmetros extras
-            produto_url = prod_urls[0].split('?')[0].split('#')[0]
+        # 2a. Prioridade: usar a URL final do redirect (mais confiável — é o produto certo)
+        if 'mercadolivre.com.br' in final_url:
+            # Limpa parâmetros e fragmentos da URL final
+            clean_final = final_url.split('?')[0].split('#')[0]
+            # Aceita tanto /p/MLB... quanto /MLB... (listagem direta)
+            if '/p/MLB' in clean_final or '/MLB' in clean_final:
+                produto_url = clean_final
+                print(f"ML: produto via redirect final: {produto_url}")
+
+        # 2b. Fallback: escaneia o HTML em busca da URL canônica do produto
+        if not produto_url:
+            # Tenta primeiro a URL canônica (og:url ou canonical) — mais precisa
+            canon = _re.search(
+                r'(?:og:url|canonical)[^>]*content=["\']([^"\']+mercadolivre\.com\.br[^"\']+/p/MLB\d+)',
+                page_html, _re.IGNORECASE
+            )
+            if canon:
+                produto_url = canon.group(1).split('?')[0].split('#')[0]
+                print(f"ML: produto via canonical/og:url: {produto_url}")
+
+        # 2c. Último recurso: primeira URL /p/MLB no HTML (comportamento antigo)
+        if not produto_url:
+            prod_urls = _re.findall(
+                r'https://www\.mercadolivre\.com\.br/[^"<>\s]+/p/MLB\d+',
+                page_html,
+            )
+            if prod_urls:
+                produto_url = prod_urls[0].split('?')[0].split('#')[0]
+                print(f"ML: produto via scan HTML: {produto_url}")
+
+        if produto_url:
             affiliate_url = f"{produto_url}?matt_tool={matt_tool}&matt_word={tag}"
 
             # --- Encurtamento meli.la via API Interna ---
@@ -1363,12 +1389,12 @@ def convert_mercado_livre_link(url):
             print(f"ML Afiliado (produto): {affiliate_url[:100]}...")
             return affiliate_url
 
-        # Fallback: tenta pegar pelo ID MLB
+        # Fallback final: tenta pegar pelo ID MLB solto
         mlb_ids = list(set(_re.findall(r'MLB\d+', page_html)))
         if mlb_ids:
             mlb_id = mlb_ids[0]
             affiliate_url = f"https://www.mercadolivre.com.br/p/{mlb_id}?matt_tool={matt_tool}&matt_word={tag}"
-            print(f"ML Afiliado (MLB ID): {affiliate_url}")
+            print(f"ML Afiliado (MLB ID fallback): {affiliate_url}")
             return affiliate_url
 
         print("ML: Nenhum produto encontrado na página.")
