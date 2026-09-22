@@ -55,40 +55,115 @@
 {% endblock %}
 
 {% block content %}
-<div class="promos-dia-header">
-    <div class="container promos-dia-header-inner">
-        <div class="promos-dia-info">
-            <div class="promos-dia-eyebrow"><i class="fas fa-calendar-day"></i> Feed do Dia • {{ data_hoje }}</div>
-            <h1 class="promos-dia-title">Todas as Promoções de Hoje</h1>
-            <p class="promos-dia-subtitle">
-                Role para ver todas as <strong>{{ total }}</strong> promoção{{ total|pluralize:"ões" }} encontradas hoje até agora, sem cortes.
+
+<style>
+/* ── Espaçamento e visual da página do dia ── */
+.dia-page-wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+}
+.dia-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 40px;
+}
+.dia-page-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.dia-page-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #76b900;
+}
+.dia-page-title {
+    font-family: 'Space Grotesk', 'Inter', Arial, sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.2;
+    margin: 0;
+}
+.dia-page-subtitle {
+    font-size: 15px;
+    color: #757575;
+    margin: 4px 0 0;
+}
+.dia-page-subtitle strong { color: #76b900; }
+.dia-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    background: #f7f7f7;
+    border: 1px solid #cccccc;
+    padding: 10px 18px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.dia-back-btn:hover {
+    background: #76b900;
+    border-color: #76b900;
+    color: #000000;
+}
+.dia-grid-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 28px;
+}
+@media (max-width: 640px) {
+    .dia-page-wrap { padding: 28px 16px 48px; }
+    .dia-page-title { font-size: 22px; }
+    .dia-page-header { padding-bottom: 20px; margin-bottom: 28px; }
+    .dia-back-btn { width: 100%; justify-content: center; }
+    .dia-grid-wrap { grid-template-columns: 1fr; gap: 18px; }
+}
+</style>
+
+<div class="dia-page-wrap">
+
+    <div class="dia-page-header">
+        <div class="dia-page-meta">
+            <div class="dia-page-eyebrow"><i class="fas fa-calendar-day"></i> Feed do Dia &bull; {{ data_hoje }}</div>
+            <h1 class="dia-page-title">Todas as Promoções de Hoje</h1>
+            <p class="dia-page-subtitle">
+                <strong>{{ total }}</strong> promoção{{ total|pluralize:"ões" }} publicada{{ total|pluralize:"s" }} hoje até agora
             </p>
         </div>
-        <div class="promos-dia-action">
-            <a href="/promos/" class="btn btn-outline">
-                <i class="fas fa-arrow-left"></i> Página Inicial
-            </a>
-        </div>
+        <a href="/promos/" class="dia-back-btn">
+            <i class="fas fa-arrow-left"></i> Voltar à Página Inicial
+        </a>
     </div>
-</div>
 
-<div id="resultado">
-{% if promos %}
-<div class="section" style="padding-top:16px;">
-    <div class="container">
-        <div class="promos-grid" id="grid">
-            {% include 'bot/_promo_grid.html' %}
-        </div>
+    {% if promos %}
+    <div class="dia-grid-wrap promos-grid" id="grid">
+        {% include 'bot/_promo_grid.html' %}
     </div>
-</div>
-{% else %}
-<div class="empty">
-    <div class="empty-icon"><i class="fas fa-magnifying-glass"></i></div>
-    <h2>Nenhuma promoção encontrada para os filtros selecionados</h2>
-    <p>Tente limpar os filtros ou volte para a página inicial.</p>
-    <a href="{% url 'promos_do_dia' %}" class="btn btn-primary">Ver todas de hoje</a>
-</div>
-{% endif %}
+    {% else %}
+    <div class="empty" style="margin-top: 48px;">
+        <div class="empty-icon"><i class="fas fa-magnifying-glass"></i></div>
+        <h2>Nenhuma promoção encontrada</h2>
+        <p>Tente limpar os filtros ou volte mais tarde.</p>
+        <a href="{% url 'promos_do_dia' %}" class="btn btn-primary" style="margin-top:16px;">Ver todas de hoje</a>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}
 
@@ -130,4 +205,3 @@
     }
 </script>
 {% endblock %}
-
