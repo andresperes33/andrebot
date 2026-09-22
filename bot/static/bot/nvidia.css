@@ -2205,14 +2205,16 @@ a.price-history-row:hover {
 /* ─── Botão / Banner: Ver todas as promoções do dia ─── */
 .banner-todas-do-dia-wrap {
     max-width: var(--container);
-    margin: 14px auto 0;
+    margin: 36px auto 16px;
     padding: 0 24px;
     display: flex;
     justify-content: center;
+    width: 100%;
 }
 .btn-todas-do-dia {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
     background: #0f141a;
     border: 1px solid rgba(118, 185, 0, 0.45);
@@ -2271,10 +2273,8 @@ a.price-history-row:hover {
 
 @media (max-width: 640px) {
     .btn-todas-do-dia {
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-        padding: 10px 14px;
+        width: auto;
+        padding: 12px 20px;
     }
     .btn-todas-hint {
         display: none;
