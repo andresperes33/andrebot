@@ -1311,20 +1311,20 @@ def convert_to_affiliate_link(url, final_url=None):
 
 def convert_mercado_livre_link(url):
     """
-    Gera link de afiliado do Mercado Livre.
-    1. Expande o link (meli.la / social page)
-    2. Se for página social (/social/), extrai o produto principal via 'card-featured'
-       (identificador exato que o Mercado Livre usa para o produto em destaque da página social)
-    3. Caso seja redirect direto para o produto, usa a URL final
-    4. Fallbacks adicionais por canônica e IDs
-    5. Gera link afiliado com nossa tag + matt_tool
+    Converte link do Mercado Livre para afiliado.
+    - Se já tem slug completo: monta o link direto sem requisição.
+    - meli.la / /social/: extrai o produto principal combinando card-featured,
+      bloco JSON via og:image, produto.mercadolivre.../_JM e fallback seguro mutando URL social.
+    - Suporte a encurtamento meli.la oficial via cookie se configurado.
     """
     tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'pean3412407')
     matt_tool = getattr(settings, 'MERCADO_LIVRE_MATT_TOOL', '57756886')
     ml_cookie = getattr(settings, 'MERCADO_LIVRE_COOKIE', None)
 
     hdrs = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "pt-BR,pt;q=0.9",
     }
     if ml_cookie:
         hdrs["Cookie"] = ml_cookie
@@ -1332,94 +1332,114 @@ def convert_mercado_livre_link(url):
     try:
         import re as _re
 
-        # 1. Expande o link (meli.la → segue redirects)
-        r = requests.get(url, allow_redirects=True, timeout=12, headers=hdrs)
-        final_url = r.url
-        page_html = r.text
+        # 1) Se já tem slug no link (ex: /produto/p/MLB... ou /produto/up/MLBU...), usa direto
+        m = _re.search(r'https://www\.mercadolivre\.com\.br/([^/\s]+)/((?:p/MLB\d+|up/MLBU\d+))', url)
+        if m:
+            slug = m.group(1)
+            item_path = m.group(2)
+            affiliate_url = f"https://www.mercadolivre.com.br/{slug}/{item_path}?matt_tool={matt_tool}&matt_word={tag}"
+            print(f"ML Afiliado (já tem slug): {affiliate_url[:130]}...")
+            return affiliate_url
 
-        produto_url = None
+        # 2) Se é meli.la OU /social/ → busca página e extrai o produto principal
+        if 'meli.la' in url or '/social/' in url:
+            r = requests.get(url, allow_redirects=True, timeout=12, headers=hdrs)
+            final_url = r.url
+            page_html = r.text
 
-        # 2. PÁGINA SOCIAL (/social/): o produto principal compartilhado é marcado
-        #    com 'card-featured' no HTML. Essa marcação existe tanto para links /p/MLB
-        #    quanto /up/MLBU, diferenciando o produto principal dos relacionados.
-        if '/social/' in final_url:
-            featured_links = _re.findall(
-                r'href=["\'](https://www\.mercadolivre\.com\.br/[^"\']*card-featured[^"\']*)',
-                page_html,
-            )
-            if featured_links:
-                produto_url = featured_links[0].split('?')[0].split('#')[0]
-                print(f"ML: produto via card-featured (destaque da página social): {produto_url}")
-
-            # Fallback secundário para página social: reco_item_pos=0
-            if not produto_url:
-                pos0_links = _re.findall(
-                    r'href=["\'](https://www\.mercadolivre\.com\.br/[^"\']*reco_item_pos=0[^"\']*)',
+            if '/social/' in final_url:
+                # 2a) Prioridade 1: Identificador 'card-featured' da página social
+                featured_links = _re.findall(
+                    r'href=["\'](https://www\.mercadolivre\.com\.br/[^"\']*card-featured[^"\']*)',
                     page_html,
                 )
-                if pos0_links:
-                    produto_url = pos0_links[0].split('?')[0].split('#')[0]
-                    print(f"ML: produto via reco_item_pos=0: {produto_url}")
+                if featured_links:
+                    produto_url = featured_links[0].split('?')[0].split('#')[0]
+                    affiliate_url = f"{produto_url}?matt_tool={matt_tool}&matt_word={tag}"
+                    print(f"ML Afiliado (social card-featured): {affiliate_url[:130]}...")
+                    return affiliate_url
 
-        # 3. URL final do redirect é diretamente um produto (/p/MLB ou /up/MLBU)
-        if not produto_url and 'mercadolivre.com.br' in final_url and '/social/' not in final_url:
-            clean_final = final_url.split('?')[0].split('#')[0]
-            if '/p/MLB' in clean_final or '/up/MLBU' in clean_final or '/MLB' in clean_final:
-                produto_url = clean_final
-                print(f"ML: produto via redirect final: {produto_url}")
+                # 2b) Prioridade 2 (lógica afiliado_ofertas): busca via og:image e bloco JSON
+                unesc = page_html.replace('\\u002F', '/').replace('\\u0022', '"')
+                og_img = _re.search(r'og:image[^>]*content="([^"]*)"', page_html, _re.IGNORECASE)
+                main_img_id = None
+                if og_img:
+                    m_img = _re.search(r'MLB\d+', og_img.group(1))
+                    main_img_id = m_img.group(0) if m_img else None
 
-        # 4. Fallback: URL canônica (og:url / canonical)
-        if not produto_url:
-            canon = _re.search(
-                r'(?:og:url|canonical)[^>]*content=["\']([^"\']+mercadolivre\.com\.br[^"\']+(?:/p/MLB|/up/MLBU)\d+)',
-                page_html, _re.IGNORECASE
-            )
-            if canon:
-                produto_url = canon.group(1).split('?')[0].split('#')[0]
-                print(f"ML: produto via canonical/og:url: {produto_url}")
+                main_block = None
+                if main_img_id:
+                    idx = unesc.find(main_img_id, 20000)
+                    if idx == -1:
+                        idx = unesc.find(main_img_id)
+                    if idx != -1:
+                        main_block = unesc[max(0, idx - 6000):idx + 3000]
 
-        # 5. Último recurso: primeiro produto encontrado no HTML (/p/MLB ou /up/MLBU)
-        if not produto_url:
-            prod_urls = _re.findall(
-                r'https://www\.mercadolivre\.com\.br/[^"<>\s]+/(?:p/MLB|up/MLBU)\d+',
-                page_html,
-            )
-            if prod_urls:
-                produto_url = prod_urls[0].split('?')[0].split('#')[0]
-                print(f"ML: produto via scan HTML: {produto_url}")
+                if main_block:
+                    # Prefere URL www.mercadolivre.../slug/(p|up)/MLB... dentro do bloco principal
+                    m_block = _re.search(r'www\.mercadolivre\.com\.br/([^/\s"]+)/((?:p/MLB|up/MLBU)(\d+))', main_block)
+                    if m_block:
+                        slug = m_block.group(1)
+                        item_path = m_block.group(2)
+                        affiliate_url = f"https://www.mercadolivre.com.br/{slug}/{item_path}?matt_tool={matt_tool}&matt_word={tag}"
+                        print(f"ML Afiliado (social bloco principal): {affiliate_url[:130]}...")
+                        return affiliate_url
 
-        if produto_url:
-            affiliate_url = f"{produto_url}?matt_tool={matt_tool}&matt_word={tag}"
+                    # Anúncio comum: produto.mercadolivre.com.br/MLB-XXXX-slug-_JM
+                    old = _re.search(r'produto\.mercadolivre\.com\.br/(MLB-(\d+)-[^"_\s]+(?:_[^"_\s]+)*_JM)', main_block)
+                    if old:
+                        old_path = old.group(1)
+                        affiliate_url = f"https://produto.mercadolivre.com.br/{old_path}?matt_tool={matt_tool}&matt_word={tag}"
+                        print(f"ML Afiliado (social item _JM): {affiliate_url[:130]}...")
+                        return affiliate_url
 
-            # --- Encurtamento meli.la via API Interna ---
-            if ml_cookie:
+                    # pdp_filters item_id + sanitized_title
+                    pdp = _re.search(r'item_id%3A(MLB\d+)', main_block)
+                    st = _re.search(r'sanitized_title":"-?([^"]+)"', main_block)
+                    if pdp and st:
+                        mlb_id = pdp.group(1)
+                        slug = st.group(1).strip('-')
+                        affiliate_url = f"https://www.mercadolivre.com.br/{slug}/p/{mlb_id}?matt_tool={matt_tool}&matt_word={tag}"
+                        print(f"ML Afiliado (social pdp): {affiliate_url[:130]}...")
+                        return affiliate_url
+
+                # 2c) Fallback: primeira URL com slug do feed
+                first_match = _re.search(r'www\.mercadolivre\.com\.br/([^/\s"]+)/((?:p/MLB|up/MLBU)(\d+))', unesc)
+                if first_match:
+                    slug = first_match.group(1)
+                    item_path = first_match.group(2)
+                    affiliate_url = f"https://www.mercadolivre.com.br/{slug}/{item_path}?matt_tool={matt_tool}&matt_word={tag}"
+                    print(f"ML Afiliado (social feed slug): {affiliate_url[:130]}...")
+                    return affiliate_url
+
+                # 2d) Fallback infalível do afiliado_ofertas: muta parâmetros matt na própria URL social
                 try:
-                    short_api_url = "https://www.mercadolivre.com.br/afiliados/api/v2/partners/social-links"
-                    short_hdrs = hdrs.copy()
-                    short_hdrs["Content-Type"] = "application/json"
-                    short_payload = {"source_url": affiliate_url}
+                    import urllib.parse as _urlparse
+                    parsed = _urlparse.urlparse(r.url)
+                    qs = dict(_urlparse.parse_qsl(parsed.query, keep_blank_values=True))
+                    qs['matt_word'] = tag
+                    qs['matt_tool'] = str(matt_tool)
+                    new_qs = _urlparse.urlencode(qs)
+                    affiliate_url = _urlparse.urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_qs, parsed.fragment))
+                    print(f"ML Afiliado (social fallback seguro): {affiliate_url[:130]}...")
+                    return affiliate_url
+                except Exception:
+                    pass
 
-                    short_resp = requests.post(short_api_url, headers=short_hdrs, json=short_payload, timeout=8)
-                    if short_resp.status_code in (200, 201):
-                        short_url = short_resp.json().get('short_url')
-                        if short_url:
-                            print(f"ML Curto (meli.la): {short_url}")
-                            return short_url
-                except Exception as short_err:
-                    print(f"ML Shortener Erro: {short_err}")
+            # Se o redirect foi para uma URL de produto direta
+            if 'mercadolivre.com.br' in final_url and '/social/' not in final_url:
+                clean_final = final_url.split('?')[0].split('#')[0]
+                if '/p/MLB' in clean_final or '/up/MLBU' in clean_final or '/MLB' in clean_final:
+                    affiliate_url = f"{clean_final}?matt_tool={matt_tool}&matt_word={tag}"
+                    print(f"ML Afiliado (redirect direto): {affiliate_url[:130]}...")
+                    return affiliate_url
 
-            print(f"ML Afiliado (produto): {affiliate_url[:120]}...")
-            return affiliate_url
+        # 3) Links bare /p/MLB... ou /up/MLBU... sem slug
+        if '/p/MLB' in url or '/up/MLBU' in url:
+            print(f"ML: Link sem slug detectado ({url}) — ML bloqueia sem slug.")
+            return None
 
-        # Fallback final: tenta pegar pelo ID MLB solto
-        mlb_ids = list(set(_re.findall(r'MLB\d+', page_html)))
-        if mlb_ids:
-            mlb_id = mlb_ids[0]
-            affiliate_url = f"https://www.mercadolivre.com.br/p/{mlb_id}?matt_tool={matt_tool}&matt_word={tag}"
-            print(f"ML Afiliado (MLB ID fallback): {affiliate_url}")
-            return affiliate_url
-
-        print("ML: Nenhum produto encontrado na página.")
+        print("ML: Formato de link não suportado")
         return None
 
     except Exception as e:
