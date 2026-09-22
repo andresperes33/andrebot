@@ -1313,9 +1313,11 @@ def convert_mercado_livre_link(url):
     """
     Gera link de afiliado do Mercado Livre.
     1. Expande o link (meli.la / social page)
-    2. Busca o produto no formato /up/MLBU primeiro (produto destacado em páginas sociais)
-    3. Fallback para /p/MLB (páginas de produto direto)
-    4. Gera link afiliado com nossa tag + matt_tool
+    2. Se for página social (/social/), extrai o produto principal via 'card-featured'
+       (identificador exato que o Mercado Livre usa para o produto em destaque da página social)
+    3. Caso seja redirect direto para o produto, usa a URL final
+    4. Fallbacks adicionais por canônica e IDs
+    5. Gera link afiliado com nossa tag + matt_tool
     """
     tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'pean3412407')
     matt_tool = getattr(settings, 'MERCADO_LIVRE_MATT_TOOL', '57756886')
@@ -1337,44 +1339,54 @@ def convert_mercado_livre_link(url):
 
         produto_url = None
 
-        # 2a. URL final do redirect é diretamente um produto (/p/MLB ou /up/MLBU)
-        if 'mercadolivre.com.br' in final_url:
+        # 2. PÁGINA SOCIAL (/social/): o produto principal compartilhado é marcado
+        #    com 'card-featured' no HTML. Essa marcação existe tanto para links /p/MLB
+        #    quanto /up/MLBU, diferenciando o produto principal dos relacionados.
+        if '/social/' in final_url:
+            featured_links = _re.findall(
+                r'href=["\'](https://www\.mercadolivre\.com\.br/[^"\']*card-featured[^"\']*)',
+                page_html,
+            )
+            if featured_links:
+                produto_url = featured_links[0].split('?')[0].split('#')[0]
+                print(f"ML: produto via card-featured (destaque da página social): {produto_url}")
+
+            # Fallback secundário para página social: reco_item_pos=0
+            if not produto_url:
+                pos0_links = _re.findall(
+                    r'href=["\'](https://www\.mercadolivre\.com\.br/[^"\']*reco_item_pos=0[^"\']*)',
+                    page_html,
+                )
+                if pos0_links:
+                    produto_url = pos0_links[0].split('?')[0].split('#')[0]
+                    print(f"ML: produto via reco_item_pos=0: {produto_url}")
+
+        # 3. URL final do redirect é diretamente um produto (/p/MLB ou /up/MLBU)
+        if not produto_url and 'mercadolivre.com.br' in final_url and '/social/' not in final_url:
             clean_final = final_url.split('?')[0].split('#')[0]
             if '/p/MLB' in clean_final or '/up/MLBU' in clean_final or '/MLB' in clean_final:
                 produto_url = clean_final
                 print(f"ML: produto via redirect final: {produto_url}")
 
-        # 2b. Busca /up/MLBU no HTML — PRIMEIRO porque nas páginas sociais
-        #     o produto DESTACADO (o correto) usa este formato, enquanto os
-        #     produtos RELACIONADOS usam /p/MLB. Buscar MLBU garante o produto certo.
-        if not produto_url:
-            up_urls = _re.findall(
-                r'https://www\.mercadolivre\.com\.br/[^"<>\s]+/up/MLBU\d+',
-                page_html,
-            )
-            if up_urls:
-                produto_url = up_urls[0].split('?')[0].split('#')[0]
-                print(f"ML: produto via /up/MLBU (destaque social): {produto_url}")
-
-        # 2c. Fallback: URL canônica (og:url / canonical) com /p/MLB
+        # 4. Fallback: URL canônica (og:url / canonical)
         if not produto_url:
             canon = _re.search(
-                r'(?:og:url|canonical)[^>]*content=["\']([^"\']+mercadolivre\.com\.br[^"\']+/p/MLB\d+)',
+                r'(?:og:url|canonical)[^>]*content=["\']([^"\']+mercadolivre\.com\.br[^"\']+(?:/p/MLB|/up/MLBU)\d+)',
                 page_html, _re.IGNORECASE
             )
             if canon:
                 produto_url = canon.group(1).split('?')[0].split('#')[0]
                 print(f"ML: produto via canonical/og:url: {produto_url}")
 
-        # 2d. Último recurso: primeira URL /p/MLB no HTML
+        # 5. Último recurso: primeiro produto encontrado no HTML (/p/MLB ou /up/MLBU)
         if not produto_url:
             prod_urls = _re.findall(
-                r'https://www\.mercadolivre\.com\.br/[^"<>\s]+/p/MLB\d+',
+                r'https://www\.mercadolivre\.com\.br/[^"<>\s]+/(?:p/MLB|up/MLBU)\d+',
                 page_html,
             )
             if prod_urls:
                 produto_url = prod_urls[0].split('?')[0].split('#')[0]
-                print(f"ML: produto via scan HTML (/p/MLB): {produto_url}")
+                print(f"ML: produto via scan HTML: {produto_url}")
 
         if produto_url:
             affiliate_url = f"{produto_url}?matt_tool={matt_tool}&matt_word={tag}"
