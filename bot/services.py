@@ -1312,9 +1312,10 @@ def convert_to_affiliate_link(url, final_url=None):
 def convert_mercado_livre_link(url):
     """
     Gera link de afiliado do Mercado Livre.
-    1. Expande o link (meli.la)
-    2. Extrai a URL real do produto (MLB) do HTML
-    3. Gera link afiliado com nossa tag + matt_tool
+    1. Expande o link (meli.la / social page)
+    2. Busca o produto no formato /up/MLBU primeiro (produto destacado em páginas sociais)
+    3. Fallback para /p/MLB (páginas de produto direto)
+    4. Gera link afiliado com nossa tag + matt_tool
     """
     tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'pean3412407')
     matt_tool = getattr(settings, 'MERCADO_LIVRE_MATT_TOOL', '57756886')
@@ -1329,25 +1330,34 @@ def convert_mercado_livre_link(url):
     try:
         import re as _re
 
-        # 1. Expande o link (meli.la → segue redirects até chegar no produto)
+        # 1. Expande o link (meli.la → segue redirects)
         r = requests.get(url, allow_redirects=True, timeout=12, headers=hdrs)
-        final_url = r.url  # URL real após todos os redirects
+        final_url = r.url
         page_html = r.text
 
         produto_url = None
 
-        # 2a. Prioridade: usar a URL final do redirect (mais confiável — é o produto certo)
+        # 2a. URL final do redirect é diretamente um produto (/p/MLB ou /up/MLBU)
         if 'mercadolivre.com.br' in final_url:
-            # Limpa parâmetros e fragmentos da URL final
             clean_final = final_url.split('?')[0].split('#')[0]
-            # Aceita tanto /p/MLB... quanto /MLB... (listagem direta)
-            if '/p/MLB' in clean_final or '/MLB' in clean_final:
+            if '/p/MLB' in clean_final or '/up/MLBU' in clean_final or '/MLB' in clean_final:
                 produto_url = clean_final
                 print(f"ML: produto via redirect final: {produto_url}")
 
-        # 2b. Fallback: escaneia o HTML em busca da URL canônica do produto
+        # 2b. Busca /up/MLBU no HTML — PRIMEIRO porque nas páginas sociais
+        #     o produto DESTACADO (o correto) usa este formato, enquanto os
+        #     produtos RELACIONADOS usam /p/MLB. Buscar MLBU garante o produto certo.
         if not produto_url:
-            # Tenta primeiro a URL canônica (og:url ou canonical) — mais precisa
+            up_urls = _re.findall(
+                r'https://www\.mercadolivre\.com\.br/[^"<>\s]+/up/MLBU\d+',
+                page_html,
+            )
+            if up_urls:
+                produto_url = up_urls[0].split('?')[0].split('#')[0]
+                print(f"ML: produto via /up/MLBU (destaque social): {produto_url}")
+
+        # 2c. Fallback: URL canônica (og:url / canonical) com /p/MLB
+        if not produto_url:
             canon = _re.search(
                 r'(?:og:url|canonical)[^>]*content=["\']([^"\']+mercadolivre\.com\.br[^"\']+/p/MLB\d+)',
                 page_html, _re.IGNORECASE
@@ -1356,7 +1366,7 @@ def convert_mercado_livre_link(url):
                 produto_url = canon.group(1).split('?')[0].split('#')[0]
                 print(f"ML: produto via canonical/og:url: {produto_url}")
 
-        # 2c. Último recurso: primeira URL /p/MLB no HTML (comportamento antigo)
+        # 2d. Último recurso: primeira URL /p/MLB no HTML
         if not produto_url:
             prod_urls = _re.findall(
                 r'https://www\.mercadolivre\.com\.br/[^"<>\s]+/p/MLB\d+',
@@ -1364,7 +1374,7 @@ def convert_mercado_livre_link(url):
             )
             if prod_urls:
                 produto_url = prod_urls[0].split('?')[0].split('#')[0]
-                print(f"ML: produto via scan HTML: {produto_url}")
+                print(f"ML: produto via scan HTML (/p/MLB): {produto_url}")
 
         if produto_url:
             affiliate_url = f"{produto_url}?matt_tool={matt_tool}&matt_word={tag}"
@@ -1386,7 +1396,7 @@ def convert_mercado_livre_link(url):
                 except Exception as short_err:
                     print(f"ML Shortener Erro: {short_err}")
 
-            print(f"ML Afiliado (produto): {affiliate_url[:100]}...")
+            print(f"ML Afiliado (produto): {affiliate_url[:120]}...")
             return affiliate_url
 
         # Fallback final: tenta pegar pelo ID MLB solto
