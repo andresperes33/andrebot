@@ -2207,6 +2207,8 @@ a.price-history-row:hover {
     max-width: var(--container);
     margin: 14px auto 0;
     padding: 0 24px;
+    display: flex;
+    justify-content: center;
 }
 .btn-todas-do-dia {
     display: inline-flex;
@@ -2224,11 +2226,11 @@ a.price-history-row:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 .btn-todas-do-dia:hover {
-    background: #151b22;
+    background: var(--primary);
     border-color: var(--primary);
-    color: var(--primary);
+    color: #000000;
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(118, 185, 0, 0.2);
+    box-shadow: 0 4px 14px rgba(118, 185, 0, 0.4);
 }
 .btn-todas-icon {
     display: inline-flex;
@@ -2256,10 +2258,15 @@ a.price-history-row:hover {
 .btn-todas-arrow {
     font-size: 12px;
     color: var(--primary);
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, color 0.2s ease;
 }
 .btn-todas-do-dia:hover .btn-todas-arrow {
     transform: translate(2px, -2px);
+    color: #000000;
+}
+.btn-todas-do-dia:hover .btn-todas-icon {
+    background: #000000;
+    color: var(--primary);
 }
 
 @media (max-width: 640px) {
