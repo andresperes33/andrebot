@@ -456,13 +456,13 @@ class Command(BaseCommand):
                 except Exception as alert_err:
                     logger.error(f"❌ Erro ao enviar alertas: {alert_err}")
 
-                # ─── Dispara alertas do NITRO ALERTA (site → WhatsApp) ──────
+                # ─── Dispara alertas do André Alerta (site → WhatsApp) ──────
                 try:
                     from bot.alert_site import send_alerts_site
                     await asyncio.to_thread(send_alerts_site, texto_para_alertas, photo_path, categoria_oferta)
-                    logger.info("🔔 Nitro Alerta (WhatsApp) verificado/enviado")
+                    logger.info("🔔 André Alerta (WhatsApp) verificado/enviado")
                 except Exception as site_err:
-                    logger.error(f"❌ Erro no Nitro Alerta: {site_err}")
+                    logger.error(f"❌ Erro no André Alerta: {site_err}")
 
                 # ─── Publicações (IG Story + IG Feed + Facebook) ───────────
                 # Dentro do lock: checar permissão → publicar → registrar são

@@ -1,5 +1,5 @@
 """
-Dispara alertas do NITRO ALERTA (site) para o WhatsApp dos usuários cadastrados.
+Dispara alertas do André Alerta (site) para o WhatsApp dos usuários cadastrados.
 Reaproveita a mesma lógica de matching de palavras-chave do bot do Telegram.
 """
 import logging
@@ -40,9 +40,9 @@ def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None):
                 continue
 
             mensagem = (
-                f"🔔 *André Indica Alerta*\n"
+                f"🔔 *André Alerta*\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
-                f"{alerta.nome or 'Olá'}, o André Indica Alerta acabou de encontrar o seu produto "
+                f"{alerta.nome or 'Olá'}, o André Alerta acabou de encontrar o seu produto "
                 f"*{alerta.keyword}*!\n\n"
                 f"*Aqui está a oferta:*\n\n"
                 f"{offer_text}\n\n"
@@ -55,8 +55,8 @@ def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None):
             if ok:
                 alerta.last_sent_at = timezone.now()
                 alerta.save(update_fields=['last_sent_at'])
-                logger.info(f"✅ Nitro Alerta enviado para {alerta.whatsapp} ({alerta.keyword})")
+                logger.info(f"✅ André Alerta enviado para {alerta.whatsapp} ({alerta.keyword})")
             else:
-                logger.warning(f"⚠️ Nitro Alerta falhou para {alerta.whatsapp} ({alerta.keyword})")
+                logger.warning(f"⚠️ André Alerta falhou para {alerta.whatsapp} ({alerta.keyword})")
         except Exception as e:
-            logger.error(f"❌ Erro no Nitro Alerta {alerta.pk}: {e}")
+            logger.error(f"❌ Erro no André Alerta {alerta.pk}: {e}")

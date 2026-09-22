@@ -1,14 +1,10 @@
 {% extends 'bot/base.html' %}
 {% load static %}
 
-{% block title %}Nitro Alerta | André Indica{% endblock %}
-{% block description %}Cadastre seu WhatsApp e receba alertas de ofertas de produtos que você quer, direto no seu número. André Indica Alerta.{% endblock %}
 {% block title %}André Alerta | André Indica{% endblock %}
 {% block description %}Cadastre seu WhatsApp e receba alertas de ofertas de produtos que você quer, direto no seu número. André Alerta.{% endblock %}
 
 {% block nav_promos %}active{% endblock %}
-
-
 
 {% block content %}
 
@@ -16,7 +12,6 @@
     <span class="corner-square"></span>
     <div class="hero-inner">
         <span class="hero-eyebrow">Alertas por WhatsApp</span>
-        <h1 class="hero-title">Nitro Alerta</h1>
         <h1 class="hero-title">André Alerta</h1>
         <p class="hero-sub">Cadastre seu nome e WhatsApp, digite o produto que você quer. Quando uma oferta dele aparecer aqui no site, a gente te avisa na hora.</p>
     </div>
@@ -64,7 +59,6 @@
                 <label style="font-size:13px;font-weight:600;color:var(--mute);display:block;margin-bottom:6px;">Produto que você quer acompanhar</label>
                 <input type="text" name="keyword" placeholder="ex: placa de vídeo rx 580" value="{{ request.POST.keyword }}" required style="width:100%;padding:12px 14px;background:var(--surface-soft);border:1px solid var(--hairline);border-radius:8px;color:var(--body);font-size:15px;">
             </div>
-            <button type="submit" class="btn btn-primary btn-lg btn-block">Ativar Nitro Alerta <i class="fas fa-bell"></i></button>
             <button type="submit" class="btn btn-primary btn-lg btn-block">Ativar André Alerta <i class="fas fa-bell"></i></button>
         </form>
     </div>

@@ -22,7 +22,7 @@ class UserAlert(models.Model):
 
 class AlertaSite(models.Model):
     """
-    Alerta de produto por WhatsApp cadastrado no site (Nitro Alerta).
+    Alerta de produto por WhatsApp cadastrado no site (André Alerta).
     Quando uma oferta que casa com a palavra-chave aparece, o site envia
     para o WhatsApp do usuário.
     """

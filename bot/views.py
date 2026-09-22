@@ -384,7 +384,7 @@ def termos_view(request):
 
 def nitroalerta_view(request):
     """
-    Página do NITRO ALERTA: cadastro de alerta de produto por WhatsApp.
+    Página do André Alerta: cadastro de alerta de produto por WhatsApp.
     GET mostra o formulário + explicação; POST cadastra o alerta.
     """
     from .models import AlertaSite
@@ -423,7 +423,7 @@ def nitroalerta_view(request):
 
 def nitroalerta_cancelar_view(request, token):
     """
-    Página de cancelamento do NITRO ALERTA (link enviado na mensagem).
+    Página de cancelamento do André Alerta (link enviado na mensagem).
     Desativa o alerta correspondente ao token.
     """
     from .models import AlertaSite

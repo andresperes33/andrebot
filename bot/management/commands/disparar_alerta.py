@@ -1,5 +1,5 @@
 """
-Dispara os alertas (Telegram + Nitro Alerta/WhatsApp) para uma promoção
+Dispara os alertas (Telegram + André Alerta/WhatsApp) para uma promoção
 específica, manualmente. Útil quando o monitor automático não disparou.
 
 Uso:
@@ -11,7 +11,7 @@ from bot.models import Promo
 
 
 class Command(BaseCommand):
-    help = 'Dispara manualmente os alertas (Telegram e Nitro Alerta/WhatsApp) para uma promoção.'
+    help = 'Dispara manualmente os alertas (Telegram e André Alerta/WhatsApp) para uma promoção.'
 
     def add_arguments(self, parser):
         parser.add_argument('--promo', type=int, default=None,
@@ -47,7 +47,7 @@ class Command(BaseCommand):
         self.stdout.write('Enviando alertas Telegram...')
         send_alerts(texto, photo_path=foto, oferta_categoria=categoria)
 
-        self.stdout.write('Enviando Nitro Alerta (WhatsApp)...')
+        self.stdout.write('Enviando André Alerta (WhatsApp)...')
         send_alerts_site(texto, photo_path=foto, oferta_categoria=categoria)
 
         self.stdout.write(self.style.SUCCESS('Disparo concluído.'))
