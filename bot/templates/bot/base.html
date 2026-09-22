@@ -7,7 +7,7 @@
     <title>{% block title %}André Indica — Promoções de Tech{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{% static 'bot/favicon.svg' %}">
     <link rel="icon" type="image/png" href="{% static 'bot/favicon.png' %}">
-    <link rel="manifest" href="{% static 'bot/manifest.json' %}">
+    <link rel="manifest" href="{% static 'bot/manifest.json' %}?v=3">
     <meta name="theme-color" content="#76b900">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -353,7 +353,7 @@ document.addEventListener('click', function (e) {
 });
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-        navigator.serviceWorker.register('{% static 'bot/sw.js' %}?v=2').catch(function (err) {
+        navigator.serviceWorker.register('{% static 'bot/sw.js' %}?v=3').catch(function (err) {
             console.warn('Service Worker falhou:', err);
         });
     });

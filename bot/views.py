@@ -363,7 +363,7 @@ def privacy_view(request):
 
 def sobre_view(request):
     """
-    Página 'Sobre' — quem é a Nitro Tech e como as ofertas funcionam.
+    Página 'Sobre' — quem é o André Indica e como as ofertas funcionam.
     """
     return render(request, 'bot/sobre.html')
 
@@ -377,7 +377,7 @@ def contato_view(request):
 
 def termos_view(request):
     """
-    Página 'Termos de Uso' do site Nitro Tech.
+    Página 'Termos de Uso' do site André Indica.
     """
     return render(request, 'bot/termos.html')
 

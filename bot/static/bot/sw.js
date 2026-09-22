@@ -1,4 +1,4 @@
-const CACHE_NAME = 'andre-indica-v2';
+const CACHE_NAME = 'andre-indica-v3';
 const APP_SHELL = [
   '/promos/',
   '/static/bot/manifest.json',
