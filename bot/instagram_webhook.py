@@ -176,7 +176,7 @@ def _link_da_caption(media_id, token):
     return ''
 
 
-def _processar_comentario(value):
+def _processar_comentario(value, entry_id=None):
     """Comentário no feed: tenta mandar o link na DM do comentador; se o
     Instagram recusar (nem toda conta libera), responde no próprio comentário."""
     comment_id = value.get('id')
@@ -200,17 +200,15 @@ def _processar_comentario(value):
         return
 
     link, token, user_id = _link_da_oferta(media_id)
-    if not token:
+    if not token or not user_id:
         from bot.instagram_stories import _contas_instagram
         contas = _contas_instagram()
         if not contas:
             logger.warning("⚠️ IG webhook: Instagram não configurado para responder.")
             return
-        token = contas[0]['token']
-    if not user_id:
-        from bot.instagram_stories import _contas_instagram
-        contas = _contas_instagram()
-        user_id = contas[0]['user_id'] if contas else ''
+        conta_match = next((c for c in contas if str(c.get('user_id')) == str(entry_id)), contas[0]) if entry_id else contas[0]
+        token = token or conta_match['token']
+        user_id = user_id or conta_match['user_id']
 
     # Link da DM: prioriza o mapa do post; se não houver (post antigo ou não mapeado),
     # lê a legenda do post (caption), onde fica o link da página do produto.
@@ -323,8 +321,9 @@ def _processar_mensagem(value, entry_id):
         if not contas:
             logger.warning("⚠️ IG webhook: Instagram não configurado para enviar DM.")
             return
-        token = contas[0]['token']
-        user_id = user_id or contas[0]['user_id']
+        conta_match = next((c for c in contas if str(c.get('user_id')) == str(entry_id)), contas[0]) if entry_id else contas[0]
+        token = conta_match['token']
+        user_id = user_id or conta_match['user_id']
 
     _enviar_dm(token, user_id, sender, _texto_resposta(link, 'dm'))
 
@@ -352,7 +351,7 @@ def processar_evento_instagram(payload):
             field = change.get('field')
             value = change.get('value') or {}
             if field in ('comments', 'comments_edge', 'caption') and value:
-                _processar_comentario(value)
+                _processar_comentario(value, entry_id)
                 contadas += 1
             elif field in ('messages', 'messaging') and value:
                 _processar_mensagem(value, entry_id)
