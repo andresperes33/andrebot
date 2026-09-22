@@ -1,0 +1,132 @@
+{% extends 'bot/base.html' %}
+{% load static %}
+
+{% block title %}Todas as Promoções de Hoje ({{ data_hoje }}) | André Indica{% endblock %}
+
+{% block menu_filters %}
+<div class="nav-filters" id="filters">
+    <div class="nav-filters-inner">
+        <div class="filter-group">
+            <span class="filter-label">Categoria</span>
+            <select id="filtro-categoria" class="filter-select" onchange="aplicarFiltrosDoDia()">
+                <option value="" {% if not categoria_ativa %}selected{% endif %}>Todas</option>
+                {% for slug, nome in categorias %}
+                <option value="{{ slug }}" {% if categoria_ativa == slug %}selected{% endif %}>{{ nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if lojas %}
+        <div class="filter-group">
+            <span class="filter-label">Loja</span>
+            <select id="filtro-loja" class="filter-select" onchange="aplicarFiltrosDoDia()">
+                <option value="" {% if not loja_ativa %}selected{% endif %}>Todas</option>
+                {% for lojanome in lojas %}
+                <option value="{{ lojanome }}" {% if loja_ativa == lojanome %}selected{% endif %}>{{ lojanome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block mobile_filters %}
+<div class="mobile-menu-label">Filtros</div>
+<div class="mobile-filter-group">
+    <span>Categoria</span>
+    <select id="m-filtro-categoria" class="filter-select" onchange="aplicarFiltrosDoDiaMobile()">
+        <option value="" {% if not categoria_ativa %}selected{% endif %}>Todas</option>
+        {% for slug, nome in categorias %}
+        <option value="{{ slug }}" {% if categoria_ativa == slug %}selected{% endif %}>{{ nome }}</option>
+        {% endfor %}
+    </select>
+</div>
+{% if lojas %}
+<div class="mobile-filter-group">
+    <span>Loja</span>
+    <select id="m-filtro-loja" class="filter-select" onchange="aplicarFiltrosDoDiaMobile()">
+        <option value="" {% if not loja_ativa %}selected{% endif %}>Todas</option>
+        {% for lojanome in lojas %}
+        <option value="{{ lojanome }}" {% if loja_ativa == lojanome %}selected{% endif %}>{{ lojanome }}</option>
+        {% endfor %}
+    </select>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="promos-dia-header">
+    <div class="container promos-dia-header-inner">
+        <div class="promos-dia-info">
+            <div class="promos-dia-eyebrow"><i class="fas fa-calendar-day"></i> Feed do Dia • {{ data_hoje }}</div>
+            <h1 class="promos-dia-title">Todas as Promoções de Hoje</h1>
+            <p class="promos-dia-subtitle">
+                Role para ver todas as <strong>{{ total }}</strong> promoção{{ total|pluralize:"ões" }} encontradas hoje até agora, sem cortes.
+            </p>
+        </div>
+        <div class="promos-dia-action">
+            <a href="/promos/" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Página Inicial
+            </a>
+        </div>
+    </div>
+</div>
+
+<div id="resultado">
+{% if promos %}
+<div class="section" style="padding-top:16px;">
+    <div class="container">
+        <div class="promos-grid" id="grid">
+            {% include 'bot/_promo_grid.html' %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty">
+    <div class="empty-icon"><i class="fas fa-magnifying-glass"></i></div>
+    <h2>Nenhuma promoção encontrada para os filtros selecionados</h2>
+    <p>Tente limpar os filtros ou volte para a página inicial.</p>
+    <a href="{% url 'promos_do_dia' %}" class="btn btn-primary">Ver todas de hoje</a>
+</div>
+{% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copiarCupom(el, cupom) {
+        navigator.clipboard.writeText(cupom).then(() => {
+            el.classList.remove('fa-copy');
+            el.classList.add('fa-check');
+            const toast = document.getElementById('toast');
+            if (toast) {
+                toast.textContent = 'Cupom copiado: ' + cupom;
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    el.classList.add('fa-copy');
+                    el.classList.remove('fa-check');
+                }, 2000);
+            }
+        });
+    }
+
+    function aplicarFiltrosDoDia() {
+        const cat = document.getElementById('filtro-categoria');
+        const loja = document.getElementById('filtro-loja');
+        const params = new URLSearchParams(window.location.search);
+        if (cat && cat.value) { params.set('cat', cat.value); } else { params.delete('cat'); }
+        if (loja && loja.value) { params.set('loja', loja.value); } else { params.delete('loja'); }
+        window.location.href = window.location.pathname + '?' + params.toString();
+    }
+
+    function aplicarFiltrosDoDiaMobile() {
+        const cat = document.getElementById('m-filtro-categoria');
+        const loja = document.getElementById('m-filtro-loja');
+        const params = new URLSearchParams(window.location.search);
+        if (cat && cat.value) { params.set('cat', cat.value); } else { params.delete('cat'); }
+        if (loja && loja.value) { params.set('loja', loja.value); } else { params.delete('loja'); }
+        window.location.href = window.location.pathname + '?' + params.toString();
+    }
+</script>
+{% endblock %}

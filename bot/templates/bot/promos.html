@@ -82,6 +82,15 @@
     <span class="stats-caption" style="font-family:'Inter',sans-serif;font-size:13px;color:#555555;">Atualizando novas ofertas em: <span id="temporizador" style="font-weight:700;color:var(--primary);">30</span>s</span>
 </div>
 
+<div class="banner-todas-do-dia-wrap">
+    <a href="{% url 'promos_do_dia' %}" class="btn-todas-do-dia" target="_blank" title="Abrir todas as promoções postadas hoje em rolagem contínua">
+        <span class="btn-todas-icon"><i class="fas fa-bolt"></i></span>
+        <span class="btn-todas-text">Ver todas as promoções do dia</span>
+        <span class="btn-todas-hint">todas de hoje em rolagem completa</span>
+        <i class="fas fa-arrow-up-right-from-square btn-todas-arrow"></i>
+    </a>
+</div>
+
 {% if promos %}
 <div class="section">
     <div class="container">

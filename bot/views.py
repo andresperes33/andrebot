@@ -299,6 +299,61 @@ def promos_view(request):
     })
 
 
+def promos_do_dia_view(request):
+    """
+    Página com TODAS as promoções do dia atual (horário de Brasília).
+    Lista todas as ofertas de hoje sem paginação para rolagem contínua.
+    """
+    import unicodedata as _uni
+
+    agora = timezone.localtime(timezone.now())
+    promos = Promo.objects.filter(criado_em__date=agora.date())
+
+    # Filtro opcional de categoria
+    categoria = request.GET.get('cat', '')
+    if categoria:
+        promos = promos.filter(categoria=categoria)
+
+    # Lojas com ofertas no dia
+    lojas_bd = list(promos.exclude(loja='').order_by('loja').values_list('loja', flat=True).distinct())
+    lojas = list(_LOJAS_FIXAS) + [l for l in lojas_bd if l not in _LOJAS_FIXAS]
+    lojas = sorted(
+        lojas,
+        key=lambda l: _uni.normalize('NFD', l.casefold())
+        .encode('ascii', 'ignore').decode('ascii'),
+    )
+
+    # Filtro opcional por loja
+    loja = request.GET.get('loja', '')
+    if loja:
+        promos = promos.filter(loja=loja)
+
+    # Busca opcional por texto
+    q = request.GET.get('q', '')
+    if q:
+        promos = (promos.filter(titulo__icontains=q) | Promo.objects.filter(criado_em__date=agora.date(), texto_original__icontains=q)).distinct()
+
+    promos = promos.order_by('-criado_em')
+    total = promos.count()
+
+    categorias = sorted(
+        Promo.CATEGORIA_CHOICES,
+        key=lambda c: _uni.normalize('NFD', c[1].casefold())
+        .encode('ascii', 'ignore').decode('ascii'),
+    )
+
+    return render(request, 'bot/promos_do_dia.html', {
+        'promos': promos,
+        'total': total,
+        'categoria_ativa': categoria,
+        'categorias': categorias,
+        'lojas': lojas,
+        'loja_ativa': loja,
+        'q': q,
+        'data_hoje': agora.strftime('%d/%m/%Y'),
+    })
+
+
 def privacy_view(request):
     """
     Página de Política de Privacidade (Obrigatória para AdSense).
@@ -419,6 +474,7 @@ def sitemap_xml_view(request):
     base_url = site_base_url(request)
     pages = [
         {"loc": f"{base_url}/promos/", "changefreq": "always", "priority": "1.0"},
+        {"loc": f"{base_url}/promos/do-dia/", "changefreq": "hourly", "priority": "0.9"},
         {"loc": f"{base_url}/nitro-alerta/", "changefreq": "monthly", "priority": "0.5"},
         {"loc": f"{base_url}/sobre/", "changefreq": "monthly", "priority": "0.3"},
         {"loc": f"{base_url}/contato/", "changefreq": "monthly", "priority": "0.3"},

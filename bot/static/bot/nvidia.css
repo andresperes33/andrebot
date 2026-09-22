@@ -2201,3 +2201,141 @@ a.price-history-row:hover {
     .cookie-banner-actions { flex-direction: row; }
     .cookie-banner-actions .btn { flex: 1; }
 }
+
+/* ─── Botão / Banner: Ver todas as promoções do dia ─── */
+.banner-todas-do-dia-wrap {
+    max-width: var(--container);
+    margin: 14px auto 0;
+    padding: 0 24px;
+}
+.btn-todas-do-dia {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #0f141a;
+    border: 1px solid rgba(118, 185, 0, 0.45);
+    color: #ffffff;
+    padding: 10px 18px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.btn-todas-do-dia:hover {
+    background: #151b22;
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(118, 185, 0, 0.2);
+}
+.btn-todas-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    background: var(--primary);
+    color: #000000;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+.btn-todas-text {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.btn-todas-hint {
+    color: var(--ash);
+    font-size: 12px;
+    font-weight: 400;
+    padding-left: 4px;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+.btn-todas-arrow {
+    font-size: 12px;
+    color: var(--primary);
+    transition: transform 0.2s ease;
+}
+.btn-todas-do-dia:hover .btn-todas-arrow {
+    transform: translate(2px, -2px);
+}
+
+@media (max-width: 640px) {
+    .btn-todas-do-dia {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        padding: 10px 14px;
+    }
+    .btn-todas-hint {
+        display: none;
+    }
+}
+
+/* ─── Header da página 'Promoções do Dia' ─── */
+.promos-dia-header {
+    background: #0f141a;
+    border-bottom: 2px solid var(--primary);
+    padding: 36px 0 30px;
+    color: #ffffff;
+}
+.promos-dia-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.promos-dia-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+.promos-dia-title {
+    font-family: var(--font-promo);
+    font-size: 32px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.2;
+    margin-bottom: 8px;
+}
+.promos-dia-subtitle {
+    font-size: 15px;
+    color: var(--on-dark-mute);
+    max-width: 640px;
+}
+.promos-dia-subtitle strong {
+    color: var(--primary);
+}
+.promos-dia-action .btn-outline {
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+}
+.promos-dia-action .btn-outline:hover {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #000000;
+}
+@media (max-width: 640px) {
+    .promos-dia-header {
+        padding: 24px 0 20px;
+    }
+    .promos-dia-title {
+        font-size: 24px;
+    }
+    .promos-dia-action {
+        width: 100%;
+    }
+    .promos-dia-action .btn-outline {
+        width: 100%;
+        text-align: center;
+    }
+}

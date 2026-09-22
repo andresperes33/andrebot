@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path('', RedirectView.as_view(url='/promos/', permanent=False)),
     path('promos/', views.promos_view, name='promos'),
+    path('promos/do-dia/', views.promos_do_dia_view, name='promos_do_dia'),
     path('promos/<int:pk>/<slug:slug>/', views.promo_detail_view, name='promo_detail'),
     # Redireciona a URL antiga /promos/<pk>/ para a URL com slug (301)
     path('promos/<int:pk>/', views.promo_detail_redirect_view, name='promo_detail_legacy'),
