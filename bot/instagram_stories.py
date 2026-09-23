@@ -128,11 +128,21 @@ def _contas_instagram():
     for item in extra.split(','):
         item = item.strip()
         if not item or '|' not in item:
+            if item:
+                logger.warning(f"⚠️ Instagram: item inválido em IG_ACCOUNTS_EXTRA (sem '|'): {item[:40]}…")
             continue
         t, _, uid = item.partition('|')
         t, uid = t.strip(), uid.strip()
         if t and uid:
             contas.append({'token': t, 'user_id': uid})
+        else:
+            logger.warning("⚠️ Instagram: item vazio em IG_ACCOUNTS_EXTRA (token ou user_id).")
+    if not extra and token and user_id:
+        logger.warning(
+            "⚠️ Instagram: só 1 conta configurada — IG_ACCOUNTS_EXTRA vazio no EasyPanel. "
+            "Story/feed NÃO vão para a 2ª conta."
+        )
+    logger.info(f"📱 Instagram: {len(contas)} conta(s) para publicar: {[c['user_id'] for c in contas]}")
     return contas
 
 
@@ -201,7 +211,7 @@ def _cota_insta_disponivel(token, ig_user_id):
 
 
 def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type='STORIES'):
-    """Publica um container (Story ou Feed) em UMA conta. Retorna True/False."""
+    """Publica um container (Story ou Feed) em UMA conta. Retorna media_id ou False."""
     payload = {
         "image_url": imagem_url,
         "media_type": media_type,
@@ -210,9 +220,10 @@ def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type
     }
     if media_type == 'STORIES' and pagina_url:
         payload["link_url"] = pagina_url
-        logger.info(f"🔗 Instagram Story: link_url definido como: {pagina_url}")
-    else:
-        logger.warning(f"⚠️ Instagram Story: pagina_url vazio ou não é Story — link NÃO será adicionado. (media_type={media_type}, pagina_url={pagina_url!r})")
+        logger.info(f"🔗 Instagram Story (conta {ig_user_id}): link_url={pagina_url}")
+    elif media_type == 'STORIES':
+        logger.warning(f"⚠️ Instagram Story (conta {ig_user_id}): pagina_url vazio — sem sticker de link.")
+    # Feed (IMAGE/REELS): link vai na legenda; não existe link_url — não é erro.
 
     # Consulta a cota de publicação de 24h ANTES de criar o container. Se estiver
     # esgotada, não queima chamadas tentando publicar (erro 9 / subcode 2207042).
@@ -239,7 +250,7 @@ def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type
             logger.error(f"❌ Instagram: falha ao criar media (resposta completa): {data}")
         return False
 
-    logger.info(f"✅ Instagram: container criado com sucesso (id={data.get('id')}, link_url enviado: {'link_url' in payload})")
+    logger.info(f"✅ Instagram: container criado (conta={ig_user_id}, id={data.get('id')}, link_url={'link_url' in payload})")
 
     creation_id = data['id']
 
@@ -282,7 +293,7 @@ def _postar_conta(token, ig_user_id, imagem_url, caption, pagina_url, media_type
         return False
 
     rotulo = 'Story' if media_type == 'STORIES' else 'Post no feed'
-    logger.info(f"✅ {rotulo} publicado no Instagram! (media={pub_data['id']})")
+    logger.info(f"✅ {rotulo} publicado no Instagram! (conta={ig_user_id}, media={pub_data['id']})")
     return pub_data['id']
 
 
@@ -328,13 +339,18 @@ def post_instagram_story(texto, photo_path=None, pagina_url=''):
     publicou = False
     for conta in contas:
         try:
+            logger.info(f"📤 Instagram Story: publicando na conta {conta['user_id']}…")
             media_id = _postar_conta(conta['token'], conta['user_id'], imagem_url, caption, pagina_url)
             if media_id:
                 publicou = True
                 # Mapa story → oferta: quem responder o Story recebe o link na DM.
                 _guardar_link_por_media(media_id, pagina_url, conta['token'], conta['user_id'])
+            else:
+                logger.error(f"❌ Instagram Story: falhou na conta {conta['user_id']}.")
         except Exception as e:
             logger.error(f"❌ Instagram: erro na conta {conta['user_id']}: {e}")
+    if not publicou:
+        logger.error("❌ Instagram Story: nenhuma conta publicou.")
     return publicou
 
 
@@ -368,12 +384,17 @@ def post_instagram_feed(texto, photo_path=None, pagina_url=''):
     publicou = False
     for conta in contas:
         try:
+            logger.info(f"📤 Instagram feed: publicando na conta {conta['user_id']}…")
             media_id = _postar_conta(conta['token'], conta['user_id'], imagem_url, caption, pagina_url, media_type='IMAGE')
             if media_id:
                 publicou = True
                 # Guarda o link da oferta no banco: quando alguém comentar
                 # "quero" ou mandar DM, o bot sabe qual link responder.
                 _guardar_link_por_media(media_id, pagina_url, conta['token'], conta['user_id'])
+            else:
+                logger.error(f"❌ Instagram feed: falhou na conta {conta['user_id']}.")
         except Exception as e:
             logger.error(f"❌ Instagram feed: erro na conta {conta['user_id']}: {e}")
+    if not publicou:
+        logger.error("❌ Instagram feed: nenhuma conta publicou.")
     return publicou
