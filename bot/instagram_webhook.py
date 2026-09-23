@@ -152,7 +152,12 @@ def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None, imagem_u
 
 
 def _imagem_da_promo(pagina_url):
-    """Extrai /promos/<pk>/ da URL e retorna a imagem_url absoluta da Promo, ou ''."""
+    """Extrai /promos/<pk>/ da URL e retorna URL JPEG da imagem da Promo.
+
+    O IG Messaging não carrega WebP (error 2018007) — se a original for WebP
+    (ou outro formato não suportado), gera uma cópia JPEG em MEDIA_ROOT/promos/
+    e retorna essa URL pública.
+    """
     if not pagina_url:
         return ''
     m = re.search(r'/promos/(\d+)', pagina_url)
@@ -166,13 +171,79 @@ def _imagem_da_promo(pagina_url):
         if not promo or not promo.imagem_url:
             return ''
         img = promo.imagem_url
-        if img.startswith('http'):
-            return img
         site = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
-        return f"{site}{img}"
+        abs_url = img if img.startswith('http') else f"{site}{img}"
+
+        # Se já é jpg/jpeg/png, manda direto
+        lower = abs_url.lower().split('?')[0]
+        if lower.endswith(('.jpg', '.jpeg', '.png')):
+            return abs_url
+
+        # WebP (ou outro): baixa e converte pra JPEG local
+        return _webp_para_jpeg_url(abs_url, promo.pk)
     except Exception as e:
         logger.warning(f"⚠️ IG webhook: erro ao buscar imagem da promo: {e}")
         return ''
+
+
+def _webp_para_jpeg_url(abs_url, promo_pk):
+    """Baixa a imagem, converte pra JPEG se preciso e retorna URL pública."""
+    import os
+    import time
+    import shutil
+    import tempfile
+    from PIL import Image
+
+    site = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
+    media_dir = os.path.join(settings.MEDIA_ROOT, 'promos')
+    os.makedirs(media_dir, exist_ok=True)
+    out_name = f"ig_dm_{promo_pk}_{int(time.time())}.jpg"
+    out_path = os.path.join(media_dir, out_name)
+
+    # Tenta usar o arquivo local se a URL for do próprio site (evita download)
+    local_src = None
+    if abs_url.startswith(site):
+        rel = abs_url[len(site):].lstrip('/')
+        # settings.MEDIA_URL costuma ser /media/
+        cand = os.path.join(settings.BASE_DIR, rel)
+        if os.path.exists(cand):
+            local_src = cand
+
+    try:
+        if local_src:
+            img = Image.open(local_src)
+        else:
+            resp = requests.get(abs_url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
+            resp.raise_for_status()
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.img') as tmp:
+                tmp.write(resp.content)
+                tmp_path = tmp.name
+            img = Image.open(tmp_path)
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+        img = Image.open(img)  # garante carregamento lazy
+        if img.mode in ('RGBA', 'LA', 'P'):
+            if img.mode == 'P':
+                img = img.convert('RGBA')
+            fundo = Image.new('RGB', img.size, (255, 255, 255))
+            fundo.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+            img = fundo
+        else:
+            img = img.convert('RGB')
+        # Limite de lado (IG prefere <= 8192)
+        max_side = 2048
+        if max(img.size) > max_side:
+            img.thumbnail((max_side, max_side), Image.LANCZOS)
+        img.save(out_path, 'JPEG', quality=90)
+        url = f"{site}{settings.MEDIA_URL}promos/{out_name}"
+        logger.info(f"🖼️ IG webhook: imagem convertida p/ JPEG → {url}")
+        return url
+    except Exception as e:
+        logger.warning(f"⚠️ IG webhook: falha ao converter imagem p/ JPEG: {e}")
+        return abs_url
 
 
 def _texto_resposta(link, modo):
