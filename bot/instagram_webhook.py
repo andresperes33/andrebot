@@ -26,7 +26,8 @@ GRAPH_URL = "https://graph.instagram.com/v26.0"
 # Texto enviado ANTES do card de oferta na DM
 _INTRO_DM = (
     "🚀 Acesse o produto pelo botão abaixo 👇\n\n"
-    "E aproveita para me seguir por aqui também! 😉"
+    "E aproveita para me seguir por aqui também! 😉\n\n"
+    "🔥 Assim você não perde as próximas ofertas!"
 )
 
 # Evita responder 2x o mesmo comentário/mensagem (webhooks reentregam eventos)
