@@ -98,15 +98,14 @@ def _responder_comentario(token, comment_id, texto):
     return True
 
 
-def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None, imagem_url=None, imagem_path=None):
+def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None, imagem_url=None, imagem_path=None, titulo=''):
     """
-    Envia uma DM. Se comment_id for passado, usa o mecanismo de Private Reply
-    do Instagram: inicia uma DM a partir de um comentário no post
-    (recipient = {"comment_id": ...}). Sem comment_id, responde numa conversa
-    já existente (recipient = {"id": ...}).
+    Envia UMA mensagem na DM.
 
-    Imagem: prefere upload multipart (filedata) com o arquivo local; se falhar,
-    cai para URL (payload.url).
+    - Com imagem: Generic Template (imagem + título + botão do link juntos).
+    - Sem imagem (ou template falhar): texto puro.
+
+    Private Reply (comment_id) aceita só UMA mensagem — nunca manda 2.
     """
     if comment_id:
         recipient = {"comment_id": str(comment_id)}
@@ -128,67 +127,41 @@ def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None, imagem_u
         except Exception:
             return resp.status_code, {"raw": resp.text[:300]}
 
-    def _post_msg_multipart(file_path):
-        """Upload direto do arquivo — Meta não precisa baixar a URL (2018007)."""
-        msg = {
-            "attachment": {
-                "type": "image",
-                "payload": {},
-            }
-        }
-        with open(file_path, 'rb') as fh:
-            resp = requests.post(
-                f"{GRAPH_URL}/{ig_user_id}/messages",
-                data={
-                    "recipient": json.dumps(recipient),
-                    "message": json.dumps(msg),
-                    "access_token": token,
-                },
-                files={
-                    "filedata": (os.path.basename(file_path), fh, "image/jpeg"),
-                },
-                timeout=60,
-            )
-        try:
-            return resp.status_code, resp.json()
-        except Exception:
-            return resp.status_code, {"raw": resp.text[:300]}
+    def _link_no_texto(t):
+        m = re.search(r'(https?://\S+)', t or '')
+        return m.group(1).rstrip('.,;|)') if m else ''
 
     try:
-        # 1) Imagem do produto (se houver)
-        if imagem_path and os.path.isfile(imagem_path):
-            status, dados = _post_msg_multipart(imagem_path)
-            if status == 200 and 'error' not in dados:
-                logger.info(f"🖼️ IG webhook: imagem enviada via multipart ({os.path.basename(imagem_path)}).")
-                time.sleep(0.4)
-            else:
-                logger.warning(f"⚠️ IG webhook: multipart falhou, tentando URL: {dados}")
-                if imagem_url:
-                    status, dados = _post_msg({
-                        "attachment": {
-                            "type": "image",
-                            "payload": {"url": imagem_url, "is_reusable": True},
-                        }
-                    })
-                    if status != 200 or 'error' in dados:
-                        logger.warning(f"⚠️ IG webhook: falha ao enviar imagem na DM: {dados}")
-                    else:
-                        logger.info(f"🖼️ IG webhook: imagem enviada na DM ({imagem_url[:80]}…).")
-                        time.sleep(0.4)
-        elif imagem_url:
+        link = _link_no_texto(texto)
+        titulo = (titulo or '').strip()[:80] or 'Aproveite a promoção!'
+        subtitle = 'Toque para ver a oferta' if link else (texto or '')[:80]
+
+        # 1) Card único: imagem + título + botão do link
+        if imagem_url:
+            element = {
+                "title": titulo,
+                "subtitle": subtitle,
+                "image_url": imagem_url,
+            }
+            if link:
+                element["default_action"] = {"type": "web_url", "url": link}
+                element["buttons"] = [{"type": "web_url", "url": link, "title": "Ver oferta"}]
             status, dados = _post_msg({
                 "attachment": {
-                    "type": "image",
-                    "payload": {"url": imagem_url, "is_reusable": True},
+                    "type": "template",
+                    "payload": {
+                        "template_type": "generic",
+                        "elements": [element],
+                    },
                 }
             })
-            if status != 200 or 'error' in dados:
-                logger.warning(f"⚠️ IG webhook: falha ao enviar imagem na DM: {dados}")
-            else:
-                logger.info(f"🖼️ IG webhook: imagem enviada na DM ({imagem_url[:80]}…).")
-                time.sleep(0.4)
+            if status == 200 and 'error' not in dados:
+                logger.info(f"✅ IG webhook: card (imagem+link) enviado na DM.")
+                logger.info(f"✅ IG webhook: DM enviado para {recipient_id} (comment_id={comment_id or '-'}).")
+                return True
+            logger.warning(f"⚠️ IG webhook: template falhou, tentando texto puro: {dados}")
 
-        # 2) Texto com o link
+        # 2) Texto puro (só UMA chamada — private reply não aceita 2)
         status, dados = _post_msg({"text": texto})
     except Exception as e:
         logger.error(f"❌ IG webhook: erro ao enviar DM: {e}")
@@ -201,24 +174,26 @@ def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None, imagem_u
 
 
 def _imagem_da_promo(pagina_url):
-    """Extrai /promos/<pk>/ da URL e retorna (url_jpeg, caminho_local).
+    """Extrai /promos/<pk>/ e retorna (url_jpeg, caminho_local, titulo_preco).
 
-    O IG Messaging não carrega WebP (error 2018007) — se a original for WebP
-    (ou outro formato não suportado), gera uma cópia JPEG em MEDIA_ROOT/promos/.
-    Retorna URL pública + path local (p/ multipart upload).
+    titulo_preco: "Produto — R$ 99" (corta em 80 p/ o card do IG).
     """
     if not pagina_url:
-        return '', ''
+        return '', '', ''
     m = re.search(r'/promos/(\d+)', pagina_url)
     if not m:
-        return '', ''
+        return '', '', ''
     try:
         from django.db import close_old_connections
         from bot.models import Promo
         close_old_connections()
         promo = Promo.objects.filter(pk=int(m.group(1))).first()
         if not promo or not promo.imagem_url:
-            return '', ''
+            return '', '', ''
+        titulo_card = (promo.titulo or '').strip()
+        if promo.preco:
+            titulo_card = f"{titulo_card} — {promo.preco}".strip()
+        titulo_card = titulo_card[:80] or 'Aproveite a promoção!'
         img = promo.imagem_url
         site = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
         abs_url = img if img.startswith('http') else f"{site}{img}"
@@ -232,13 +207,14 @@ def _imagem_da_promo(pagina_url):
                 cand = os.path.join(settings.BASE_DIR, rel)
                 if os.path.isfile(cand):
                     local = cand
-            return abs_url, local
+            return abs_url, local, titulo_card
 
         # WebP (ou outro): baixa e converte pra JPEG local
-        return _webp_para_jpeg_url(abs_url, promo.pk)
+        url, path = _webp_para_jpeg_url(abs_url, promo.pk)
+        return url, path, titulo_card
     except Exception as e:
         logger.warning(f"⚠️ IG webhook: erro ao buscar imagem da promo: {e}")
-        return '', ''
+        return '', '', ''
 
 
 def _webp_para_jpeg_url(abs_url, promo_pk):
@@ -303,10 +279,13 @@ def _webp_para_jpeg_url(abs_url, promo_pk):
 
 def _texto_resposta(link, modo):
     link = (link or '').strip()
-    if link:
-        return f"✅ Aproveite a promoção!\n\n🔗 {link}"
-    site = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
-    return f"✅ Promo confirmada! Confira no nosso site:\n{site}"
+    if modo == 'dm':
+        if link:
+            return f"✅ Aproveite a promoção!\n\n🔗 {link}"
+        site = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
+        return f"✅ Promo confirmada! Confira no nosso site:\n{site}"
+    # comentário no post: só avisa que o link foi pra DM (não repete a promo)
+    return "📩 Link do produto enviado na sua DM!"
 
 
 def _link_da_caption(media_id, token):
@@ -418,23 +397,25 @@ def _processar_comentario(value, entry_id=None):
         origem = 'site'
     logger.info(f"🔍 IG webhook: media={media_id} link_origem={origem} url={dm_link}")
 
-    # 1ª tentativa: Private Reply — inicia a DM a partir do comentário
-    # (recipient.comment_id). É a forma oficial de mandar DM pra quem comentou.
+    # 1ª tentativa: Private Reply — UMA msg com imagem+link (ou texto).
     if token and user_id:
         dm_enviado = False
-        imagem, imagem_path = _imagem_da_promo(dm_link)
+        imagem, imagem_path, titulo = _imagem_da_promo(dm_link)
         try:
-            dm_enviado = _enviar_dm(token, user_id, sender_id, _texto_resposta(dm_link, 'dm'), comment_id=comment_id, imagem_url=imagem, imagem_path=imagem_path)
+            dm_enviado = _enviar_dm(
+                token, user_id, sender_id, _texto_resposta(dm_link, 'dm'),
+                comment_id=comment_id, imagem_url=imagem, imagem_path=imagem_path,
+                titulo=titulo,
+            )
         except Exception as e:
             logger.error(f"❌ IG webhook: erro no Private Reply: {e}")
 
         if dm_enviado:
-            # Avisa no comentário que o link foi para a DM (agora é verdade)
             _responder_comentario(token, comment_id, "✅ Prontinho! Te mandei o link na sua DM 📩")
             return
 
-    # 2ª tentativa (fallback): responder o comentário com o link
-    _responder_comentario(token, comment_id, _texto_resposta(dm_link, 'comentario'))
+    # 2ª tentativa (fallback): só avisa no comentário (sem expor o link)
+    _responder_comentario(token, comment_id, "📩 Link do produto enviado na sua DM!")
 
 
 def _acha_conta(contas, *ids):
@@ -597,12 +578,15 @@ def _processar_mensagem(value, entry_id):
         if recipient:
             _entry_user_cache[str(recipient)] = str(user_id)
 
-    imagem, imagem_path = _imagem_da_promo(link)
+    imagem, imagem_path, titulo = _imagem_da_promo(link)
     logger.info(
         f"📤 IG webhook: enviando DM conta_user_id={user_id} "
         f"token_prefix={(token or '')[:12]}… origem={origem} imagem={'sim' if imagem else 'não'}"
     )
-    ok = _enviar_dm(token, user_id, sender, _texto_resposta(link, 'dm'), imagem_url=imagem, imagem_path=imagem_path)
+    ok = _enviar_dm(
+        token, user_id, sender, _texto_resposta(link, 'dm'),
+        imagem_url=imagem, imagem_path=imagem_path, titulo=titulo,
+    )
     if not ok:
         logger.error(
             f"❌ IG webhook: FALHOU enviar DM para conta_user_id={user_id} "
