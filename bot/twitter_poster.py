@@ -21,7 +21,7 @@ def _auth():
     if not (ck and cks and at and ats):
         return None
     from requests_oauthlib import OAuth1
-    return OAuth1(ck, consumer_secret=cks, resource_owner_key=at, resource_owner_secret=ats)
+    return OAuth1(ck, client_secret=cks, resource_owner_key=at, resource_owner_secret=ats)
 
 
 def _len_x(msg):
