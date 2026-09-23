@@ -224,12 +224,15 @@ def _webp_para_jpeg_url(abs_url, promo_pk):
             except OSError:
                 pass
 
-        img = Image.open(img)  # garante carregamento lazy
+        img.load()  # força decodificação (WebP lazy)
         if img.mode in ('RGBA', 'LA', 'P'):
             if img.mode == 'P':
                 img = img.convert('RGBA')
             fundo = Image.new('RGB', img.size, (255, 255, 255))
-            fundo.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+            if img.mode == 'RGBA':
+                fundo.paste(img, mask=img.split()[-1])
+            else:
+                fundo.paste(img)
             img = fundo
         else:
             img = img.convert('RGB')
