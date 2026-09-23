@@ -539,6 +539,29 @@ class Command(BaseCommand):
                     except Exception as fb_err:
                         logger.error(f"❌ Erro Facebook: {fb_err}")
 
+                    # ─── Publica nos STORIES do Facebook ────────────────────
+                    try:
+                        from bot.facebook_poster import post_facebook_story
+                        from bot.story_gate import pode_publicar_story, registrar_publicacao
+
+                        if categoria_oferta == 'cupom':
+                            logger.info("⏸️ Facebook story não publicado: promoção da categoria 'cupom'.")
+                        else:
+                            permitido_fbs, motivo_fbs = await asyncio.to_thread(
+                                pode_publicar_story, chave='ultima_publicacao_fb_story'
+                            )
+                            if not permitido_fbs:
+                                logger.info(f"⏸️ Facebook story adiado ({motivo_fbs}).")
+                            else:
+                                publicou_fbs = await asyncio.to_thread(post_facebook_story, modified_text, photo_path)
+                                if publicou_fbs:
+                                    await asyncio.to_thread(registrar_publicacao, chave='ultima_publicacao_fb_story')
+                                    logger.info("📱 Story publicado no Facebook.")
+                                else:
+                                    logger.info("ℹ️ Facebook story: nada publicado (não configurado ou falhou).")
+                    except Exception as fbs_err:
+                        logger.error(f"❌ Erro Facebook story: {fbs_err}")
+
                 # ─── Limpa foto após 90s ─────────────────────────────────────
                 if photo_path:
                     async def cleanup(path):
