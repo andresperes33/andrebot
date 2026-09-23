@@ -19,7 +19,13 @@ from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from bot.instagram_webhook import _tem_interesse, _texto_resposta, _ja_processada
+from bot.instagram_webhook import (
+    _tem_interesse,
+    _texto_resposta,
+    _ja_processada,
+    _INTRO_DM,
+    _imagem_da_promo,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -40,29 +46,67 @@ def _link_da_oferta():
     return (getattr(settings, 'SITE_URL', '') or '').rstrip('/') + '/promos/'
 
 
-def _enviar_dm(psid, texto):
-    """Envia uma DM para o usuário (PSID) via Send API do Messenger."""
+def _post_mensagem(psid, message_dict, token):
+    resp = requests.post(
+        f"{GRAPH_URL}/me/messages",
+        data={
+            'recipient': json.dumps({'id': str(psid)}),
+            'message': json.dumps(message_dict),
+            'messaging_type': 'RESPONSE',
+            'access_token': token,
+        },
+        timeout=30,
+    )
+    try:
+        return resp.status_code, resp.json()
+    except Exception:
+        return resp.status_code, {'raw': resp.text[:300]}
+
+
+def _enviar_dm(psid, texto, link=''):
+    """Envia a DM do Facebook em 2 passos: intro + card/texto com o link."""
     token = getattr(settings, 'FB_ACCESS_TOKEN', None)
     if not token:
         logger.warning("⚠️ FB webhook: FB_ACCESS_TOKEN ausente.")
         return False
     try:
-        resp = requests.post(
-            f"{GRAPH_URL}/me/messages",
-            data={
-                'recipient': json.dumps({'id': str(psid)}),
-                'message': json.dumps({'text': texto}),
-                'messaging_type': 'RESPONSE',
-                'access_token': token,
-            },
-            timeout=30,
-        )
-        dados = resp.json()
+        # 1) Intro (mesmo texto do Instagram)
+        st, dt = _post_mensagem(psid, {'text': _INTRO_DM}, token)
+        if st != 200 or 'error' in dt:
+            logger.warning(f"⚠️ FB webhook: intro não enviada: {dt}")
+        else:
+            logger.info("💬 FB webhook: intro enviada antes do link.")
+
+        # 2) Card com imagem+botão se houver promo; senão, texto com link
+        imagem, _path, titulo = _imagem_da_promo(link) if link else ('', '', '')
+        if imagem and link:
+            element = {
+                'title': (titulo or 'Aproveite a promoção!')[:80],
+                'subtitle': 'Toque para ver a oferta',
+                'image_url': imagem,
+                'default_action': {'type': 'web_url', 'url': link},
+                'buttons': [{'type': 'web_url', 'url': link, 'title': 'Ver oferta'}],
+            }
+            st, dt = _post_mensagem(psid, {
+                'attachment': {
+                    'type': 'template',
+                    'payload': {
+                        'template_type': 'generic',
+                        'elements': [element],
+                    },
+                },
+            }, token)
+            if st == 200 and 'error' not in dt:
+                logger.info(f"✅ FB webhook: card enviado para {psid}.")
+                return True
+            logger.warning(f"⚠️ FB webhook: template falhou, mandando texto: {dt}")
+
+        st, dt = _post_mensagem(psid, {'text': texto}, token)
     except Exception as e:
         logger.error(f"❌ FB webhook: erro ao enviar DM: {e}")
         return False
-    if resp.status_code != 200 or 'error' in dados:
-        logger.error(f"❌ FB webhook: falha ao enviar DM: {dados}")
+    if st != 200 or 'error' in dt:
+        logger.error(f"❌ FB webhook: falha ao enviar DM: {dt}")
         return False
     logger.info(f"✅ FB webhook: DM enviado para {psid}.")
     return True
@@ -103,7 +147,7 @@ def _processar_mensagem(item, page_id=''):
         return
 
     link = _link_da_oferta()
-    _enviar_dm(sender, _texto_resposta(link, 'dm'))
+    _enviar_dm(sender, _texto_resposta(link, 'dm'), link=link)
 
 
 def processar_evento_facebook(payload):
