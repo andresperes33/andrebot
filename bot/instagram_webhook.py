@@ -97,36 +97,82 @@ def _responder_comentario(token, comment_id, texto):
     return True
 
 
-def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None):
+def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None, imagem_url=None):
     """
     Envia uma DM. Se comment_id for passado, usa o mecanismo de Private Reply
     do Instagram: inicia uma DM a partir de um comentário no post
     (recipient = {"comment_id": ...}). Sem comment_id, responde numa conversa
     já existente (recipient = {"id": ...}).
+
+    Se imagem_url for informado, manda a imagem primeiro e depois o texto.
     """
     if comment_id:
         recipient = {"comment_id": str(comment_id)}
     else:
         recipient = {"id": str(recipient_id)}
-    try:
+
+    def _post_msg(msg_dict):
         resp = requests.post(
             f"{GRAPH_URL}/{ig_user_id}/messages",
             data={
                 "recipient": json.dumps(recipient),
-                "message": json.dumps({"text": texto}),
+                "message": json.dumps(msg_dict),
                 "access_token": token,
             },
             timeout=30,
         )
-        dados = resp.json()
+        return resp.status_code, resp.json()
+
+    try:
+        # 1) Imagem do produto (se houver) — precisa de 2 chamadas (text ≠ attachment)
+        if imagem_url:
+            status, dados = _post_msg({
+                "attachment": {
+                    "type": "image",
+                    "payload": {"url": imagem_url, "is_reusable": True},
+                }
+            })
+            if status != 200 or 'error' in dados:
+                logger.warning(f"⚠️ IG webhook: falha ao enviar imagem na DM: {dados}")
+            else:
+                logger.info(f"🖼️ IG webhook: imagem enviada na DM ({imagem_url[:80]}…).")
+                # Pequena pausa entre imagem e texto
+                time.sleep(0.4)
+
+        # 2) Texto com o link
+        status, dados = _post_msg({"text": texto})
     except Exception as e:
         logger.error(f"❌ IG webhook: erro ao enviar DM: {e}")
         return False
-    if resp.status_code != 200 or 'error' in dados:
+    if status != 200 or 'error' in dados:
         logger.error(f"❌ IG webhook: falha ao enviar DM: {dados}")
         return False
     logger.info(f"✅ IG webhook: DM enviado para {recipient_id} (comment_id={comment_id or '-'}).")
     return True
+
+
+def _imagem_da_promo(pagina_url):
+    """Extrai /promos/<pk>/ da URL e retorna a imagem_url absoluta da Promo, ou ''."""
+    if not pagina_url:
+        return ''
+    m = re.search(r'/promos/(\d+)', pagina_url)
+    if not m:
+        return ''
+    try:
+        from django.db import close_old_connections
+        from bot.models import Promo
+        close_old_connections()
+        promo = Promo.objects.filter(pk=int(m.group(1))).first()
+        if not promo or not promo.imagem_url:
+            return ''
+        img = promo.imagem_url
+        if img.startswith('http'):
+            return img
+        site = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
+        return f"{site}{img}"
+    except Exception as e:
+        logger.warning(f"⚠️ IG webhook: erro ao buscar imagem da promo: {e}")
+        return ''
 
 
 def _texto_resposta(link, modo):
@@ -250,8 +296,9 @@ def _processar_comentario(value, entry_id=None):
     # (recipient.comment_id). É a forma oficial de mandar DM pra quem comentou.
     if token and user_id:
         dm_enviado = False
+        imagem = _imagem_da_promo(dm_link)
         try:
-            dm_enviado = _enviar_dm(token, user_id, sender_id, _texto_resposta(dm_link, 'dm'), comment_id=comment_id)
+            dm_enviado = _enviar_dm(token, user_id, sender_id, _texto_resposta(dm_link, 'dm'), comment_id=comment_id, imagem_url=imagem)
         except Exception as e:
             logger.error(f"❌ IG webhook: erro no Private Reply: {e}")
 
@@ -424,11 +471,12 @@ def _processar_mensagem(value, entry_id):
         if recipient:
             _entry_user_cache[str(recipient)] = str(user_id)
 
+    imagem = _imagem_da_promo(link)
     logger.info(
         f"📤 IG webhook: enviando DM conta_user_id={user_id} "
-        f"token_prefix={(token or '')[:12]}… origem={origem}"
+        f"token_prefix={(token or '')[:12]}… origem={origem} imagem={'sim' if imagem else 'não'}"
     )
-    ok = _enviar_dm(token, user_id, sender, _texto_resposta(link, 'dm'))
+    ok = _enviar_dm(token, user_id, sender, _texto_resposta(link, 'dm'), imagem_url=imagem)
     if not ok:
         logger.error(
             f"❌ IG webhook: FALHOU enviar DM para conta_user_id={user_id} "
