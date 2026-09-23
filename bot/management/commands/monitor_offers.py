@@ -562,6 +562,29 @@ class Command(BaseCommand):
                     except Exception as fbs_err:
                         logger.error(f"❌ Erro Facebook story: {fbs_err}")
 
+                    # ─── Publica no X (Twitter) ──────────────────────────────
+                    try:
+                        from bot.twitter_poster import post_twitter
+                        from bot.story_gate import pode_publicar_story, registrar_publicacao
+
+                        if categoria_oferta == 'cupom':
+                            logger.info("⏸️ X não publicado: promoção da categoria 'cupom'.")
+                        else:
+                            permitido_x, motivo_x = await asyncio.to_thread(
+                                pode_publicar_story, chave='ultima_publicacao_x'
+                            )
+                            if not permitido_x:
+                                logger.info(f"⏸️ X adiado ({motivo_x}).")
+                            else:
+                                publicou_x = await asyncio.to_thread(post_twitter, modified_text, photo_path, pagina_url)
+                                if publicou_x:
+                                    await asyncio.to_thread(registrar_publicacao, chave='ultima_publicacao_x')
+                                    logger.info("🐦 Oferta publicada no X.")
+                                else:
+                                    logger.info("ℹ️ X: nada publicado (não configurado ou falhou).")
+                    except Exception as x_err:
+                        logger.error(f"❌ Erro X: {x_err}")
+
                 # ─── Limpa foto após 90s ─────────────────────────────────────
                 if photo_path:
                     async def cleanup(path):
