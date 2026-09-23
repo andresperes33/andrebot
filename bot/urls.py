@@ -19,4 +19,5 @@ urlpatterns = [
     path('ads.txt', views.ads_txt_view, name='ads_txt'),
     path('sitemap.xml', views.sitemap_xml_view, name='sitemap_xml'),
     path('instagram/webhook/', views.instagram_webhook_view, name='instagram_webhook'),
+    path('facebook/webhook/', views.facebook_webhook_view, name='facebook_webhook'),
 ]

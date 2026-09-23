@@ -5,6 +5,7 @@ from django.conf import settings
 from datetime import timedelta
 from .models import Promo, Evento
 from bot.instagram_webhook import instagram_webhook_view
+from bot.facebook_webhook import facebook_webhook_view
 
 # Lojas sempre exibidas no filtro, mesmo sem promoções no período atual.
 _LOJAS_FIXAS = [

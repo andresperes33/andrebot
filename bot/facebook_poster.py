@@ -68,7 +68,21 @@ def post_facebook(texto, photo_path=None, pagina_url=''):
         return False
 
     logger.info(f"✅ Post publicado no Facebook: {data.get('id')}")
+    _guardar_ultimo_link_fb(pagina_url)
     return True
+
+
+def _guardar_ultimo_link_fb(pagina_url):
+    """Persiste o link da oferta postada (usado pelo webhook ao responder DM)."""
+    if not pagina_url:
+        return
+    try:
+        from django.db import close_old_connections
+        from bot.models import BotConfig
+        close_old_connections()
+        BotConfig.set('fb_ultimo_pagina_url', pagina_url)
+    except Exception as e:
+        logger.warning(f"⚠️ Facebook: erro ao guardar último link: {e}")
 
 
 def post_facebook_story(texto, photo_path=None, pagina_url=''):
@@ -139,4 +153,5 @@ def post_facebook_story(texto, photo_path=None, pagina_url=''):
         return False
 
     logger.info(f"✅ Story publicado no Facebook: post_id={data.get('post_id')}")
+    _guardar_ultimo_link_fb(pagina_url)
     return True
