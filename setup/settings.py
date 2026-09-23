@@ -225,3 +225,23 @@ TWITTER_ACCESS_TOKEN = os.getenv('TWITTER_ACCESS_TOKEN', '')
 TWITTER_ACCESS_TOKEN_SECRET = os.getenv('TWITTER_ACCESS_TOKEN_SECRET', '')
 # URL pública da aplicação (usada para montar links absolutos fora do contexto HTTP)
 SITE_URL = os.getenv('SITE_URL', '')
+
+# Logs do bot/webhook no stdout (EasyPanel). Sem isso, logger.info não aparece.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {'format': '%(levelname)s %(name)s %(message)s'},
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'bot': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'django': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+    },
+    'root': {'handlers': ['console'], 'level': 'INFO'},
+}
