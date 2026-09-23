@@ -25,6 +25,10 @@ GRAPH_URL = "https://graph.instagram.com/v26.0"
 # Evita responder 2x o mesmo comentário/mensagem (webhooks reentregam eventos)
 _processadas = {}
 
+# entry_id do webhook ≠ IG user id da API. Cache entry → user_id real
+# (aprendido quando um evento bate no mapa media→conta).
+_entry_user_cache = {}
+
 
 def _norm(texto):
     """Minúsculas sem acentos, para casar com 'quero'."""
@@ -212,14 +216,19 @@ def _processar_comentario(value, entry_id=None):
         if not contas:
             logger.warning("⚠️ IG webhook: Instagram não configurado para responder.")
             return
-        conta_match = next((c for c in contas if str(c.get('user_id')) == str(entry_id)), contas[0]) if entry_id else contas[0]
+        # entry_id do webhook costuma ser diferente do IG user id da API —
+        # tenta entry, cache e recipient-like ids antes de desistir.
+        cached = _entry_user_cache.get(str(entry_id)) if entry_id else None
+        conta_match = _acha_conta(contas, entry_id, cached) or contas[0]
         token = token or conta_match['token']
         user_id = user_id or conta_match['user_id']
         logger.info(
-            f"🔍 IG webhook: mapa ausente — fallback entry_id={entry_id} → "
+            f"🔍 IG webhook: mapa ausente — fallback entry={entry_id} cache={cached} → "
             f"conta user_id={conta_match.get('user_id')} "
             f"(match={str(conta_match.get('user_id'))==str(entry_id)})"
         )
+    if entry_id and user_id:
+        _entry_user_cache[str(entry_id)] = str(user_id)
     logger.info(
         f"🔍 IG webhook: media={media_id} origem_mapa={origem_mapa} "
         f"conta_user_id={user_id} token_prefix={(token or '')[:12]}…"
@@ -255,10 +264,62 @@ def _processar_comentario(value, entry_id=None):
     _responder_comentario(token, comment_id, _texto_resposta(dm_link, 'comentario'))
 
 
+def _acha_conta(contas, *ids):
+    """Acha a conta configurada cujo user_id bate com algum dos ids passados."""
+    for cid in ids:
+        if not cid:
+            continue
+        for c in contas:
+            if str(c.get('user_id')) == str(cid):
+                return c
+    return None
+
+
+def _resolver_conta_dm(entry_id, recipient_id, token_mapa=None, user_id_mapa=None):
+    """Resolve (token, user_id) da conta certa pra enviar DM.
+
+    Prioridade:
+    1. Dados do mapa media/story (já vêm com token+user_id da conta certa)
+    2. recipient.id / entry_id casando com contas configuradas
+    3. Cache entry_id → user_id aprendido em eventos anteriores
+    """
+    from bot.instagram_stories import _contas_instagram
+    contas = _contas_instagram()
+    if not contas:
+        logger.warning("⚠️ IG webhook: Instagram não configurado para enviar DM.")
+        return None, None
+
+    if token_mapa and user_id_mapa:
+        return token_mapa, user_id_mapa
+
+    conta = _acha_conta(contas, recipient_id, entry_id)
+    if not conta and entry_id:
+        cached = _entry_user_cache.get(str(entry_id))
+        conta = _acha_conta(contas, cached)
+    if not conta and recipient_id:
+        cached = _entry_user_cache.get(str(recipient_id))
+        conta = _acha_conta(contas, cached)
+
+    if conta:
+        logger.info(
+            f"🔍 IG webhook: conta resolvida user_id={conta['user_id']} "
+            f"(recipient={recipient_id} entry={entry_id} "
+            f"match_recipient={str(conta.get('user_id'))==str(recipient_id)} "
+            f"match_entry={str(conta.get('user_id'))==str(entry_id)})"
+        )
+        return conta['token'], conta['user_id']
+
+    logger.warning(
+        f"⚠️ IG webhook: não achou conta p/ DM "
+        f"(entry={entry_id} recipient={recipient_id} contas={[c.get('user_id') for c in contas]})"
+    )
+    return None, None
+
+
 def _processar_mensagem(value, entry_id):
     """DM com 'quero': envia o link direto na conversa.
 
-    Se a mensagem for uma RESPOSTA a um Story (replies_to.story/shares),
+    Se a mensagem for uma RESPOSTA a um Story (reply_to.story),
     prioriza o link da oferta daquele Story postado por nós; senão usa o
     último link postado.
 
@@ -268,6 +329,7 @@ def _processar_mensagem(value, entry_id):
     from bot.instagram_stories import link_por_media
 
     sender = ''
+    recipient = ''
     mid = ''
     text = ''
     story_id = ''
@@ -276,28 +338,38 @@ def _processar_mensagem(value, entry_id):
     if messaging and isinstance(messaging, list):
         m = messaging[0]
         sender = (m.get('sender') or {}).get('id') or ''
+        recipient = (m.get('recipient') or {}).get('id') or ''
         msg = m.get('message') or {}
     else:
         # Formato direto: sender/recipient/message vêm direto no item do webhook
         sender = (value.get('sender') or {}).get('id') or (value.get('from') or {}).get('id') or ''
+        recipient = (value.get('recipient') or {}).get('id') or ''
         msg = value.get('message') or {}
 
     if isinstance(msg, dict):
         mid = (msg.get('mid') or '').strip()
         text = (msg.get('text') or '').strip()
-        # Resposta a Story → replies_to.story
-        replies_to = msg.get('replies_to')
-        if isinstance(replies_to, dict):
-            story = replies_to.get('story') or {}
+        # Resposta a Story → Meta usa reply_to (sem "s"); legado: replies_to
+        reply_to = msg.get('reply_to') or msg.get('replies_to')
+        if isinstance(reply_to, dict):
+            story = reply_to.get('story') or {}
             if isinstance(story, dict):
                 story_id = (story.get('id') or '').strip()
         if not story_id:
-            # Outro formato: shares com type='story'
+            # shares com type='story'
             shares = msg.get('shares') or []
             if isinstance(shares, list):
                 for s in shares:
-                    if isinstance(s, dict) and s.get('type') == 'story':
+                    if isinstance(s, dict) and s.get('type') in ('story', 'ig_story'):
                         story_id = (s.get('id') or '').strip()
+                        break
+        if not story_id:
+            # attachments com type story/ig_story
+            for att in msg.get('attachments') or []:
+                if isinstance(att, dict) and att.get('type') in ('story', 'ig_story'):
+                    payload = att.get('payload') or {}
+                    story_id = (payload.get('id') or payload.get('url') or '').strip()
+                    if story_id:
                         break
     else:
         text = str(msg or '').strip()
@@ -306,8 +378,8 @@ def _processar_mensagem(value, entry_id):
         return
 
     logger.info(
-        f"📩 IG webhook: mensagem entry_id={entry_id} sender={sender} "
-        f"story_id={story_id or '-'} mid={mid or '-'} text={text[:40]!r}"
+        f"📩 IG webhook: mensagem entry={entry_id} recipient={recipient or '-'} "
+        f"sender={sender} story_id={story_id or '-'} mid={mid or '-'} text={text[:40]!r}"
     )
 
     # Se a pessoa respondeu diretamente a um Story, ela já está querendo o link daquele Story!
@@ -319,38 +391,38 @@ def _processar_mensagem(value, entry_id):
     if _ja_processada(f'dm:{mid or (sender + ":" + story_id)}'):
         return
 
-    # Link e credenciais padrão (último postado / conta principal)
-    link, token, user_id = _link_da_oferta()
+    # Link padrão (último postado)
+    link, _t_mapa, _u_mapa = _link_da_oferta()
     origem = 'ultimo' if link else '?'
+    token_mapa = None
+    user_id_mapa = None
 
     # Resposta a Story → usa o mapa daquele Story (fixa qual conta/qual oferta)
     if story_id:
         dados = link_por_media(story_id)
         if dados:
             link = dados.get('url') or link
-            token = dados.get('token') or token
-            user_id = dados.get('user_id') or user_id
+            token_mapa = dados.get('token')
+            user_id_mapa = dados.get('user_id')
             origem = 'story-mapa' if dados.get('url') else 'story-mapa-vazio'
         else:
             origem = 'story-sem-mapa'
         logger.info(f"🔍 IG webhook: resposta a Story={story_id} origem={origem}")
 
-    if not user_id:
-        user_id = entry_id
-    if not token:
-        from bot.instagram_stories import _contas_instagram
-        contas = _contas_instagram()
-        if not contas:
-            logger.warning("⚠️ IG webhook: Instagram não configurado para enviar DM.")
-            return
-        conta_match = next((c for c in contas if str(c.get('user_id')) == str(entry_id)), contas[0]) if entry_id else contas[0]
-        token = conta_match['token']
-        user_id = user_id or conta_match['user_id']
-        logger.info(
-            f"🔍 IG webhook: sem token — fallback entry_id={entry_id} → "
-            f"conta user_id={conta_match.get('user_id')} "
-            f"(match={str(conta_match.get('user_id'))==str(entry_id)})"
-        )
+    token, user_id = _resolver_conta_dm(
+        entry_id, recipient,
+        token_mapa=token_mapa, user_id_mapa=user_id_mapa,
+    )
+    if not token or not user_id:
+        # Sem conta resolvível — não tenta mandar com ID errado
+        return
+
+    # Aprende entry_id/recipient → user_id real pra próximos eventos sem mapa
+    if user_id:
+        if entry_id:
+            _entry_user_cache[str(entry_id)] = str(user_id)
+        if recipient:
+            _entry_user_cache[str(recipient)] = str(user_id)
 
     logger.info(
         f"📤 IG webhook: enviando DM conta_user_id={user_id} "
@@ -360,7 +432,7 @@ def _processar_mensagem(value, entry_id):
     if not ok:
         logger.error(
             f"❌ IG webhook: FALHOU enviar DM para conta_user_id={user_id} "
-            f"sender={sender} entry_id={entry_id} origem={origem}"
+            f"sender={sender} entry={entry_id} recipient={recipient} origem={origem}"
         )
 
 
