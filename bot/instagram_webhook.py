@@ -23,6 +23,12 @@ logger = logging.getLogger(__name__)
 
 GRAPH_URL = "https://graph.instagram.com/v26.0"
 
+# Texto enviado ANTES do card de oferta na DM
+_INTRO_DM = (
+    "🚀 Acesse o produto pelo botão abaixo 👇\n\n"
+    "E aproveita para me seguir por aqui também! 😉"
+)
+
 # Evita responder 2x o mesmo comentário/mensagem (webhooks reentregam eventos)
 _processadas = {}
 
@@ -100,23 +106,21 @@ def _responder_comentario(token, comment_id, texto):
 
 def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None, imagem_url=None, imagem_path=None, titulo=''):
     """
-    Envia UMA mensagem na DM.
+    Envia a DM em 2 passos:
+      1) Texto de intro (_INTRO_DM) — no private reply usa comment_id; senão, a conversa.
+      2) Card (imagem + título + botão) na conversa (recipient.id).
 
-    - Com imagem: Generic Template (imagem + título + botão do link juntos).
-    - Sem imagem (ou template falhar): texto puro.
-
-    Private Reply (comment_id) aceita só UMA mensagem — nunca manda 2.
+    Private Reply só permite UMA msg por comment_id — por isso o card vai
+    para recipient_id depois (conversa já aberta pelo reply).
     """
-    if comment_id:
-        recipient = {"comment_id": str(comment_id)}
-    else:
-        recipient = {"id": str(recipient_id)}
+    recipient_conv = {"id": str(recipient_id)} if recipient_id else None
+    recipient_reply = {"comment_id": str(comment_id)} if comment_id else recipient_conv
 
-    def _post_msg(msg_dict):
+    def _post_msg(rec, msg_dict):
         resp = requests.post(
             f"{GRAPH_URL}/{ig_user_id}/messages",
             data={
-                "recipient": json.dumps(recipient),
+                "recipient": json.dumps(rec),
                 "message": json.dumps(msg_dict),
                 "access_token": token,
             },
@@ -136,8 +140,19 @@ def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None, imagem_u
         titulo = (titulo or '').strip()[:80] or 'Aproveite a promoção!'
         subtitle = 'Toque para ver a oferta' if link else (texto or '')[:80]
 
-        # 1) Card único: imagem + título + botão do link
-        if imagem_url:
+        # 1) Intro (antes do card)
+        intro_ok = False
+        if recipient_reply:
+            st, dt = _post_msg(recipient_reply, {"text": _INTRO_DM})
+            intro_ok = st == 200 and 'error' not in dt
+            if not intro_ok:
+                logger.warning(f"⚠️ IG webhook: intro não enviada: {dt}")
+            else:
+                logger.info("💬 IG webhook: intro enviada antes do card.")
+
+        # 2) Card na conversa (se houver recipient.id; senão, no mesmo target)
+        alvo_card = recipient_conv or recipient_reply
+        if imagem_url and alvo_card:
             element = {
                 "title": titulo,
                 "subtitle": subtitle,
@@ -146,7 +161,7 @@ def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None, imagem_u
             if link:
                 element["default_action"] = {"type": "web_url", "url": link}
                 element["buttons"] = [{"type": "web_url", "url": link, "title": "Ver oferta"}]
-            status, dados = _post_msg({
+            st, dt = _post_msg(alvo_card, {
                 "attachment": {
                     "type": "template",
                     "payload": {
@@ -155,19 +170,28 @@ def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None, imagem_u
                     },
                 }
             })
-            if status == 200 and 'error' not in dados:
-                logger.info(f"✅ IG webhook: card (imagem+link) enviado na DM.")
+            if st == 200 and 'error' not in dt:
+                logger.info("✅ IG webhook: card (imagem+link) enviado na DM.")
                 logger.info(f"✅ IG webhook: DM enviado para {recipient_id} (comment_id={comment_id or '-'}).")
                 return True
-            logger.warning(f"⚠️ IG webhook: template falhou, tentando texto puro: {dados}")
+            logger.warning(f"⚠️ IG webhook: template falhou: {dt}")
+            # Se o card falhou mas a intro saiu, ainda é sucesso parcial
+            if intro_ok:
+                return True
 
-        # 2) Texto puro (só UMA chamada — private reply não aceita 2)
-        status, dados = _post_msg({"text": texto})
+        # 3) Fallback: texto puro com o link
+        if alvo_card:
+            st, dt = _post_msg(alvo_card, {"text": texto})
+        elif recipient_reply:
+            st, dt = _post_msg(recipient_reply, {"text": texto})
+        else:
+            logger.error("❌ IG webhook: sem destinatário para DM.")
+            return False
     except Exception as e:
         logger.error(f"❌ IG webhook: erro ao enviar DM: {e}")
         return False
-    if status != 200 or 'error' in dados:
-        logger.error(f"❌ IG webhook: falha ao enviar DM: {dados}")
+    if st != 200 or 'error' in dt:
+        logger.error(f"❌ IG webhook: falha ao enviar DM: {dt}")
         return False
     logger.info(f"✅ IG webhook: DM enviado para {recipient_id} (comment_id={comment_id or '-'}).")
     return True
