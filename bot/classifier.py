@@ -754,7 +754,9 @@ def detectar_categoria(texto, titulo=None):
         if eh_console and eh_bundle:
             return 'console'
 
-    # Sem produto identificado, NÃO vira cupom: vai para 'outros'.
+    # Sem produto identificado, NÃO vira cupom automaticamente: vai para
+    # 'outros' — exceto quando a postagem É um anúncio de cupom (ex.:
+    # 'Cupom Shopee', 'Novo Cupom AMAZON'), tratado logo abaixo.
     # (Antes: 'AUMENTOU O LIMITE!!', '10% OFF', 'Compra mínima' forçavam
     # a categoria cupom mesmo sem produto real.)
     alvo_titulo = titulo or texto
@@ -778,6 +780,28 @@ def detectar_categoria(texto, titulo=None):
             for p in padroes:
                 if re.search(p, limpo):
                     return categoria
+
+    # Postagem que É um anúncio de cupom (título curto com 'cupom', ex.:
+    # 'Cupom Shopee', 'Novo Cupom Kabum') sem nenhum produto real → 'cupom'.
+    # Produtos com cupom ('Water Cooler ... cupom X') já retornaram acima ou
+    # são pegos por tem_produto_real; anúncios SEM a palavra 'cupom'
+    # ('AUMENTOU O LIMITE!!', '10% OFF') continuam em 'outros'.
+    from bot.services import _eh_anuncio_cupom, _eh_linha_titulo_produto
+    tem_produto_real = any(
+        _eh_linha_titulo_produto(_norm(linha))
+        for alvo in (titulo, texto)
+        if alvo
+        for linha in alvo.split('\n')
+        if _norm(linha)
+    )
+    if not tem_produto_real:
+        for alvo in (titulo, texto):
+            if not alvo:
+                continue
+            for linha in alvo.split('\n'):
+                linha_norm = _norm(linha)
+                if linha_norm and _eh_anuncio_cupom(linha_norm):
+                    return 'cupom'
 
     return 'outros'
 

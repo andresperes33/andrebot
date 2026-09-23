@@ -726,6 +726,12 @@ def _eh_linha_titulo_produto(linha):
         return False
     if tem_termo:
         return True
+    # Linha só de desconto ('R$ 150,00 OFF a partir de R$ 999,00: 3SQUENT4150')
+    # sem termo de produto: o token com letra+dígito é o CÓDIGO do cupom, não
+    # um modelo de produto — senão a heurística de 'modelo' faria a postagem
+    # de cupom parecer produto e a categoria não seria 'cupom'.
+    if re.search(r'\b(?:off|desconto|descontos)\b', linha):
+        return False
     # Nome de produto sem termos conhecidos: tem >= 2 palavras e uma delas
     # parece modelo (mistura letra+digito), ex.: 'gk240', 'k688'.
     palavras = [w for w in linha.split() if re.search(r'\w', w)]
