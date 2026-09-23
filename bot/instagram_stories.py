@@ -35,6 +35,58 @@ def _titulo_preco_link(texto):
     return titulo, preco, link
 
 
+def _normalizar_imagem_feed(photo_path):
+    """Ajusta a imagem pra proporção aceita pelo feed do IG (4:5 a 1.91:1).
+
+    Se a proporção estiver fora do intervalo, faz crop centralizado.
+    Retorna o caminho (possivelmente novo) ou o original se falhar/não precisar.
+    """
+    if not photo_path or isinstance(photo_path, str) and photo_path.startswith('http'):
+        return photo_path
+    import os
+    if not os.path.exists(photo_path):
+        return photo_path
+    try:
+        from PIL import Image, ImageOps
+        with Image.open(photo_path) as img:
+            img = ImageOps.exif_transpose(img)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                fundo = Image.new('RGB', img.size, (255, 255, 255))
+                fundo.paste(img, mask=img.split()[-1])
+                img = fundo
+            else:
+                img = img.convert('RGB')
+            w, h = img.size
+            if w <= 0 or h <= 0:
+                return photo_path
+            ratio = w / h
+            min_ratio, max_ratio = 4 / 5, 1.91
+            if min_ratio <= ratio <= max_ratio:
+                return photo_path
+            # Crop central pra caber na faixa válida
+            if ratio < min_ratio:
+                novo_w = max(1, int(h * min_ratio))
+                left = max(0, (w - novo_w) // 2)
+                img = img.crop((left, 0, left + novo_w, h))
+            else:  # ratio > max_ratio
+                nova_h = max(1, int(w / max_ratio))
+                top = max(0, (h - nova_h) // 2)
+                img = img.crop((0, top, w, top + nova_h))
+            base, ext = os.path.splitext(photo_path)
+            out = f"{base}_feed{ext or '.jpg'}"
+            img.save(out, quality=90)
+            logger.info(
+                f"✂️ Instagram feed: imagem ajustada p/ proporção "
+                f"{img.size[0]}x{img.size[1]} (ratio={img.size[0]/img.size[1]:.3f})"
+            )
+            return out
+    except Exception as e:
+        logger.warning(f"⚠️ Instagram feed: não foi possível normalizar imagem: {e}")
+        return photo_path
+
+
 def _url_publica_imagem(photo_path):
     """
     Converte uma imagem local em URL pública acessível pelo Instagram.
@@ -299,6 +351,8 @@ def post_instagram_feed(texto, photo_path=None, pagina_url=''):
 
     titulo, preco, link = _titulo_preco_link(texto)
 
+    # Feed exige proporção 4:5 .. 1.91:1 — normaliza antes de enviar.
+    photo_path = _normalizar_imagem_feed(photo_path)
     imagem_url = _url_publica_imagem(photo_path)
     if not imagem_url:
         logger.warning("⚠️ Instagram feed: nenhuma imagem disponível.")
