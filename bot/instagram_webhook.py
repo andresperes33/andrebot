@@ -187,6 +187,11 @@ def _processar_comentario(value, entry_id=None):
         media_id = value.get('media', {}).get('id')
     sender_id = (value.get('from') or {}).get('id')
 
+    logger.info(
+        f"📩 IG webhook: comentário entry_id={entry_id} media={media_id} "
+        f"sender={sender_id} text={text[:40]!r}"
+    )
+
     # Reply que nós mesmos postamos → ignora (evita loop)
     if value.get('parent_id') or not comment_id:
         logger.info(f"🔍 IG webhook: comentário ignorado (parent={value.get('parent_id')}, id={comment_id}).")
@@ -200,6 +205,7 @@ def _processar_comentario(value, entry_id=None):
         return
 
     link, token, user_id = _link_da_oferta(media_id)
+    origem_mapa = bool(token and user_id)
     if not token or not user_id:
         from bot.instagram_stories import _contas_instagram
         contas = _contas_instagram()
@@ -209,6 +215,15 @@ def _processar_comentario(value, entry_id=None):
         conta_match = next((c for c in contas if str(c.get('user_id')) == str(entry_id)), contas[0]) if entry_id else contas[0]
         token = token or conta_match['token']
         user_id = user_id or conta_match['user_id']
+        logger.info(
+            f"🔍 IG webhook: mapa ausente — fallback entry_id={entry_id} → "
+            f"conta user_id={conta_match.get('user_id')} "
+            f"(match={str(conta_match.get('user_id'))==str(entry_id)})"
+        )
+    logger.info(
+        f"🔍 IG webhook: media={media_id} origem_mapa={origem_mapa} "
+        f"conta_user_id={user_id} token_prefix={(token or '')[:12]}…"
+    )
 
     # Link da DM: prioriza o mapa do post; se não houver (post antigo ou não mapeado),
     # lê a legenda do post (caption), onde fica o link da página do produto.
@@ -290,6 +305,11 @@ def _processar_mensagem(value, entry_id):
     if not sender:
         return
 
+    logger.info(
+        f"📩 IG webhook: mensagem entry_id={entry_id} sender={sender} "
+        f"story_id={story_id or '-'} mid={mid or '-'} text={text[:40]!r}"
+    )
+
     # Se a pessoa respondeu diretamente a um Story, ela já está querendo o link daquele Story!
     # Caso seja uma DM normal, precisa conter uma das palavras de interesse (quero, link, etc.)
     if not story_id and not _tem_interesse(text):
@@ -311,6 +331,8 @@ def _processar_mensagem(value, entry_id):
             token = dados.get('token') or token
             user_id = dados.get('user_id') or user_id
             origem = 'story-mapa' if dados.get('url') else 'story-mapa-vazio'
+        else:
+            origem = 'story-sem-mapa'
         logger.info(f"🔍 IG webhook: resposta a Story={story_id} origem={origem}")
 
     if not user_id:
@@ -324,8 +346,22 @@ def _processar_mensagem(value, entry_id):
         conta_match = next((c for c in contas if str(c.get('user_id')) == str(entry_id)), contas[0]) if entry_id else contas[0]
         token = conta_match['token']
         user_id = user_id or conta_match['user_id']
+        logger.info(
+            f"🔍 IG webhook: sem token — fallback entry_id={entry_id} → "
+            f"conta user_id={conta_match.get('user_id')} "
+            f"(match={str(conta_match.get('user_id'))==str(entry_id)})"
+        )
 
-    _enviar_dm(token, user_id, sender, _texto_resposta(link, 'dm'))
+    logger.info(
+        f"📤 IG webhook: enviando DM conta_user_id={user_id} "
+        f"token_prefix={(token or '')[:12]}… origem={origem}"
+    )
+    ok = _enviar_dm(token, user_id, sender, _texto_resposta(link, 'dm'))
+    if not ok:
+        logger.error(
+            f"❌ IG webhook: FALHOU enviar DM para conta_user_id={user_id} "
+            f"sender={sender} entry_id={entry_id} origem={origem}"
+        )
 
 
 def processar_evento_instagram(payload):
@@ -382,7 +418,12 @@ def instagram_webhook_view(request):
             return JsonResponse({'status': 'error'}, status=400)
 
         obj = payload.get('object')
-        logger.info(f"🔔 IG webhook: POST recebido (object={obj}), entries={len(payload.get('entry') or [])}")
+        entries = payload.get('entry') or []
+        entry_ids = [e.get('id') for e in entries if isinstance(e, dict)]
+        logger.info(
+            f"🔔 IG webhook: POST recebido (object={obj}), "
+            f"entries={len(entries)} entry_ids={entry_ids}"
+        )
         if obj in ('instagram', 'page'):
             processar_evento_instagram(payload)
         return JsonResponse({'status': 'ok'})
