@@ -553,7 +553,7 @@ class Command(BaseCommand):
                             if not permitido_fbs:
                                 logger.info(f"⏸️ Facebook story adiado ({motivo_fbs}).")
                             else:
-                                publicou_fbs = await asyncio.to_thread(post_facebook_story, modified_text, photo_path)
+                                publicou_fbs = await asyncio.to_thread(post_facebook_story, modified_text, photo_path, pagina_url)
                                 if publicou_fbs:
                                     await asyncio.to_thread(registrar_publicacao, chave='ultima_publicacao_fb_story')
                                     logger.info("📱 Story publicado no Facebook.")

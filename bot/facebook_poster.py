@@ -71,9 +71,12 @@ def post_facebook(texto, photo_path=None, pagina_url=''):
     return True
 
 
-def post_facebook_story(texto, photo_path=None):
+def post_facebook_story(texto, photo_path=None, pagina_url=''):
     """
     Publica a oferta como STORY na página do Facebook (Photo Stories API).
+
+    Compõe o card 1080x1920 (foto + texto da promo embutido, igual ao story
+    do Instagram) antes do upload.
 
     Fluxo (docs: developers.facebook.com/docs/page-stories-api):
       1. Upload da foto com published=false (a foto do story NÃO pode ser a
@@ -93,9 +96,21 @@ def post_facebook_story(texto, photo_path=None):
         logger.info("ℹ️ Facebook story: sem foto, pulado.")
         return False
 
+    # Compõe o card com texto embutido (igual ao story do Instagram).
+    foto_enviar = photo_path
+    try:
+        from bot.story_composer import compor_story_card
+        from bot.services import texto_card
+        mensagem = texto_card(texto) or (texto or '')[:500]
+        story_path = compor_story_card(photo_path, mensagem, pagina_url=pagina_url)
+        if story_path and os.path.exists(story_path):
+            foto_enviar = story_path
+    except Exception as e:
+        logger.error(f"⚠️ Facebook story: erro ao compor card (usando foto original): {e}")
+
     try:
         # 1) Upload da foto SEM publicar (story precisa de mídia inédita).
-        with open(photo_path, 'rb') as foto:
+        with open(foto_enviar, 'rb') as foto:
             resp_up = requests.post(
                 f"{GRAPH_URL}/{page_id}/photos",
                 files={'source': foto},
