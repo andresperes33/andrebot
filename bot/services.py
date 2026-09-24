@@ -24,8 +24,9 @@ _RODAPE_CANAIS_TEXTO = (
     "💬 WhatsApp: https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD\n"
     "🤖 Bot: https://t.me/alertas_andre_bot\n"
     "🌐 Site: https://promos.andreindicatech.com.br\n"
-    "📸 Instagram: https://www.instagram.com/nitro_tech_brasil/\n"
-    "🎵 TikTok: https://www.tiktok.com/@nitrotech.store"
+    "📸 Instagram: https://www.instagram.com/andreindicatech/\n"
+    "🎵 TikTok: https://www.tiktok.com/@andreperes.dev\n"
+    "📘 Facebook: https://www.facebook.com/profile.php?id=100069882953168"
 )
 
 # Mesmo rodapé em HTML, com links clicáveis (usado na página do produto).
@@ -36,8 +37,9 @@ _RODAPE_CANAIS_HTML = """
     <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD" target="_blank" rel="noopener">💬 Grupo no WhatsApp</a>
     <a href="https://t.me/alertas_andre_bot" target="_blank" rel="noopener">🤖 Bot André Indica</a>
     <a href="https://promos.andreindicatech.com.br" target="_blank" rel="noopener">🌐 Site / App</a>
-    <a href="https://www.instagram.com/nitro_tech_brasil/" target="_blank" rel="noopener">📸 Instagram</a>
-    <a href="https://www.tiktok.com/@nitrotech.store" target="_blank" rel="noopener">🎵 TikTok</a>
+    <a href="https://www.instagram.com/andreindicatech/" target="_blank" rel="noopener">📸 Instagram</a>
+    <a href="https://www.tiktok.com/@andreperes.dev" target="_blank" rel="noopener">🎵 TikTok</a>
+    <a href="https://www.facebook.com/profile.php?id=100069882953168" target="_blank" rel="noopener">📘 Facebook</a>
 </div>
 """
 
