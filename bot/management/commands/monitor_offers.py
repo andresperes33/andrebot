@@ -206,7 +206,7 @@ class Command(BaseCommand):
                     return False
 
                 # ─── Converte links e processa texto ─────────────────────────
-                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer, _RODAPE_CANAIS_TEXTO, normaliza_emoji_inicial
+                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer, _RODAPE_CANAIS_TEXTO, _RODAPE_CANAIS_TG_HTML, normaliza_emoji_inicial
 
                 channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
 
@@ -421,16 +421,24 @@ class Command(BaseCommand):
 
                 # ─── Envia para o Telegram ───────────────────────────────────
                 try:
-                    texto_telegram = modified_text + _RODAPE_CANAIS_TEXTO
+                    from html import escape as _html_escape
+                    # Escapa o corpo pra não quebrar o parse HTML do Telegram
+                    corpo_tg = _html_escape(modified_text)
+                    texto_telegram = corpo_tg + _RODAPE_CANAIS_TG_HTML
                     if photo_path and os.path.exists(photo_path):
                         # O caption com foto é limitado a 1024 chars; reserva
                         # espaço para o rodapé sempre aparecer completo.
-                        limite = 1024 - len(_RODAPE_CANAIS_TEXTO)
-                        caption = modified_text[:max(limite, 0)] + _RODAPE_CANAIS_TEXTO
-                        await client.send_file(group_id, photo_path, caption=caption[:1024])
+                        limite = 1024 - len(_RODAPE_CANAIS_TG_HTML)
+                        corte = corpo_tg[:max(limite, 0)]
+                        # Não corta no meio de uma entidade (&amp; etc.)
+                        amp = corte.rfind('&')
+                        if amp != -1 and ';' not in corte[amp:]:
+                            corte = corte[:amp]
+                        caption = (corte + _RODAPE_CANAIS_TG_HTML)[:1024]
+                        await client.send_file(group_id, photo_path, caption=caption, parse_mode='html')
                         logger.info("✅ Enviado para Telegram (com foto)")
                     else:
-                        await client.send_message(group_id, texto_telegram)
+                        await client.send_message(group_id, texto_telegram, parse_mode='html')
                         logger.info("✅ Enviado para Telegram (só texto)")
                 except Exception as tg_err:
                     logger.error(f"❌ Erro Telegram: {tg_err}")

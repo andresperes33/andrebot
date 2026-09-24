@@ -32,6 +32,22 @@ _RODAPE_CANAIS_TEXTO = (
     "Confirme preço e disponibilidade na loja antes de comprar."
 )
 
+# Mesmo rodapé em HTML pro Telegram (parse_mode='html'): link embutido no texto.
+_RODAPE_CANAIS_TG_HTML = (
+    "\n\n"
+    "📲 Canais André Indica:\n"
+    '📢 <a href="https://t.me/Nitro_Tech_1">Grupo no Telegram</a>\n'
+    '💬 <a href="https://chat.whatsapp.com/Jxjt68Mfr9J4tx1vIS82DD">Grupo no WhatsApp</a>\n'
+    '🤖 <a href="https://t.me/alertas_andre_bot">Bot André Indica</a>\n'
+    '🌐 <a href="https://promos.andreindicatech.com.br">Site / App</a>\n'
+    '📸 <a href="https://www.instagram.com/andreindicatech/">Instagram</a>\n'
+    '🎵 <a href="https://www.tiktok.com/@andreperes.dev">TikTok</a>\n'
+    '📘 <a href="https://www.facebook.com/profile.php?id=100069882953168">Facebook</a>\n'
+    "\n"
+    "⚠️ Aviso: as ofertas são geradas automaticamente e podem conter erros. "
+    "Confirme preço e disponibilidade na loja antes de comprar."
+)
+
 # Mesmo rodapé em HTML, com links clicáveis (usado na página do produto).
 _RODAPE_CANAIS_HTML = """
 <div class="detail-channels">
