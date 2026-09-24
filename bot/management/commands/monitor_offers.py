@@ -18,6 +18,12 @@ logger = logging.getLogger(__name__)
 # junto para todos os outros canais (WhatsApp, site, alertas).
 _AVISO_PROMOCAO = "⏳A promoção pode encerrar a qualquer momento."
 
+# Aviso que permanece no TG/Zap (o de rodapé de canais sai)
+_AVISO_AUTOMATICO = (
+    "⚠️ Aviso: as ofertas são geradas automaticamente e podem conter erros. "
+    "Confirme preço e disponibilidade na loja antes de comprar."
+)
+
 
 def _texto_sem_rodape(texto):
     """Remove o aviso de promoção — ele fica só no site, não no TG/Zap."""
@@ -428,8 +434,10 @@ class Command(BaseCommand):
                 # ─── Envia para o Telegram ───────────────────────────────────
                 try:
                     from html import escape as _html_escape
-                    # Sem rodapé de canais e sem aviso no TG (ficam só no site)
-                    corpo_tg = _html_escape(_texto_sem_rodape(modified_text))
+                    # Sem rodapé de canais e sem aviso de promoção; mantém o ⚠️ Aviso
+                    corpo_tg = _html_escape(
+                        _texto_sem_rodape(modified_text) + f"\n\n{_AVISO_AUTOMATICO}"
+                    )
                     texto_telegram = corpo_tg
                     if photo_path and os.path.exists(photo_path):
                         corte = corpo_tg[:1024]
@@ -447,7 +455,7 @@ class Command(BaseCommand):
 
                 # ─── Envia para o WhatsApp ───────────────────────────────────
                 try:
-                    texto_whatsapp = _texto_sem_rodape(modified_text)
+                    texto_whatsapp = _texto_sem_rodape(modified_text) + f"\n\n{_AVISO_AUTOMATICO}"
                     enviado_wa = send_whatsapp_message(texto_whatsapp, photo_path)
                     if enviado_wa:
                         logger.info("✅ Enviado para WhatsApp")
