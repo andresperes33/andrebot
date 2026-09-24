@@ -26,7 +26,10 @@ _RODAPE_CANAIS_TEXTO = (
     "🌐 Site: https://promos.andreindicatech.com.br\n"
     "📸 Instagram: https://www.instagram.com/andreindicatech/\n"
     "🎵 TikTok: https://www.tiktok.com/@andreperes.dev\n"
-    "📘 Facebook: https://www.facebook.com/profile.php?id=100069882953168"
+    "📘 Facebook: https://www.facebook.com/profile.php?id=100069882953168\n"
+    "\n"
+    "⚠️ Aviso: as ofertas são geradas automaticamente e podem conter erros. "
+    "Confirme preço e disponibilidade na loja antes de comprar."
 )
 
 # Mesmo rodapé em HTML, com links clicáveis (usado na página do produto).
@@ -41,6 +44,9 @@ _RODAPE_CANAIS_HTML = """
     <a href="https://www.tiktok.com/@andreperes.dev" target="_blank" rel="noopener">🎵 TikTok</a>
     <a href="https://www.facebook.com/profile.php?id=100069882953168" target="_blank" rel="noopener">📘 Facebook</a>
 </div>
+<p class="detail-channels-aviso" style="margin-top:12px;font-size:13px;color:var(--mute);">
+    ⚠️ Aviso: as ofertas são geradas automaticamente e podem conter erros. Confirme preço e disponibilidade na loja antes de comprar.
+</p>
 """
 
 
