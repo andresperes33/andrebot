@@ -18,6 +18,11 @@ logger = logging.getLogger(__name__)
 # junto para todos os outros canais (WhatsApp, site, alertas).
 _AVISO_PROMOCAO = "⏳A promoção pode encerrar a qualquer momento."
 
+
+def _texto_sem_rodape(texto):
+    """Remove o aviso de promoção — ele fica só no site, não no TG/Zap."""
+    return (texto or '').replace(f"\n\n{_AVISO_PROMOCAO}", '').strip()
+
 # ─── Cache em memória para last_processed_id ─────────────────────────────────
 # Evita chamadas constantes ao banco em contexto async — mais seguro e rápido.
 # Na inicialização, carrega do banco (persiste entre deploys).
@@ -206,7 +211,7 @@ class Command(BaseCommand):
                     return False
 
                 # ─── Converte links e processa texto ─────────────────────────
-                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer, _RODAPE_CANAIS_TEXTO, _RODAPE_CANAIS_TG_HTML, normaliza_emoji_inicial
+                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer, normaliza_emoji_inicial
 
                 channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
 
@@ -380,7 +385,8 @@ class Command(BaseCommand):
                 except Exception as db_err:
                     logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")
 
-                texto_para_alertas = modified_text
+                # Sem aviso nos alertas (Telegram/WhatsApp de usuários)
+                texto_para_alertas = _texto_sem_rodape(modified_text)
 
                 # ─── Categoria da oferta (para filtro dos alertas) ──────────
                 # O alerta só dispara se o produto aparecer na categoria
@@ -422,20 +428,16 @@ class Command(BaseCommand):
                 # ─── Envia para o Telegram ───────────────────────────────────
                 try:
                     from html import escape as _html_escape
-                    # Escapa o corpo pra não quebrar o parse HTML do Telegram
-                    corpo_tg = _html_escape(modified_text)
-                    texto_telegram = corpo_tg + _RODAPE_CANAIS_TG_HTML
+                    # Sem rodapé de canais e sem aviso no TG (ficam só no site)
+                    corpo_tg = _html_escape(_texto_sem_rodape(modified_text))
+                    texto_telegram = corpo_tg
                     if photo_path and os.path.exists(photo_path):
-                        # O caption com foto é limitado a 1024 chars; reserva
-                        # espaço para o rodapé sempre aparecer completo.
-                        limite = 1024 - len(_RODAPE_CANAIS_TG_HTML)
-                        corte = corpo_tg[:max(limite, 0)]
+                        corte = corpo_tg[:1024]
                         # Não corta no meio de uma entidade (&amp; etc.)
                         amp = corte.rfind('&')
                         if amp != -1 and ';' not in corte[amp:]:
                             corte = corte[:amp]
-                        caption = (corte + _RODAPE_CANAIS_TG_HTML)[:1024]
-                        await client.send_file(group_id, photo_path, caption=caption, parse_mode='html')
+                        await client.send_file(group_id, photo_path, caption=corte, parse_mode='html')
                         logger.info("✅ Enviado para Telegram (com foto)")
                     else:
                         await client.send_message(group_id, texto_telegram, parse_mode='html')
@@ -445,7 +447,7 @@ class Command(BaseCommand):
 
                 # ─── Envia para o WhatsApp ───────────────────────────────────
                 try:
-                    texto_whatsapp = modified_text + _RODAPE_CANAIS_TEXTO
+                    texto_whatsapp = _texto_sem_rodape(modified_text)
                     enviado_wa = send_whatsapp_message(texto_whatsapp, photo_path)
                     if enviado_wa:
                         logger.info("✅ Enviado para WhatsApp")
