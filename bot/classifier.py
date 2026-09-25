@@ -656,6 +656,17 @@ def detectar_categoria(texto, titulo=None):
         ) and re.search(r'\b(?:ps[0-9]|playstation|xbox|nintendo|switch|pc\b|steam)\b', alvo_norm):
             return 'jogo'
 
+    # PROJETOR: 'Projetor HY300 ... Celular TV Box Xbox PS5 PC' — os consoles
+    # citados são só compatibilidade; o produto é o projetor → 'outros'.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\bprojetor(?:es)?\b', alvo_norm):
+            return 'outros'
+
     # CONSOLE tem prioridade sobre 'oled'/'qled' da TV: 'Nintendo Switch
     # Console OLED 64gb' é um CONSOLE, não uma TV, mesmo com 'OLED' no título.
     # Ignora acessórios ('controle/fone/headset para PS5', 'capa Xbox').
