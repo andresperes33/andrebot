@@ -25,6 +25,10 @@ _AVISO_AUTOMATICO = (
 )
 
 
+# Categorias que NÃO vão para o Instagram/Facebook (feed/stories)
+_CATS_BLOQUEADAS_REDES = {'cupom', 'filtro_linha', 'outros'}
+
+
 def _texto_sem_rodape(texto):
     """Remove o aviso de promoção — ele fica só no site, não no TG/Zap."""
     return (texto or '').replace(f"\n\n{_AVISO_PROMOCAO}", '').strip()
@@ -499,8 +503,8 @@ class Command(BaseCommand):
                         from bot.instagram_stories import post_instagram_story
                         from bot.story_gate import pode_publicar_story, registrar_publicacao
 
-                        if categoria_oferta == 'cupom':
-                            logger.info("⏸️ Story não publicado: promoção da categoria 'cupom'.")
+                        if categoria_oferta in _CATS_BLOQUEADAS_REDES:
+                            logger.info(f"⏸️ Story não publicado: categoria '{categoria_oferta}'.")
                         else:
                             permitido, motivo = await asyncio.to_thread(pode_publicar_story)
                             if not permitido:
@@ -518,8 +522,8 @@ class Command(BaseCommand):
                         from bot.instagram_stories import post_instagram_feed
                         from bot.story_gate import pode_publicar_story, registrar_publicacao as registrar_feed
 
-                        if categoria_oferta == 'cupom':
-                            logger.info("⏸️ Feed não publicado: promoção da categoria 'cupom'.")
+                        if categoria_oferta in _CATS_BLOQUEADAS_REDES:
+                            logger.info(f"⏸️ Feed não publicado: categoria '{categoria_oferta}'.")
                         else:
                             permitido_feed, motivo_feed = await asyncio.to_thread(
                                 pode_publicar_story, chave='ultima_publicacao_ig_feed'
@@ -539,8 +543,8 @@ class Command(BaseCommand):
                         from bot.facebook_poster import post_facebook
                         from bot.story_gate import pode_publicar_story, registrar_publicacao
 
-                        if categoria_oferta == 'cupom':
-                            logger.info("⏸️ Facebook não publicado: promoção da categoria 'cupom'.")
+                        if categoria_oferta in _CATS_BLOQUEADAS_REDES:
+                            logger.info(f"⏸️ Facebook não publicado: categoria '{categoria_oferta}'.")
                         else:
                             permitido_fb, motivo_fb = await asyncio.to_thread(
                                 pode_publicar_story, chave='ultima_publicacao_fb'
@@ -562,8 +566,8 @@ class Command(BaseCommand):
                         from bot.facebook_poster import post_facebook_story
                         from bot.story_gate import pode_publicar_story, registrar_publicacao
 
-                        if categoria_oferta == 'cupom':
-                            logger.info("⏸️ Facebook story não publicado: promoção da categoria 'cupom'.")
+                        if categoria_oferta in _CATS_BLOQUEADAS_REDES:
+                            logger.info(f"⏸️ Facebook story não publicado: categoria '{categoria_oferta}'.")
                         else:
                             permitido_fbs, motivo_fbs = await asyncio.to_thread(
                                 pode_publicar_story, chave='ultima_publicacao_fb_story'
