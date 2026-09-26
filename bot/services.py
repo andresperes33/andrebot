@@ -110,7 +110,7 @@ def cortar_rodape_imagem(caminho, rodape_px=10):
         return caminho
 
 
-def adicionar_watermark(caminho, texto='André Indica', margem_px=12, escala=1.0):
+def adicionar_watermark(caminho, texto='Andre Indica', margem_px=12, escala=1.0):
     """
     Insere uma marca d'água com `texto` no canto inferior esquerdo da imagem.
     Edita o arquivo in-place. Se algo falhar, mantém a imagem original.
