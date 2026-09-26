@@ -110,6 +110,54 @@ def cortar_rodape_imagem(caminho, rodape_px=10):
         return caminho
 
 
+def adicionar_watermark(caminho, texto='André Indica', margem_px=12, escala=1.0):
+    """
+    Insere uma marca d'água com `texto` no canto inferior esquerdo da imagem.
+    Edita o arquivo in-place. Se algo falhar, mantém a imagem original.
+
+    `escala` controla o tamanho da fonte relativo à largura da imagem.
+    """
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        if not caminho or not os.path.exists(caminho):
+            return caminho
+        img = Image.open(caminho).convert('RGB')
+        largura, altura = img.size
+
+        # Tamanho da fonte proporcional à imagem (largura / ~45, ajustado pela escala)
+        tamanho_fonte = max(10, int(largura / 45 * escala))
+        try:
+            fonte = ImageFont.load_default(size=tamanho_fonte)
+        except TypeError:
+            fonte = ImageFont.load_default()
+
+        draw = ImageDraw.Draw(img)
+        margem = max(8, int(margem_px * escala))
+
+        # Desenha texto com contorno/ombra para legibilidade em qualquer fundo.
+        # Sombras deslocadas (x+1/y+1 e x-1/y-1) criam um contorno simples.
+        x = margem
+        y = altura - margem - tamanho_fonte
+        sombra = (0, 0, 0)
+        branco = (255, 255, 255)
+        for dx, dy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
+            draw.text((x + dx, y + dy), texto, font=fonte, fill=sombra)
+        draw.text((x, y), texto, font=fonte, fill=branco)
+
+        formato = (img.format or 'JPEG').upper()
+        if formato == 'PNG':
+            img.save(caminho, 'PNG')
+        else:
+            img.save(caminho, 'JPEG', quality=95)
+
+        img.close()
+        print(f"💧 Marca d'água '{texto}' adicionada em {caminho}")
+        return caminho
+    except Exception as err:
+        print(f"Erro ao adicionar marca d'água: {err}")
+        return caminho
+
+
 def _primeiro_link_produto(texto):
     """Extrai o primeiro link de produto do texto (ignora links de rede social e serviços)."""
     for lnk in re.findall(r'(https?://\S+)', texto or ''):

@@ -383,6 +383,11 @@ class Command(BaseCommand):
 
                 # Sem corte da imagem: a foto chega inteira no Telegram/WhatsApp/site.
 
+                # Marca d'água 'André Indica' no canto inferior esquerdo
+                if photo_path:
+                    from bot.services import adicionar_watermark
+                    photo_path = await asyncio.to_thread(adicionar_watermark, photo_path)
+
                 # ─── Salva a promo no banco para a página web ─────────────────
                 promo_id = None
                 try:
