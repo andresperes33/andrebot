@@ -100,6 +100,8 @@ _REGEX_CATEGORIA = [
     ('cabo', [
         r'\busb\s*cabe\b', r'\bcable\b',
         r'\bcarregador\b', r'\badaptador\s*de\s*energia\b', r'\bpd\s*60w\b',
+        r'\bpower\s*bank\b', r'\bpowerbank\b', r'\bbateria\s*port[aá]til\b',
+        r'\bcarregador\s*port[aá]til\b',
         r'\busb\s*c\b.*\bcabo\b', r'\btipo[- ]c?\s*cabo\b',
         r'\bhdmi\b.*\bcabo\b', r'\bcabo\b.*\bhdmi\b',
         r'\bcabo\b.*\busb\b', r'\busb\b.*\bcabo\b',
@@ -377,6 +379,18 @@ def detectar_categoria(texto, titulo=None):
             continue
         if re.search(r'\bgabinete\b', alvo_norm):
             return 'gabinete'
+
+    # Power bank / carregador portátil tem prioridade sobre 'monitor'/'display'
+    # ('Monitor Power Bank 50000mAh ... Display Digital' é um CARREGADOR; a
+    # palavra 'monitor'/'display' aí é o visor digital do próprio power bank).
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(r'\b(?:power\s*bank|powerbank|bateria\s*port[aá]til|carregador\s*port[aá]til)\b', alvo_norm):
+            return 'cabo'
 
     # Monitor tem prioridade sobre notebook — 'Monitor Portátil ... Tela IPS'
     # é um MONITOR; a 'tela ips' é o painel do monitor, não um notebook.
