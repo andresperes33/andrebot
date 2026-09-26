@@ -26,7 +26,7 @@ _AVISO_AUTOMATICO = (
 
 
 # Categorias que NÃO vão para o Instagram/Facebook (feed/stories)
-_CATS_BLOQUEADAS_REDES = {'cupom', 'filtro_linha', 'outros'}
+_CATS_BLOQUEADAS_REDES = {'cupom', 'filtro_linha', 'outros', 'cabo', 'pasta_termica'}
 
 
 def _texto_sem_rodape(texto):
