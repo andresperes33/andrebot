@@ -1844,6 +1844,8 @@ def strip_promo_footer(text):
     cleaned_text = re.sub(r'(?im)^\s*🤫\s*➡️\s*Link\s+Geral.*$', '', cleaned_text)
     cleaned_text = re.sub(r'(?im)^\s*https?://links\.andreindica\.com\.br/?\s*$', '', cleaned_text)
     cleaned_text = re.sub(r'(?im)^\s*‼️\s*Bot\s+de\s+alerta\s*:\s*@\S+\s*$', '', cleaned_text)
+    # PEPERAIO: remove linhas do rodapé de alertas (ex.: '🔔 BOT DE ALERTAS: pode retirar ...')
+    cleaned_text = re.sub(r'(?im)^\s*🔔?\s*Bot\s+de\s+alertas?\s*:.*$', '', cleaned_text)
     # PC DO FAFA: remove rodapés e textos de verificação do canal
     cleaned_text = re.sub(r'(?im)^\s*✅\s*BOT\s+DE\s+DESCONTOS\s*:\s*@\S+\s*$', '', cleaned_text)
     cleaned_text = re.sub(r'(?im)^\s*✅\s*Oferta\s+verificada\s*:.*$', '', cleaned_text)
