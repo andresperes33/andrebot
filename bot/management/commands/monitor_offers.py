@@ -551,7 +551,10 @@ class Command(BaseCommand):
 
                 # ─── Envia para o WhatsApp ───────────────────────────────────
                 try:
-                    texto_whatsapp = _texto_sem_rodape(modified_text) + f"\n\n{_AVISO_AUTOMATICO}"
+                    texto_whatsapp = _texto_sem_rodape(modified_text)
+                    if not has_ali:
+                        texto_whatsapp += f"\n\n{_AVISO_APP_LOJA}"
+                    texto_whatsapp += f"\n\n{_AVISO_AUTOMATICO}"
                     enviado_wa = send_whatsapp_message(texto_whatsapp, photo_path)
                     if enviado_wa:
                         logger.info("✅ Enviado para WhatsApp")

@@ -61,6 +61,9 @@ _RODAPE_CANAIS_HTML = """
     <a href="https://www.facebook.com/profile.php?id=100069882953168" target="_blank" rel="noopener">📘 Facebook</a>
 </div>
 <p class="detail-channels-aviso" style="margin-top:12px;font-size:13px;color:var(--mute);">
+    📲 Comprando pelo app da loja o valor final pode sair MAIS BARATO! Muitas lojas liberam cupons, moedas e descontos exclusivos só no aplicativo. Vale conferir antes de finalizar a compra.
+</p>
+<p class="detail-channels-aviso" style="margin-top:6px;font-size:13px;color:var(--mute);">
     ⚠️ Aviso: as ofertas são geradas automaticamente e podem conter erros. Confirme preço e disponibilidade na loja antes de comprar.
 </p>
 """
