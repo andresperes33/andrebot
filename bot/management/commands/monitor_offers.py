@@ -24,6 +24,13 @@ _AVISO_AUTOMATICO = (
     "Confirme preço e disponibilidade na loja antes de comprar."
 )
 
+# Dica de persuasão sobre comprar pelo app da loja (vai acima do aviso no TG)
+_AVISO_APP_LOJA = (
+    "📲 Comprando pelo app da loja o valor final pode sair MAIS BARATO! "
+    "Muitas lojas liberam cupons, moedas e descontos exclusivos só no "
+    "aplicativo. Vale conferir antes de finalizar a compra."
+)
+
 
 # Categorias que NÃO vão para o Instagram/Facebook (feed/stories)
 _CATS_BLOQUEADAS_REDES = {'cupom', 'filtro_linha', 'outros', 'cabo', 'pasta_termica'}
@@ -520,10 +527,13 @@ class Command(BaseCommand):
                 # ─── Envia para o Telegram ───────────────────────────────────
                 try:
                     from html import escape as _html_escape
-                    # Sem rodapé de canais e sem aviso de promoção; mantém o ⚠️ Aviso
-                    corpo_tg = _html_escape(
-                        _texto_sem_rodape(modified_text) + f"\n\n{_AVISO_AUTOMATICO}"
-                    )
+                    # Sem rodapé de canais e sem aviso de promoção; mantém o ⚠️ Aviso.
+                    # Se não for AliExpress, insere a dica de comprar pelo app.
+                    corpo_tg = _texto_sem_rodape(modified_text)
+                    if not has_ali:
+                        corpo_tg += f"\n\n{_AVISO_APP_LOJA}"
+                    corpo_tg += f"\n\n{_AVISO_AUTOMATICO}"
+                    corpo_tg = _html_escape(corpo_tg)
                     texto_telegram = corpo_tg
                     if photo_path and os.path.exists(photo_path):
                         corte = corpo_tg[:1024]
