@@ -2249,6 +2249,17 @@ def strip_promo_footer(text):
     # PC DO FAFA: remove rodapés e textos de verificação do canal
     cleaned_text = re.sub(r'(?im)^\s*✅\s*BOT\s+DE\s+DESCONTOS\s*:\s*@\S+\s*$', '', cleaned_text)
     cleaned_text = re.sub(r'(?im)^\s*✅\s*Oferta\s+verificada\s*:.*$', '', cleaned_text)
+    # TecnoArt: remove o bloco de divulgação dos outros canais
+    # ('⚡️SE LIGA NOS OUTROS CANAIS DO TECNOART⚡️' + '👨🏼‍💻SÓ PLACAS DE VÍDEO: ...')
+    cleaned_text = re.sub(r'(?im)^[^\n]*se\s+liga\s+nos\s+outros\s+canais[^\n]*$', '', cleaned_text)
+    cleaned_text = re.sub(
+        r'(?im)^[^\n]*\bs[oó]\s+(?:placas?|notebooks?|smart\w*|celulares?|'
+        r'perif[eé]ricos?|monitores?|tvs?|games?|processadores?|mem[oó]rias?|'
+        r'hardwares?|ofertas?)\b[^\n]*$',
+        '', cleaned_text,
+    )
+    # Remove a marca '(anuncio)'/'(anúncio)' isolada
+    cleaned_text = re.sub(r'(?im)^\s*\(\s*an[uú]ncio\s*\)\s*$', '', cleaned_text)
     cleaned_text = re.sub(r'(?im)^\s*_{5,}\s*$', '', cleaned_text)
     cleaned_text = re.sub(r'\n{3,}', '\n\n', cleaned_text)
     return cleaned_text.strip()
