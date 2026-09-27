@@ -250,20 +250,22 @@ def _primeiro_link_produto(texto):
 
 def _link_produto_compra(texto):
     """Extrai o link do PRODUTO (para o botão 'Comprar com desconto'),
-    distinguindo-o do link do cupom, quando ambos aparecem.
+    distinguindo-o dos links de cupom/bots/moedas quando ambos aparecem.
 
-    O canal costuma publicar dois links: o do cupom (ex.: 'Resgate o cupom
-    R$ 90 OFF: https://...') e o do produto (ex.: 'Link do produto:
-    https://...'). O link do produto é o que deve ir no botão de compra.
+    O canal costuma publicar vários links: o do produto ('Link APP', 'Link PC',
+    'Link do produto'), o de cupom ('Resgate o cupom: ...') e links de bots
+    ('Bot de descontos', 'Bot de Moedas'). O link do produto é o que deve ir no
+    botão de compra e definir a loja.
     """
     if not texto:
         return ''
-    # Coleta todos os links com o texto que os precede (rótulo), para
-    # identificar qual é marcado como produto.
-    itens = []  # (rotulo, link)
-    for m in re.finditer(r'([\n:]{0,80}?):?\s*(https?://\S+)', texto):
-        rotulo = (m.group(1) or '').strip().casefold()
-        link = m.group(2).rstrip('.,;|)')
+    itens = []  # (rotulo, link) — o rótulo é o texto antes do link na linha
+    for linha in texto.split('\n'):
+        m = re.search(r'(https?://\S+)', linha)
+        if not m:
+            continue
+        link = m.group(1).rstrip('.,;|)')
+        rotulo = linha[:m.start()].strip().casefold()
         if any(d in link for d in ['t.me/', 'linktr.ee', 'youtube', 'youtu.be', 'tecnan.com.br', 'links.andreindica']):
             continue
         # Ignora links internos de serviços (assinaturas, plataformas)
@@ -275,22 +277,21 @@ def _link_produto_compra(texto):
     if not itens:
         return _primeiro_link_produto(texto)
 
-    # Rótulos que marcavam o link do produto.
+    # 1) Rótulo explícito de produto ('Link APP', 'Link PC', 'Link do produto',
+    #    'Comprar', ...). No AliExpress o 'Link APP'/'Link PC' é o produto.
     for rotulo, link in itens:
-        if any(marc in rotulo for marc in ('produto', 'comprar', 'compre', 'link da', 'link para', 'este link')):
+        if any(marc in rotulo for marc in (
+            'produto', 'comprar', 'compre', 'link app', 'link pc',
+            'link da', 'link para', 'este link', 'link do',
+        )):
             return link
 
-    # Se o primeiro link tem rótulo de cupom e há outro link depois, usa o
-    # segundo (o do produto). Ex.: 'Resgate o cupom: L1' / 'Link: L2'.
-    primeiro_rotulo = itens[0][0]
-    if 'cupom' in primeiro_rotulo and len(itens) > 1:
-        return itens[1][1]
-
-    # Caso geral: prefere o link que NÃO aparece junto a um rótulo de cupom.
-    if len(itens) > 1:
-        for rotulo, link in itens[1:]:
-            if 'cupom' not in rotulo:
-                return link
+    # 2) Ignora rótulos que não são do produto (bot, moedas, cupom, canal...)
+    for rotulo, link in itens:
+        if not any(marc in rotulo for marc in (
+            'bot', 'moeda', 'desconto', 'cupom', 'canal', 'grupo',
+        )):
+            return link
 
     return itens[0][1]
 
