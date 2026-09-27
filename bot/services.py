@@ -657,6 +657,31 @@ def _preco_do_texto(texto):
     return ''
 
 
+def _preco_reais(preco):
+    """Converte um preço ('R$ 1.877,98', '877.98', etc.) no valor inteiro de
+    REAIS, ignorando os centavos. Retorna int ou None. Usado para comparar
+    ofertas: 'R$ 877,00' e 'R$ 877,98' contam como o mesmo valor (877)."""
+    if preco is None:
+        return None
+    s = re.sub(r'[^\d.,]', '', str(preco))
+    if not s:
+        return None
+    if ',' in s:
+        # vírgula é o separador decimal (formato BR)
+        inteiro = s.split(',')[0]
+    elif '.' in s:
+        partes = s.split('.')
+        # '877.98' -> decimal; '1.877' -> milhar
+        inteiro = '.'.join(partes[:-1]) if len(partes[-1]) == 2 else s
+    else:
+        inteiro = s
+    inteiro = inteiro.replace('.', '').replace(',', '')
+    try:
+        return int(inteiro)
+    except Exception:
+        return None
+
+
 # Linhas que devem ser ignoradas ao montar o título do produto
 _TERMOS_CABECALHO = [
     'postagem original', 'postagem',
@@ -1065,12 +1090,13 @@ def promo_ja_postada(texto):
         return False
 
 
-def promo_repetida_recente(texto, janela_minutos=60):
+def promo_repetida_recente(texto, janela_minutos=1440):
     """
-    Verifica se uma promoção IGUAL já foi capturada recentemente dentro
-    de uma janela curta. Considera IGUAL quando bate o link + preço OU
-    o título + preço. Evita spam quando o canal da fonte publica a MESMA
-    oferta repetida em pouco tempo (às vezes com link novo/diferente).
+    Verifica se uma promoção IGUAL já foi capturada recentemente dentro da
+    janela (padrão 24h). Considera IGUAL quando bate o link OU o título, e o
+    PREÇO em REAIS (ignorando centavos): 'R$ 877,00' e 'R$ 877,98' contam como
+    o mesmo valor; 'R$ 877' e 'R$ 878' contam como diferentes.
+    Evita spam quando o canal da fonte publica a MESMA oferta repetida.
 
     Retorna True se já existir uma promo igual criada dentro da janela
     (deve ignorar a oferta).
@@ -1083,23 +1109,31 @@ def promo_repetida_recente(texto, janela_minutos=60):
 
     limite = timezone.now() - timedelta(minutes=janela_minutos)
     try:
-        # 1) Mesma chave (link + preço)
-        chave = _chave_dedup(texto)
-        if chave:
-            if Promo.objects.filter(url_chave=chave, criado_em__gte=limite).exists():
-                return True
-        # 2) Mesmo título + preço (link pode ter mudado)
+        link = _normalizar_url(_primeiro_link_produto(texto))
+        preco_int = _preco_reais(_preco_do_texto(texto))
+
+        # 1) Mesmo link (preço comparado em reais inteiros)
+        if link:
+            chaves = Promo.objects.filter(
+                url_chave__startswith=link + '|', criado_em__gte=limite
+            ).values_list('url_chave', flat=True)
+            for uc in chaves:
+                p = uc.split('|', 1)[1] if '|' in uc else ''
+                if _preco_reais(p) == preco_int:
+                    return True
+
+        # 2) Mesmo título (link pode ter mudado; preço em reais inteiros)
         try:
             titulo = _linha_titulo(texto)[:500]
-            preco = _preco_do_texto(texto)
         except Exception:
-            titulo = preco = ''
+            titulo = ''
         if titulo:
-            q = Promo.objects.filter(titulo=titulo, criado_em__gte=limite)
-            if preco:
-                q = q.filter(preco=preco)
-            if q.exists():
-                return True
+            precos = Promo.objects.filter(
+                titulo=titulo, criado_em__gte=limite
+            ).values_list('preco', flat=True)
+            for p in precos:
+                if _preco_reais(p) == preco_int:
+                    return True
         return False
     except Exception as db_err:
         logger = logging.getLogger(__name__)
