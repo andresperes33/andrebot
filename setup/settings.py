@@ -192,7 +192,7 @@ MERCADO_LIVRE_COOKIE = os.getenv('MERCADO_LIVRE_COOKIE')
 TELEGRAM_API_ID = os.getenv('TELEGRAM_API_ID')
 TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH')
 TELEGRAM_STRING_SESSION = os.getenv('TELEGRAM_STRING_SESSION')
-SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'TecnoArt (Promoções de Hardware)')
+SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'Promoções Gamer')
 
 # Usa a imagem principal da PÁGINA do produto (link da oferta) em vez da foto
 # capturada do canal (evita marca d'água de outros canais). Fallback: foto capturada.
@@ -221,9 +221,7 @@ def _parse_extra_channels():
                 return [c for c in data if isinstance(c, dict) and c.get('nome')]
         except Exception:
             pass
-    return [
-        {'nome': 'Promoções Gamer', 'filtro': 'aliexpress'},
-    ]
+    return []
 EXTRA_SOURCE_CHANNELS = _parse_extra_channels()
 
 # Personal Settings (Overrides)
