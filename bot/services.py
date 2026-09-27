@@ -1523,6 +1523,44 @@ def baixar_imagem_produto(texto, destino_dir):
     return None
 
 
+# Mapa loja -> arquivo de imagem fixa de cupom (pasta media/cupom/).
+# Ordem importa: 'kabum' antes de 'aoferta'/'amazon' (o domínio aoferta.net
+# serve Amazon E KaBuM; o sufixo '-Kabum' identifica a loja).
+_CUPOM_POR_CHAVE = [
+    ('shopee', 'cupom_shopee.jpg'),
+    ('aliexpress', 'cupom_aliexpress.png'),
+    ('ali express', 'cupom_aliexpress.png'),
+    ('kabum', 'cupom_kabum.jpg'),
+    ('mercado livre', 'cupom_mercado_livre.jpg'),
+    ('mercadolivre', 'cupom_mercado_livre.jpg'),
+    ('meli.la', 'cupom_mercado_livre.jpg'),
+    ('magalu', 'cupom_magalu.png'),
+    ('magazine', 'cupom_magalu.png'),
+    ('amazon', 'cupom_amazon.jpg'),
+    ('amzn', 'cupom_amazon.jpg'),
+    ('aoferta', 'cupom_amazon.jpg'),
+]
+
+
+def imagem_cupom_loja(texto):
+    """Retorna o caminho da imagem fixa de cupom da loja (pasta media/cupom/),
+    detectada a partir do texto/links. None se não identificar a loja.
+    Procura em media/cupom/ e em bot/static/bot/cupom/ (versionado)."""
+    from bot.classifier import sem_acento
+    t = sem_acento(texto or '').lower()
+    for chave, arq in _CUPOM_POR_CHAVE:
+        if chave in t:
+            for base in (
+                os.path.join(settings.MEDIA_ROOT, 'cupom'),
+                os.path.join(settings.BASE_DIR, 'bot', 'static', 'bot', 'cupom'),
+                os.path.join(settings.BASE_DIR, 'staticfiles', 'bot', 'cupom'),
+            ):
+                caminho = os.path.join(base, arq)
+                if os.path.exists(caminho):
+                    return caminho
+    return None
+
+
 def _shopee_image_url(link):
     """Obtém a imagem principal de um produto Shopee via API de afiliados
     (query productOfferV2). Retorna a URL da imagem ou None."""

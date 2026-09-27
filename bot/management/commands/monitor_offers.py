@@ -407,12 +407,38 @@ class Command(BaseCommand):
 
                 # ─── Baixa foto ──────────────────────────────────────────────
                 photo_path = None
+                imagem_cupom_usada = False
                 temp_dir = os.path.join(os.getcwd(), 'tmp_photos')
                 os.makedirs(temp_dir, exist_ok=True)
 
+                # 0) Se a oferta é CUPOM: usa a imagem fixa da loja (pasta
+                # media/cupom/) — não usa imagem do link nem do canal.
+                eh_cupom = False
+                try:
+                    from bot.classifier import detectar_categoria
+                    from bot.services import _linha_titulo
+                    eh_cupom = detectar_categoria(
+                        modified_text, titulo=_linha_titulo(modified_text)
+                    ) == 'cupom'
+                except Exception as cup_err:
+                    logger.warning(f"⚠️ Falha ao detectar categoria cupom: {cup_err}")
+
+                if eh_cupom:
+                    try:
+                        from bot.services import imagem_cupom_loja
+                        img_cupom = await asyncio.to_thread(imagem_cupom_loja, msg_text)
+                        if img_cupom and os.path.exists(img_cupom):
+                            photo_path = img_cupom
+                            imagem_cupom_usada = True
+                            logger.info("🎟️ Usando imagem fixa de cupom da loja.")
+                        else:
+                            logger.info("ℹ️ Cupom sem imagem de loja mapeada; usando fluxo normal.")
+                    except Exception as cup_err2:
+                        logger.warning(f"⚠️ Falha ao obter imagem de cupom: {cup_err2}")
+
                 # 1) Tenta a imagem principal da PÁGINA do produto (link da
                 # oferta). Assim a imagem vem limpa, sem marca d'água do canal.
-                if getattr(settings, 'IMAGEM_DA_PAGINA_PRODUTO', True):
+                if not photo_path and getattr(settings, 'IMAGEM_DA_PAGINA_PRODUTO', True):
                     try:
                         from bot.services import baixar_imagem_produto
                         img_prod = await asyncio.to_thread(baixar_imagem_produto, msg_text, temp_dir)
@@ -439,7 +465,8 @@ class Command(BaseCommand):
                             logger.warning(f"⚠️ Falha ao cortar rodapé da foto capturada: {corte_err}")
 
                 # Marca d'água 'Andre Indica' no canto inferior esquerdo
-                if photo_path:
+                # (não aplica na imagem fixa de cupom, que já é pronta)
+                if photo_path and not imagem_cupom_usada:
                     from bot.services import adicionar_watermark
                     photo_path = await asyncio.to_thread(adicionar_watermark, photo_path)
 
@@ -671,7 +698,8 @@ class Command(BaseCommand):
                         logger.error(f"❌ Erro X: {x_err}")
 
                 # ─── Limpa foto após 90s ─────────────────────────────────────
-                if photo_path:
+                # (não remove a imagem fixa de cupom, que é compartilhada)
+                if photo_path and not imagem_cupom_usada:
                     async def cleanup(path):
                         await asyncio.sleep(90)
                         try:
