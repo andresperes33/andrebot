@@ -194,9 +194,14 @@ TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH')
 TELEGRAM_STRING_SESSION = os.getenv('TELEGRAM_STRING_SESSION')
 SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'PEPERAIO HARDWARE OFERTAS')
 
+# Usa a imagem principal da PÁGINA do produto (link da oferta) em vez da foto
+# capturada do canal (evita marca d'água de outros canais). Fallback: foto capturada.
+IMAGEM_DA_PAGINA_PRODUTO = os.getenv('IMAGEM_DA_PAGINA_PRODUTO', 'True') == 'True'
+
 # Canais extras monitorados além do principal. Cada item:
-#   {'nome': '<nome ou @username>', 'filtro': '<tipo>'}
+#   {'nome': '<nome ou @username>', 'filtro': '<tipo>', 'remover_marca': bool}
 #   'filtro' opcional: 'aliexpress' = captura SÓ ofertas com link AliExpress.
+#   'remover_marca' opcional: True = remove marca d'água verde do canto inferior esquerdo.
 # Formato: JSON (ex.: '[{"nome": "Promoções Gamer", "filtro": "aliexpress"}]')
 import json as _json_extra
 def _parse_extra_channels():

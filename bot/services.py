@@ -110,12 +110,15 @@ def cortar_rodape_imagem(caminho, rodape_px=10):
         return caminho
 
 
-def adicionar_watermark(caminho, texto='Andre Indica', margem_px=12, escala=1.0):
+def adicionar_watermark(caminho, texto='Andre Indica', escala=1.0):
     """
-    Insere uma marca d'água com `texto` no canto inferior esquerdo da imagem.
-    Edita o arquivo in-place. Se algo falhar, mantém a imagem original.
+    Insere uma marca d'água com `texto` no canto inferior esquerdo da imagem,
+    na mesma posição relativa do logo removido (esquerda ~1.6% da largura,
+    base ~90.4% da altura). Edita o arquivo in-place. Se algo falhar, mantém
+    a imagem original.
 
-    `escala` controla o tamanho da fonte relativo à largura da imagem.
+    Usa as cores do design system (NVIDIA Green #76b900 + contorno preto).
+    `escala` multiplica o tamanho da fonte (base = 4.8% da altura da imagem).
     """
     try:
         from PIL import Image, ImageDraw, ImageFont
@@ -124,25 +127,28 @@ def adicionar_watermark(caminho, texto='Andre Indica', margem_px=12, escala=1.0)
         img = Image.open(caminho).convert('RGB')
         largura, altura = img.size
 
-        # Tamanho da fonte proporcional à imagem (largura / ~45, ajustado pela escala)
-        tamanho_fonte = max(10, int(largura / 45 * escala))
+        # Tamanho proporcional à altura (base ~4.8% da altura, ajustável por escala)
+        tamanho_fonte = max(10, int(altura * 0.048 * escala))
         try:
             fonte = ImageFont.load_default(size=tamanho_fonte)
         except TypeError:
             fonte = ImageFont.load_default()
 
         draw = ImageDraw.Draw(img)
-        margem = max(8, int(margem_px * escala))
 
-        # Desenha texto com contorno/ombra para legibilidade em qualquer fundo.
-        # Sombras deslocadas (x+1/y+1 e x-1/y-1) criam um contorno simples.
-        x = margem
-        y = altura - margem - tamanho_fonte
-        sombra = (0, 0, 0)
-        branco = (255, 255, 255)
-        for dx, dy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
-            draw.text((x + dx, y + dy), texto, font=fonte, fill=sombra)
-        draw.text((x, y), texto, font=fonte, fill=branco)
+        # Posição relativa: mesma do logo antigo (esquerda ~1.6% / base ~90.4%)
+        x = int(largura * 0.016)
+        base_y = int(altura * 0.904)
+        y = base_y - tamanho_fonte
+
+        # Cores do design system: verde André Indica (#76b900) com contorno preto
+        verde_marca = (118, 185, 0)   # #76b900 (--primary)
+        contorno = (0, 0, 0)          # preto (--on-primary)
+        # Contorno (offsets ao redor) para legibilidade em qualquer fundo
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1),
+                       (-1, -1), (1, -1), (-1, 1), (1, 1)):
+            draw.text((x + dx, y + dy), texto, font=fonte, fill=contorno)
+        draw.text((x, y), texto, font=fonte, fill=verde_marca)
 
         formato = (img.format or 'JPEG').upper()
         if formato == 'PNG':
@@ -155,6 +161,76 @@ def adicionar_watermark(caminho, texto='Andre Indica', margem_px=12, escala=1.0)
         return caminho
     except Exception as err:
         print(f"Erro ao adicionar marca d'água: {err}")
+        return caminho
+
+
+def remover_marca_dagua_verde(caminho, x_lim=0.55, y_inicio=0.70, y_fim=1.0,
+                              limiar_branco=230, dilatar=8):
+    """
+    Remove o logo verde ('Ofertas TecnoArt') no canto inferior esquerdo.
+    Detecta a marca pelo verde (HSV) e mascara o verde + a vizinhança próxima
+    (contorno escuro e letras prateadas ficam colados no verde), preenchendo com
+    a cor de fundo. Limitar à vizinhança evita apagar o produto. Edita in-place.
+    Se falhar (cv2 ausente etc.), mantém a imagem original.
+    """
+    if not caminho or not os.path.exists(caminho):
+        return caminho
+    try:
+        import cv2
+        import numpy as np
+    except Exception:
+        print("cv2 não disponível — pulando remoção de marca d'água.")
+        return caminho
+    try:
+        img = cv2.imread(caminho)  # BGR
+        if img is None:
+            return caminho
+        h, w = img.shape[:2]
+
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        H = hsv[:, :, 0].astype(int)
+        S = hsv[:, :, 1].astype(int)
+        V = hsv[:, :, 2].astype(int)
+        verde = (H >= 30) & (H <= 95) & (S > 40) & (V > 40)
+
+        # Restringe à região inferior esquerda
+        regiao = np.zeros((h, w), dtype=bool)
+        ry0, ry1 = int(y_inicio * h), int(y_fim * h)
+        rx0, rx1 = 0, int(x_lim * w)
+        regiao[ry0:ry1, rx0:rx1] = True
+        verde_reg = verde & regiao
+
+        if int(verde_reg.sum()) == 0:
+            return caminho
+
+        # Marca = verde + vizinhança próxima (o contorno escuro e as letras
+        # prateadas ficam colados no verde). Limitar à vizinhança evita apagar
+        # o produto que porventura esteja perto (ex.: base da cadeira).
+        mask = cv2.dilate(verde_reg.astype(np.uint8) * 255,
+                          np.ones((3, 3), np.uint8), iterations=dilatar)
+        # Inclui pixels não-brancos que estejam dentro dessa vizinhança
+        mn = img.min(axis=2).astype(int)
+        naobranco = mn < limiar_branco
+        mask[~(naobranco | verde_reg)] = 0
+
+        # Cor de fundo estimada pela moldura da imagem (as imagens de produto
+        # do canal têm fundo claro/branco). Preenche a marca com o fundo em vez
+        # de inpaint (inpaint deixava mancha cinza).
+        moldura = np.concatenate([
+            img[0:max(1, h // 100)].reshape(-1, 3),
+            img[max(0, h - h // 100):].reshape(-1, 3),
+            img[:, 0:max(1, w // 100)].reshape(-1, 3),
+            img[:, max(0, w - w // 100):].reshape(-1, 3),
+        ])
+        cor_fundo = np.median(moldura, axis=0).astype(np.uint8)
+
+        res = img.copy()
+        res[mask > 0] = cor_fundo
+        cv2.imwrite(caminho, res)
+        print(f"🧽 Marca d'água verde removida em {caminho}")
+        return caminho
+    except Exception as err:
+        print(f"Erro ao remover marca d'água verde: {err}")
         return caminho
 
 
@@ -1335,6 +1411,105 @@ def get_product_info(url):
 
     print(f"Produto: {name} | Preço: {price} | Imagem: {bool(image_url)}")
     return name, image_url, price
+
+
+# Links de loja que valem tentar baixar a imagem principal do produto
+_RE_LINK_LOJA = re.compile(
+    r'(?:amazon\.com\.br|amzn\.to|link\.amazon|aoferta\.net|shopee\.com\.br|s\.shopee|'
+    r'mercadolivre|meli\.la|mlstatic|aliexpress\.com|s\.click\.ali|a\.aliexpress|'
+    r'kabum\.com\.br|magazineluiza\.com\.br|magalu\.com|mgl\.io)',
+    re.IGNORECASE,
+)
+
+
+def _extrair_imagem_da_pagina(html, final_url=''):
+    """Extrai a URL da imagem principal (og:image, twitter:image, image_src ou
+    data-a-dynamic-image da Amazon) a partir do HTML de uma página de produto."""
+    if not html:
+        return None
+    # Amazon: imagem no atributo data-a-dynamic-image (JSON com URLs)
+    m = re.search(r'data-a-dynamic-image="([^"]+)"', html)
+    if m:
+        import html as _html
+        attr = _html.unescape(m.group(1))
+        urls = re.findall(r'https://[^"]+?\.(?:jpg|jpeg|png|webp)', attr)
+        if urls:
+            img = urls[0]
+            # Remove o sufixo de redimensionamento p/ pegar a imagem maior
+            img = re.sub(r'\._[A-Z0-9_,]+_\.', '.', img)
+            return img
+    padroes = [
+        r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\'](https?://[^"\']+)["\']',
+        r'<meta[^>]+content=["\'](https?://[^"\']+)["\'][^>]+property=["\']og:image["\']',
+        r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\'](https?://[^"\']+)["\']',
+        r'<link[^>]+rel=["\']image_src["\'][^>]+href=["\'](https?://[^"\']+)["\']',
+    ]
+    for p in padroes:
+        mm = re.search(p, html, re.IGNORECASE)
+        if mm:
+            img = mm.group(1).strip()
+            if 'favicon' in img.lower() or 'logo' in img.lower():
+                continue
+            # Mercado Livre: prefere a versão de alta resolução
+            if 'mlstatic' in img and '-O.' in img:
+                img = img.replace('-O.', '-F.')
+            # AliExpress: remove sufixo de tamanho (ex.: xxx_220x220.jpg)
+            if 'alicdn' in img or 'aliexpress-media' in img:
+                img = re.sub(r'_\d+x\d+(?=\.\w+$)', '', img)
+            # KaBuM: usa a variante grande (_gg.jpg = ~1000px)
+            if 'images.kabum.com.br' in img:
+                img = re.sub(r'_[a-z]{1,2}\.(jpg|jpeg|png|webp)$', r'_gg.\1', img, flags=re.IGNORECASE)
+            return img
+    return None
+
+
+def baixar_imagem_produto(texto, destino_dir):
+    """Abre o primeiro link de loja encontrado em `texto`, extrai a imagem
+    principal do produto e baixa para `destino_dir`. Retorna o caminho local
+    ou None se não conseguir. Não quebra se falhar."""
+    import time as _time
+    if not texto or not destino_dir:
+        return None
+    try:
+        os.makedirs(destino_dir, exist_ok=True)
+    except Exception:
+        return None
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+    }
+    links = [l.rstrip('.,;|)') for l in re.findall(r'https?://\S+', texto or '')]
+    # Só links de loja; ignora redes sociais/internos
+    links = [l for l in links if _RE_LINK_LOJA.search(l)
+             and not any(x in l for x in ('t.me/', 'instagram.com', 'facebook.com', 'links.andreindica'))]
+    for link in links:
+        try:
+            resp = requests.get(link, headers=headers, timeout=15, allow_redirects=True)
+            if resp.status_code != 200:
+                continue
+            img_url = _extrair_imagem_da_pagina(resp.text, resp.url)
+            if not img_url:
+                continue
+            ri = requests.get(img_url, headers=headers, timeout=20)
+            if ri.status_code != 200 or not ri.content:
+                continue
+            # Valida que é mesmo uma imagem
+            try:
+                from PIL import Image as _Image
+                import io as _io
+                _Image.open(_io.BytesIO(ri.content)).verify()
+            except Exception:
+                continue
+            caminho = os.path.join(destino_dir, f'produto_{int(_time.time() * 1000)}.jpg')
+            with open(caminho, 'wb') as f:
+                f.write(ri.content)
+            print(f"🖼️ Imagem do produto baixada: {img_url[:80]}")
+            return caminho
+        except Exception as err:
+            print(f"Aviso ao baixar imagem do produto ({link[:50]}): {err}")
+            continue
+    return None
 
 
 import urllib.parse

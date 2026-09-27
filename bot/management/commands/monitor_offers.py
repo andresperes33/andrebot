@@ -407,17 +407,29 @@ class Command(BaseCommand):
 
                 # ─── Baixa foto ──────────────────────────────────────────────
                 photo_path = None
-                if message.photo:
-                    temp_dir = os.path.join(os.getcwd(), 'tmp_photos')
-                    os.makedirs(temp_dir, exist_ok=True)
+                temp_dir = os.path.join(os.getcwd(), 'tmp_photos')
+                os.makedirs(temp_dir, exist_ok=True)
+
+                # 1) Tenta a imagem principal da PÁGINA do produto (link da
+                # oferta). Assim a imagem vem limpa, sem marca d'água do canal.
+                if getattr(settings, 'IMAGEM_DA_PAGINA_PRODUTO', True):
+                    try:
+                        from bot.services import baixar_imagem_produto
+                        img_prod = await asyncio.to_thread(baixar_imagem_produto, msg_text, temp_dir)
+                        if img_prod and os.path.exists(img_prod):
+                            photo_path = img_prod
+                            logger.info("🖼️ Usando imagem da página do produto.")
+                    except Exception as img_err:
+                        logger.warning(f"⚠️ Falha ao baixar imagem do produto: {img_err}")
+
+                # 2) Fallback: usa a foto capturada do canal
+                if not photo_path and message.photo:
                     photo_path = await message.download_media(file=temp_dir)
                     if photo_path:
                         photo_path = os.path.abspath(photo_path)
-                        logger.info(f"📸 Foto baixada: {photo_path}")
+                        logger.info(f"📸 Foto capturada baixada: {photo_path}")
 
-                # Sem corte da imagem: a foto chega inteira no Telegram/WhatsApp/site.
-
-                # Marca d'água 'André Indica' no canto inferior esquerdo
+                # Marca d'água 'Andre Indica' no canto inferior esquerdo
                 if photo_path:
                     from bot.services import adicionar_watermark
                     photo_path = await asyncio.to_thread(adicionar_watermark, photo_path)
