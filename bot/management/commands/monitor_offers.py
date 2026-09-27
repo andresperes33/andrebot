@@ -37,24 +37,31 @@ def _texto_sem_rodape(texto):
 # Evita chamadas constantes ao banco em contexto async — mais seguro e rápido.
 # Na inicialização, carrega do banco (persiste entre deploys).
 # A cada save, atualiza a memória E persiste no banco.
-_last_id: int = 0
-_last_id_loaded: bool = False
+# O last_id é POR CANAL: cada canal monitorado tem o seu próprio (os IDs de
+# mensagens são relativos a cada canal).
+_last_ids: dict = {}
+_last_ids_loaded: dict = {}
 _processing_ids: set = set()
 
 
-@sync_to_async
-def _db_get_last_id():
-    from django.db import close_old_connections
-    close_old_connections()
-    from bot.models import BotConfig
-    return BotConfig.get('last_processed_id', '0')
+def _chave_last_id(nome_canal):
+    """Chave estável para guardar o last_id de cada canal no BotConfig."""
+    return f"last_processed_id_{nome_canal.strip().casefold()}"
+
 
 @sync_to_async
-def _db_set_last_id(msg_id):
+def _db_get_last_id(chave):
     from django.db import close_old_connections
     close_old_connections()
     from bot.models import BotConfig
-    BotConfig.set('last_processed_id', msg_id)
+    return BotConfig.get(chave, '0')
+
+@sync_to_async
+def _db_set_last_id(chave, msg_id):
+    from django.db import close_old_connections
+    close_old_connections()
+    from bot.models import BotConfig
+    BotConfig.set(chave, msg_id)
 
 @sync_to_async
 def _db_get_channel():
@@ -70,27 +77,27 @@ def _db_set_channel(channel):
     from bot.models import BotConfig
     BotConfig.set('monitored_channel', channel)
 
-async def load_last_id() -> int:
-    global _last_id, _last_id_loaded
-    if _last_id_loaded:
-        return _last_id
+async def load_last_id(nome_canal: str) -> int:
+    chave = _chave_last_id(nome_canal)
+    if _last_ids_loaded.get(chave):
+        return _last_ids.get(chave, 0)
     try:
-        val = await _db_get_last_id()
-        _last_id = int(val)
-        logger.info(f"📌 Último ID carregado do banco: {_last_id}")
+        val = await _db_get_last_id(chave)
+        _last_ids[chave] = int(val)
+        logger.info(f"📌 Último ID carregado do banco ({nome_canal}): {_last_ids[chave]}")
     except Exception as e:
-        logger.warning(f"⚠️ Não foi possível carregar last_id do banco: {e}. Usando 0.")
-        _last_id = 0
-    _last_id_loaded = True
-    return _last_id
+        logger.warning(f"⚠️ Não foi possível carregar last_id ({nome_canal}): {e}. Usando 0.")
+        _last_ids[chave] = 0
+    _last_ids_loaded[chave] = True
+    return _last_ids[chave]
 
-async def save_last_id(msg_id: int):
-    global _last_id
-    _last_id = msg_id
+async def save_last_id(nome_canal: str, msg_id: int):
+    chave = _chave_last_id(nome_canal)
+    _last_ids[chave] = msg_id
     try:
-        await _db_set_last_id(msg_id)
+        await _db_set_last_id(chave, msg_id)
     except Exception as e:
-        logger.error(f"❌ Erro ao persistir last_id={msg_id} no banco: {e}")
+        logger.error(f"❌ Erro ao persistir last_id={msg_id} ({nome_canal}) no banco: {e}")
 
 
 
@@ -115,60 +122,64 @@ class Command(BaseCommand):
             
             await client.start()
 
-            source_channel = getattr(settings, 'SOURCE_CHANNEL_USERNAME', 'zFinnY').strip()
-            source_channel_norm = source_channel.casefold()
+            # ─── Canais monitorados ─────────────────────────────────────────
+            # Canal principal (SOURCE_CHANNEL_USERNAME) + canais extras
+            # (EXTRA_SOURCE_CHANNELS). Cada canal pode ter um filtro:
+            #   filtro=None        → captura todas as ofertas
+            #   filtro='aliexpress'→ captura SÓ ofertas com link AliExpress
+            canais = []
+            canal_principal = getattr(settings, 'SOURCE_CHANNEL_USERNAME', 'zFinnY').strip()
+            if canal_principal:
+                canais.append({'nome': canal_principal, 'filtro': None})
+            for extra in (getattr(settings, 'EXTRA_SOURCE_CHANNELS', []) or []):
+                nome_extra = (extra.get('nome') or '').strip()
+                if nome_extra:
+                    canais.append({'nome': nome_extra, 'filtro': extra.get('filtro') or None})
 
-            logger.info(f"🔍 Localizando ID do canal {source_channel}...")
-            target_id = None
-            async for dialog in client.iter_dialogs():
-                dialog_name = (dialog.name or '').casefold()
-                dialog_username = (getattr(dialog, 'username', None) or '').casefold()
-                if source_channel_norm in dialog_name or source_channel_norm == dialog_username:
-                    target_id = dialog.id
-                    logger.info(f"✅ CANAL ENCONTRADO: {dialog.name} (ID: {target_id})")
-                    break
+            # Resolve o ID de cada canal e faz o cold start individual
+            for canal in canais:
+                canal_nome = canal['nome']
+                canal_norm = canal_nome.casefold()
+                logger.info(f"🔍 Localizando ID do canal {canal_nome}...")
+                target_id = None
+                async for dialog in client.iter_dialogs():
+                    dialog_name = (dialog.name or '').casefold()
+                    dialog_username = (getattr(dialog, 'username', None) or '').casefold()
+                    if canal_norm in dialog_name or canal_norm == dialog_username:
+                        target_id = dialog.id
+                        logger.info(f"✅ CANAL ENCONTRADO: {dialog.name} (ID: {target_id})")
+                        break
 
-            if not target_id:
-                logger.warning(f"⚠️ Canal não encontrado: {source_channel}. Verifique o valor de SOURCE_CHANNEL_USERNAME (pode ser o @username OU o nome exato do canal).")
+                if not target_id:
+                    logger.warning(f"⚠️ Canal não encontrado: {canal_nome}. Verifique o nome/@username (pode ser o nome exato OU o @username do canal).")
+                    canal['target_id'] = None
+                    continue
+                canal['target_id'] = target_id
+
+                # ─── COLD START: banco vazio, pular histórico ──────────────
+                # Quando o banco está recém-criado/vazio, last_id parte de 0 e o
+                # polling reprocessaria os últimos posts do canal (disparos duplicados).
+                # Detectamos isso e avançamos o last_id até o post mais recente,
+                # processando apenas ofertas NOVAS daqui em diante.
+                latest = await client.get_messages(target_id, limit=1)
+                current_last = await load_last_id(canal_nome)
+                if latest and current_last > latest[0].id:
+                    logger.info(f"🔄 last_id ({current_last}) é maior que o último post do canal ({latest[0].id}). Trocou de canal? Resetando para 0.")
+                    await save_last_id(canal_nome, 0)
+                current_last = await load_last_id(canal_nome)
+                if current_last == 0:
+                    try:
+                        if latest and latest[0].id:
+                            await save_last_id(canal_nome, latest[0].id)
+                            logger.info(f"🧊 Cold start ({canal_nome}): last_id inicializado em {latest[0].id}. Só novas ofertas serão processadas.")
+                    except Exception as cold_err:
+                        logger.error(f"❌ Erro no cold start ({canal_nome}): {cold_err}")
+
+            # Remove canais que não foram encontrados
+            canais = [c for c in canais if c.get('target_id')]
+            if not canais:
+                logger.error("❌ Nenhum canal monitorado foi encontrado. Verifique SOURCE_CHANNEL_USERNAME / EXTRA_SOURCE_CHANNELS.")
                 return
-
-            # ─── COLD START: banco vazio, pular histórico ─────────────────────
-            # Quando o banco está recém-criado/vazio, last_id parte de 0 e o
-            # polling reprocessaria os últimos posts do canal (disparos duplicados).
-            # Detectamos isso e avançamos o last_id até o post mais recente,
-            # processando apenas ofertas NOVAS daqui em diante.
-            #
-            # Também resetamos o last_id quando trocamos de canal monitorado:
-            # o último_id salvo pode vir do canal ANTERIOR e ser maior que os IDs
-            # do canal atual, fazendo o polling pular todas as ofertas novas.
-            saved_channel = (await _db_get_channel() or '').strip().casefold()
-            if saved_channel and saved_channel != source_channel_norm:
-                logger.info(f"🔄 Canal mudou ('{saved_channel}' -> '{source_channel_norm}'). Resetando last_id.")
-                await save_last_id(0)
-                await load_last_id()
-                await _db_set_channel(source_channel)
-
-            latest = await client.get_messages(target_id, limit=1)
-            current_last = await load_last_id()
-            if latest and current_last > latest[0].id:
-                logger.info(f"🔄 last_id ({current_last}) é maior que o último post do canal ({latest[0].id}). Trocou de canal? Resetando para 0.")
-                await save_last_id(0)
-                await load_last_id()
-            current_last = await load_last_id()
-            if current_last == 0:
-                try:
-                    if latest and latest[0].id:
-                        newest = latest[0].id
-                        await save_last_id(newest)
-                        logger.info(f"🧊 Cold start detectado (banco vazio). Pulando histórico, last_id inicializado em {newest}. Só novas ofertas serão processadas.")
-                except Exception as cold_err:
-                    logger.error(f"❌ Erro no cold start: {cold_err}")
-
-            # Persiste o canal monitorado para detectar trocas futuras
-            try:
-                await _db_set_channel(source_channel)
-            except Exception as ch_err:
-                logger.error(f"❌ Erro ao salvar canal monitorado: {ch_err}")
 
             # Serializa as publicações (Story/Feed do IG + Facebook). O cooldown
             # só é registrado DEPOIS do post dar certo (~15-30s), então sem lock
@@ -176,9 +187,11 @@ class Command(BaseCommand):
             # checagem e publicariam juntas.
             publicacao_lock = asyncio.Lock()
 
-            async def process_message(message):
+            async def process_message(message, canal=None):
                 """Converte links e envia para Telegram + WhatsApp"""
                 msg_text = message.message or ""
+                canal = canal or {'nome': canal_principal, 'filtro': None}
+                canal_filtro = canal.get('filtro')
 
                 if not msg_text and not message.photo:
                     return False
@@ -187,6 +200,12 @@ class Command(BaseCommand):
                 if not re.search(r'https?://\S+', msg_text):
                     logger.info(f"ℹ️ Mensagem ignorada (não contém links)")
                     return False
+
+                # ─── Filtro do canal (ex.: só AliExpress) ─────────────────────
+                if canal_filtro == 'aliexpress':
+                    if not re.search(r'(?:aliexpress\.com|s\.click\.ali|a\.aliexpress\.com)', msg_text, re.I):
+                        logger.info(f"🚫 ({canal['nome']}) ignorada: só captura ofertas AliExpress.")
+                        return False
 
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
@@ -337,6 +356,21 @@ class Command(BaseCommand):
                         # Se falhou, não conta como convertido (vai sair no 'nenhum link')
                         continue
 
+                    if canal_filtro == 'aliexpress':
+                        # Canal configurado para capturar SÓ AliExpress: remove
+                        # qualquer outro link de loja e mantém apenas os da Ali.
+                        if is_ali:
+                            converted = convert_to_affiliate_link(link)
+                            if converted:
+                                has_ali = True
+                                modified_text = modified_text.replace(link, converted)
+                                modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
+                                converted_any = True
+                        elif is_amazon or is_shopee or is_ml or is_kabum or is_magalu or is_awin or is_pcdofafa:
+                            modified_text = modified_text.replace(link, '')
+                            modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
+                        continue
+
                     if any([is_amazon, is_shopee, is_ml, is_ali, is_kabum, is_magalu]):
                         converted = convert_to_affiliate_link(link)
                         if converted:
@@ -395,7 +429,7 @@ class Command(BaseCommand):
                     # Chave estável baseada no link BRUTO + preço (msg_text),
                     # para não ignorar ofertas novas do mesmo produto com preço/cupom diferente.
                     chave_estavel = _chave_dedup(msg_text)
-                    promo_id = await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, source_channel, chave_estavel)
+                    promo_id = await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, canal['nome'], chave_estavel)
                     logger.info("💾 Promo salva no banco de dados")
                 except Exception as db_err:
                     logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")
@@ -625,50 +659,60 @@ class Command(BaseCommand):
 
                 return True
 
-            # ─── LISTENER (Tempo Real) ───────────────────────────────────────
-            @client.on(events.NewMessage(chats=target_id))
-            async def handler(event):
-                msg = event.message
-                last_id = await load_last_id()
-                if msg.id <= last_id or msg.id in _processing_ids:
-                    return
-                
-                _processing_ids.add(msg.id)
-                try:
-                    await process_message(msg)
-                    # Avança o last_id SEMPRE (mesmo ignorada) para não
-                    # reprocessar mensagens antigas após restart/redeploy.
-                    await save_last_id(msg.id)
-                finally:
-                    if msg.id in _processing_ids:
-                        _processing_ids.remove(msg.id)
+            # ─── LISTENER (Tempo Real) — um por canal ────────────────────────
+            async def registrar_listener(canal):
+                target_id = canal['target_id']
+                canal_nome = canal['nome']
 
-            # ─── POLLING INTELIGENTE ──────────────────────────────────────────────
+                @client.on(events.NewMessage(chats=target_id))
+                async def handler(event):
+                    msg = event.message
+                    chave = (canal_nome, msg.id)
+                    last_id = await load_last_id(canal_nome)
+                    if msg.id <= last_id or chave in _processing_ids:
+                        return
+
+                    _processing_ids.add(chave)
+                    try:
+                        await process_message(msg, canal)
+                        # Avança o last_id SEMPRE (mesmo ignorada) para não
+                        # reprocessar mensagens antigas após restart/redeploy.
+                        await save_last_id(canal_nome, msg.id)
+                    finally:
+                        _processing_ids.discard(chave)
+
+            for canal in canais:
+                await registrar_listener(canal)
+
+            # ─── POLLING INTELIGENTE — itera todos os canais ────────────────
             async def smart_polling():
                 while True:
                     try:
-                        last_id = await load_last_id()
-                        messages = await client.get_messages(target_id, limit=10, min_id=last_id)
-                        if messages:
-                            for msg in reversed(list(messages)):
-                                if msg.id > last_id and msg.id not in _processing_ids:
-                                    _processing_ids.add(msg.id)
-                                    try:
-                                        await process_message(msg)
-                                    finally:
-                                        if msg.id in _processing_ids:
-                                            _processing_ids.remove(msg.id)
-                                        # Avança o last_id mesmo se ignorada/duplicada
-                                        if msg.id > last_id:
-                                            await save_last_id(msg.id)
-                                            last_id = msg.id
+                        for canal in canais:
+                            target_id = canal['target_id']
+                            canal_nome = canal['nome']
+                            last_id = await load_last_id(canal_nome)
+                            messages = await client.get_messages(target_id, limit=10, min_id=last_id)
+                            if messages:
+                                for msg in reversed(list(messages)):
+                                    chave = (canal_nome, msg.id)
+                                    if msg.id > last_id and chave not in _processing_ids:
+                                        _processing_ids.add(chave)
+                                        try:
+                                            await process_message(msg, canal)
+                                        finally:
+                                            _processing_ids.discard(chave)
+                                            # Avança o last_id mesmo se ignorada/duplicada
+                                            if msg.id > last_id:
+                                                await save_last_id(canal_nome, msg.id)
+                                                last_id = msg.id
                         await client.get_me()
                         logger.info("💓 Check-up automático realizado")
                     except Exception as e:
                         logger.error(f"Erro no polling: {e}")
                     await asyncio.sleep(30)
 
-            logger.info("🚀 MONITOR AUTÔNOMO INICIADO! (Bot de Alertas Ativo)")
+            logger.info(f"🚀 MONITOR AUTÔNOMO INICIADO! Canais: {[c['nome'] for c in canais]}")
             await asyncio.gather(
                 client.run_until_disconnected(),
                 smart_polling()

@@ -194,6 +194,25 @@ TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH')
 TELEGRAM_STRING_SESSION = os.getenv('TELEGRAM_STRING_SESSION')
 SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'PEPERAIO HARDWARE OFERTAS')
 
+# Canais extras monitorados além do principal. Cada item:
+#   {'nome': '<nome ou @username>', 'filtro': '<tipo>'}
+#   'filtro' opcional: 'aliexpress' = captura SÓ ofertas com link AliExpress.
+# Formato: JSON (ex.: '[{"nome": "Promoções Gamer", "filtro": "aliexpress"}]')
+import json as _json_extra
+def _parse_extra_channels():
+    raw = os.getenv('EXTRA_SOURCE_CHANNELS_JSON', '').strip()
+    if raw:
+        try:
+            data = _json_extra.loads(raw)
+            if isinstance(data, list):
+                return [c for c in data if isinstance(c, dict) and c.get('nome')]
+        except Exception:
+            pass
+    return [
+        {'nome': 'Promoções Gamer', 'filtro': 'aliexpress'},
+    ]
+EXTRA_SOURCE_CHANNELS = _parse_extra_channels()
+
 # Personal Settings (Overrides)
 PERSONAL_CHANNEL_LINK = os.getenv('PERSONAL_CHANNEL_LINK', 'https://t.me/andreindica33')
 PERSONAL_CHANNEL_NAME = os.getenv('PERSONAL_CHANNEL_NAME', 'andreindicatech')
