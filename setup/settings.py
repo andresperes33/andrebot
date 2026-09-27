@@ -198,6 +198,10 @@ SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'PEPERAIO HARDWAR
 # capturada do canal (evita marca d'água de outros canais). Fallback: foto capturada.
 IMAGEM_DA_PAGINA_PRODUTO = os.getenv('IMAGEM_DA_PAGINA_PRODUTO', 'True') == 'True'
 
+# Quando NÃO conseguir a imagem da página do produto (fallback = foto capturada
+# do canal), corta essa quantidade de pixels da base para remover a marca do canal.
+CORTE_FALLBACK_PX = int(os.getenv('CORTE_FALLBACK_PX', '300'))
+
 # Canais extras monitorados além do principal. Cada item:
 #   {'nome': '<nome ou @username>', 'filtro': '<tipo>', 'remover_marca': bool}
 #   'filtro' opcional: 'aliexpress' = captura SÓ ofertas com link AliExpress.
