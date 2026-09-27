@@ -33,7 +33,7 @@ _AVISO_APP_LOJA = (
 
 
 # Categorias que NÃO vão para o Instagram/Facebook (feed/stories)
-_CATS_BLOQUEADAS_REDES = {'cupom', 'filtro_linha', 'outros', 'cabo', 'pasta_termica'}
+_CATS_BLOQUEADAS_REDES = {'cupom', 'filtro_linha', 'outros', 'cabo', 'pasta_termica', 'caixa_som'}
 
 
 def _texto_sem_rodape(texto):
