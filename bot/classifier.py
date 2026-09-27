@@ -198,6 +198,7 @@ _REGEX_CATEGORIA = [
     ]),
     ('cooler', [
         r'\bcooler\b', r'\bwater\s*cooler\b', r'\bwatercooler\b', r'\bdissipador\b',
+        r'\brefrigera[cç][aã]o\b', r'\brefrigera[cç][aã]o\s*l[ií]quida\b',
         r'\bventoinhas?\b', r'\baio\b', r'\bfan(s)?\b', r'\bfans?\s*magn[eé]tic',
         r'\bargb\b', r'kit\s*\d+\s*fans?', r'kit\s+ventoinhas?',
     ]),
