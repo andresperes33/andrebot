@@ -457,7 +457,10 @@ class Command(BaseCommand):
                 if promo_id:
                     try:
                         from bot.models import Promo
-                        cat = Promo.objects.filter(pk=promo_id).values_list('categoria', flat=True).first()
+                        cat = await sync_to_async(
+                            lambda: Promo.objects.filter(pk=promo_id)
+                            .values_list('categoria', flat=True).first()
+                        )()
                         if cat:
                             categoria_oferta = cat
                     except Exception as cat_err:
