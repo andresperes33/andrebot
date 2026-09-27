@@ -1485,10 +1485,14 @@ def baixar_imagem_produto(texto, destino_dir):
              and not any(x in l for x in ('t.me/', 'instagram.com', 'facebook.com', 'links.andreindica'))]
     for link in links:
         try:
-            resp = requests.get(link, headers=headers, timeout=15, allow_redirects=True)
-            if resp.status_code != 200:
-                continue
-            img_url = _extrair_imagem_da_pagina(resp.text, resp.url)
+            # Shopee bloqueia scraping: a imagem vem pela API de afiliados
+            if 'shopee' in link.lower():
+                img_url = _shopee_image_url(link)
+            else:
+                resp = requests.get(link, headers=headers, timeout=15, allow_redirects=True)
+                if resp.status_code != 200:
+                    continue
+                img_url = _extrair_imagem_da_pagina(resp.text, resp.url)
             if not img_url:
                 continue
             ri = requests.get(img_url, headers=headers, timeout=20)
@@ -1509,6 +1513,41 @@ def baixar_imagem_produto(texto, destino_dir):
         except Exception as err:
             print(f"Aviso ao baixar imagem do produto ({link[:50]}): {err}")
             continue
+    return None
+
+
+def _shopee_image_url(link):
+    """Obtém a imagem principal de um produto Shopee via API de afiliados
+    (query productOfferV2). Retorna a URL da imagem ou None."""
+    app_id = getattr(settings, 'SHOPEE_APP_ID', None)
+    app_secret = getattr(settings, 'SHOPEE_SECRET', None)
+    if not app_id or not app_secret:
+        return None
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"}
+        resp = requests.get(link, headers=headers, timeout=15, allow_redirects=True)
+        final = resp.url or link
+        m = re.search(r'-i\.(\d+)\.(\d+)', final)
+        item_id = m.group(2) if m else None
+        if not item_id:
+            m2 = re.search(r'[?&]item[Ii]d=(\d+)', final)
+            item_id = m2.group(1) if m2 else None
+        if not item_id:
+            return None
+        timestamp = int(time.time())
+        q = ('query{productOfferV2(itemId:%s,limit:1){nodes{imageUrl}}}' % item_id)
+        body = json.dumps({"query": q}, separators=(',', ':'))
+        signature = hashlib.sha256(f"{app_id}{timestamp}{body}{app_secret}".encode('utf-8')).hexdigest()
+        hh = {
+            "Content-Type": "application/json",
+            "Authorization": f"SHA256 Credential={app_id},Timestamp={timestamp},Signature={signature}",
+        }
+        r = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=hh, data=body, timeout=20)
+        nodes = r.json().get('data', {}).get('productOfferV2', {}).get('nodes') or []
+        if nodes:
+            return nodes[0].get('imageUrl')
+    except Exception as err:
+        print(f"Aviso na imagem Shopee: {err}")
     return None
 
 
