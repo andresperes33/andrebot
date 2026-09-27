@@ -1488,6 +1488,13 @@ def baixar_imagem_produto(texto, destino_dir):
             # Shopee bloqueia scraping: a imagem vem pela API de afiliados
             if 'shopee' in link.lower():
                 img_url = _shopee_image_url(link)
+            elif 'aliexpress' in link.lower() or 's.click.ali' in link.lower():
+                # AliExpress: tenta a API de afiliados (mais confiável); se
+                # falhar, cai no scraping normal do og:image.
+                img_url = _aliexpress_image_url(link)
+                if not img_url:
+                    resp = requests.get(link, headers=headers, timeout=15, allow_redirects=True)
+                    img_url = _extrair_imagem_da_pagina(resp.text, resp.url)
             else:
                 resp = requests.get(link, headers=headers, timeout=15, allow_redirects=True)
                 if resp.status_code != 200:
@@ -1548,6 +1555,60 @@ def _shopee_image_url(link):
             return nodes[0].get('imageUrl')
     except Exception as err:
         print(f"Aviso na imagem Shopee: {err}")
+    return None
+
+
+def _aliexpress_image_url(link):
+    """Obtém a imagem principal de um produto AliExpress via API de afiliados
+    (method aliexpress.affiliate.productdetail.get). Retorna a URL ou None."""
+    app_key = getattr(settings, 'ALIEXPRESS_APP_KEY', None)
+    app_secret = getattr(settings, 'ALIEXPRESS_APP_SECRET', None)
+    if not app_key or not app_secret:
+        return None
+    # Descobre o product_id (resolvendo redirect quando for link curto)
+    pid = None
+    m = re.search(r'/item/(\d+)', link)
+    if m:
+        pid = m.group(1)
+    else:
+        try:
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"}
+            resp = requests.get(link, headers=headers, timeout=15, allow_redirects=True)
+            m = re.search(r'/item/(\d+)', resp.url or '')
+            if m:
+                pid = m.group(1)
+        except Exception:
+            pass
+    if not pid:
+        return None
+    for _tent in range(3):
+        try:
+            params = {
+                'app_key': app_key,
+                'method': 'aliexpress.affiliate.productdetail.get',
+                'format': 'json', 'v': '2.0', 'sign_method': 'md5',
+                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()),
+                'product_ids': pid, 'target_currency': 'BRL', 'target_language': 'PT',
+                'tracking_id': getattr(settings, 'ALIEXPRESS_TRACKING_ID', '') or '',
+            }
+            s = app_secret + ''.join(f'{k}{params[k]}' for k in sorted(params)) + app_secret
+            params['sign'] = hashlib.md5(s.encode()).hexdigest().upper()
+            ar = requests.get("https://api-sg.aliexpress.com/sync", params=params, timeout=25)
+            j = ar.json()
+            if 'error_response' in j:
+                # Rate limit costuma ser temporário: aguarda e tenta de novo
+                time.sleep(4)
+                continue
+            resp = j.get('aliexpress_affiliate_productdetail_get_response', {})
+            result = resp.get('resp_result', {}).get('result', {})
+            prods = result.get('products', {})
+            if isinstance(prods, dict):
+                prods = prods.get('product', [])
+            if prods:
+                return prods[0].get('product_main_image_url')
+            return None
+        except Exception:
+            time.sleep(2)
     return None
 
 
