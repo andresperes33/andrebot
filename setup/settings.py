@@ -198,10 +198,6 @@ SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'Promoções Game
 # capturada do canal (evita marca d'água de outros canais). Fallback: foto capturada.
 IMAGEM_DA_PAGINA_PRODUTO = os.getenv('IMAGEM_DA_PAGINA_PRODUTO', 'True') == 'True'
 
-# Quando NÃO conseguir a imagem da página do produto (fallback = foto capturada
-# do canal), corta essa quantidade de pixels da base para remover a marca do canal.
-CORTE_FALLBACK_PX = int(os.getenv('CORTE_FALLBACK_PX', '300'))
-
 # Janela da trava anti-repetição (minutos). Dentro dela, a mesma oferta
 # (mesmo link/título e mesmo preço em reais, ignorando centavos) é ignorada.
 JANELA_REPETICAO_MINUTOS = int(os.getenv('JANELA_REPETICAO_MINUTOS', '1440'))

@@ -449,21 +449,12 @@ class Command(BaseCommand):
                     except Exception as img_err:
                         logger.warning(f"⚠️ Falha ao baixar imagem do produto: {img_err}")
 
-                # 2) Fallback: usa a foto capturada do canal. Nesse caso a foto
-                # pode ter a marca d'água do canal na base, então cortamos o
-                # rodapé (CORTE_FALLBACK_PX, padrão 300px).
+                # 2) Fallback: usa a foto capturada do canal (sem corte)
                 if not photo_path and message.photo:
                     photo_path = await message.download_media(file=temp_dir)
                     if photo_path:
                         photo_path = os.path.abspath(photo_path)
                         logger.info(f"📸 Foto capturada baixada: {photo_path}")
-                        try:
-                            from bot.services import cortar_rodape_imagem
-                            corte_px = int(getattr(settings, 'CORTE_FALLBACK_PX', 300))
-                            photo_path = await asyncio.to_thread(cortar_rodape_imagem, photo_path, corte_px)
-                            logger.info(f"✂️ Rodapé da foto capturada cortado ({corte_px}px).")
-                        except Exception as corte_err:
-                            logger.warning(f"⚠️ Falha ao cortar rodapé da foto capturada: {corte_err}")
 
                 # Marca d'água 'Andre Indica' no canto inferior esquerdo
                 # (não aplica na imagem fixa de cupom, que já é pronta)
