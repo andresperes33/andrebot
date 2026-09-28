@@ -119,7 +119,7 @@
             </a>
 
             <form class="nav-search-form" method="get" action="/promos/" role="search">
-                <i class="fas fa-search"></i>
+                <button type="submit" class="nav-search-btn" aria-label="Pesquisar"><i class="fas fa-search"></i></button>
                 {% if request.GET.periodo %}<input type="hidden" name="periodo" value="{{ request.GET.periodo }}">{% endif %}
                 {% if request.GET.cat %}<input type="hidden" name="cat" value="{{ request.GET.cat }}">{% endif %}
                 <input type="text" name="q" placeholder="Pesquisar oferta" value="{{ request.GET.q }}" aria-label="Pesquisar oferta" autocomplete="off">
