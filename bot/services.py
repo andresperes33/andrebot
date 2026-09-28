@@ -871,6 +871,8 @@ _TERMOS_PRODUTO = [
     'iphone', 'xiaomi', 'redmi', 'poco', 'realme', 'samsung', 'galaxy', 'motorola',
     'tablet', 'ipad', 'ar condicionado', 'condicionador', 'smart tv', 'qled', 'oled',
     'starlink', 'soprador',
+    'cambio', 'câmbio', 'shifter', 'logitech', 'driving force', 'sim racing',
+    'volante', 'pedaleira', 'racing wheel', 'simulator', 'simulador',
 ]
 
 
