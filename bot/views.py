@@ -189,7 +189,18 @@ def promo_detail_view(request, pk, slug=None):
             chart_data.append({
                 'data': item['criado_em'].isoformat(),
                 'valor': _normalizar_preco(item['preco']),
+                'loja': (item.get('loja') or '').strip(),
             })
+
+        # Marca o menor preço no gráfico
+        if chart_data:
+            menor_chart = min(
+                (p['valor'] for p in chart_data if p.get('valor') is not None),
+                default=None,
+            )
+            if menor_chart is not None:
+                for p in chart_data:
+                    p['menor'] = p.get('valor') is not None and abs(p['valor'] - menor_chart) < 0.01
 
         # Menor preço do período (para o resumo em destaque)
         if historico:
@@ -205,8 +216,28 @@ def promo_detail_view(request, pk, slug=None):
 
     # Formata o menor preço como 'R$ 1.999,00' (o filtro preco_completo é só p/ strings)
     preco_minimo_str = ''
+    preco_atual = _normalizar_preco(promo.preco)
+    preco_atual_str = ''
+    if preco_atual is not None:
+        preco_atual_str = f"R$ {preco_atual:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
     if preco_minimo is not None:
         preco_minimo_str = f"R$ {preco_minimo:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+
+    # Variação % do preço atual vs o menor preço do período
+    variacao_pct = None
+    eh_menor_preco = False
+    if preco_minimo is not None and preco_minimo > 0 and preco_atual is not None:
+        variacao_pct = round((preco_atual - preco_minimo) / preco_minimo * 100)
+        eh_menor_preco = abs(preco_atual - preco_minimo) < 0.01
+
+    # Lojas presentes no histórico (para o filtro)
+    lojas_historico = []
+    _vistas = set()
+    for item in historico:
+        loja = (item.get('loja') or '').strip()
+        if loja and loja not in _vistas:
+            _vistas.add(loja)
+            lojas_historico.append(loja)
 
     return render(request, 'bot/promo_detail.html', {
         'promo': promo,
@@ -216,6 +247,10 @@ def promo_detail_view(request, pk, slug=None):
         'preco_minimo': preco_minimo,
         'preco_minimo_str': preco_minimo_str,
         'preco_minimo_data': preco_minimo_data,
+        'preco_atual_str': preco_atual_str,
+        'variacao_pct': variacao_pct,
+        'eh_menor_preco': eh_menor_preco,
+        'lojas_historico': lojas_historico,
         'rodape_canais': _RODAPE_CANAIS_HTML,
         'dicas_categoria': _CATEGORIA_DICAS.get(promo.categoria, _CATEGORIA_DICAS.get('outros', '')),
     })

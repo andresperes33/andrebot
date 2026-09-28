@@ -96,18 +96,39 @@
             <div class="detail-label"><i class="fas fa-chart-line" style="color:var(--primary);"></i> Histórico de preços</div>
             {% if preco_minimo_str %}
             <div class="price-history-resumo">
-                <span class="ph-resumo-tag">Menor preço do período</span>
-                <span class="ph-resumo-valor">{{ preco_minimo_str }}</span>
-                {% if preco_minimo_data %}<span class="ph-resumo-data">{{ preco_minimo_data|date:"d/m/y" }}</span>{% endif %}
+                <div class="ph-resumo-linha">
+                    <span class="ph-resumo-tag">Menor preço do período</span>
+                    <span class="ph-resumo-valor">{{ preco_minimo_str }}</span>
+                    {% if preco_minimo_data %}<span class="ph-resumo-data">{{ preco_minimo_data|date:"d/m/y" }}</span>{% endif %}
+                </div>
+                {% if preco_atual_str %}
+                <div class="ph-resumo-linha ph-resumo-atual">
+                    <span class="ph-resumo-tag">Preço atual</span>
+                    <span class="ph-resumo-valor ph-resumo-valor-atual">{{ preco_atual_str }}</span>
+                    {% if eh_menor_preco %}
+                    <span class="ph-resumo-ok"><i class="fas fa-check-circle"></i> Você está no menor preço!</span>
+                    {% elif variacao_pct is not None %}
+                    <span class="ph-resumo-pct">{{ variacao_pct|default:0 }}% acima do menor</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% if lojas_historico|length > 1 %}
+            <div class="price-history-filtros">
+                <button type="button" class="ph-filtro is-ativo" data-loja="">Todas</button>
+                {% for loja in lojas_historico %}
+                <button type="button" class="ph-filtro" data-loja="{{ loja }}">{{ loja }}</button>
+                {% endfor %}
             </div>
             {% endif %}
             <div class="price-history">
                 <div class="price-history-chart-wrap">
                     <canvas id="priceChart" aria-label="Evolução do preço"></canvas>
                 </div>
-                <div class="price-history-list">
+                <div class="price-history-list" id="priceHistoryList">
                     {% for item in historico %}
-                    <a class="price-history-row{% if item.pk == promo.pk %} is-current{% endif %}" {% if item.pk == promo.pk %}href="{% url 'promo_detail' promo.pk promo.slug %}"{% elif item.pk %}href="{% url 'promo_detail' item.pk item.slug %}"{% elif item.link_afiliado %}href="{{ item.link_afiliado }}" target="_blank" rel="nofollow sponsored"{% endif %}>
+                    <a class="price-history-row{% if item.pk == promo.pk %} is-current{% endif %}" data-loja="{{ item.loja|default:'' }}" {% if item.pk == promo.pk %}href="{% url 'promo_detail' promo.pk promo.slug %}"{% elif item.pk %}href="{% url 'promo_detail' item.pk item.slug %}"{% elif item.link_afiliado %}href="{{ item.link_afiliado }}" target="_blank" rel="nofollow sponsored"{% endif %}>
                         <div class="price-history-info">
                             <div class="price-history-date">{{ item.criado_em|date:"d/m/y \à\s H:i" }} {% if item.pk == promo.pk %}<span class="price-history-badge"><i class="fas fa-location-arrow"></i> Você está aqui</span>{% endif %}</div>
                             {% if item.link_afiliado or item.pk %}
@@ -194,74 +215,129 @@
         var el = document.getElementById('priceChart');
         var dataEl = document.getElementById('priceChartData');
         if (!el || !dataEl) return;
-        var pontos = JSON.parse(dataEl.textContent);
-        if (!pontos.length) return;
+        var todos = JSON.parse(dataEl.textContent);
+        if (!todos.length) return;
 
-        // Com apenas um valor (ou todos iguais), não faz sentido um "gráfico".
-        var valores = pontos.map(function (p) { return p.valor; });
-        var distintos = valores.filter(function (v, i) { return valores.indexOf(v) === i; });
-        if (distintos.length < 2) {
-            el.closest('.price-history-chart-wrap').style.display = 'none';
-            el.closest('.price-history-chart-wrap').remove();
-            return;
-        }
+        // Se todos os pontos têm a mesma loja, não mostra os filtros.
+        var lojas = todos.map(function (p) { return p.loja || ''; });
+        var lojasDistintas = lojas.filter(function (l, i) { return lojas.indexOf(l) === i; });
+        var temFiltro = lojasDistintas.length > 1;
 
-        // Mostra o ano no eixo X só quando o histórico atravessa mais de um ano.
-        var anos = pontos.map(function (p) { return new Date(p.data).getFullYear(); });
-        var cruzaAno = anos.some(function (a, i) { return anos.indexOf(a) !== i; });
+        var chart = null;
+        var filtroAtual = '';
+        var cruzaAno = (function () {
+            var anos = todos.map(function (p) { return new Date(p.data).getFullYear(); });
+            return anos.some(function (a, i) { return anos.indexOf(a) !== i; });
+        })();
         var fmt = cruzaAno
             ? { day: '2-digit', month: '2-digit', year: '2-digit' }
             : { day: '2-digit', month: '2-digit' };
-        var labels = pontos.map(function (p) {
-            return new Date(p.data).toLocaleDateString('pt-BR', fmt);
-        });
 
-        new Chart(el, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Preço (R$)',
-                    data: valores,
-                    borderColor: '#76b900',
-                    backgroundColor: 'rgba(118,185,0,0.12)',
-                    fill: true,
-                    tension: 0.25,
-                    pointBackgroundColor: '#76b900',
-                    pointBorderColor: '#0d0d0d',
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function (ctx) {
-                                return 'R$ ' + ctx.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        function montar() {
+            var pontos = filtroAtual
+                ? todos.filter(function (p) { return (p.loja || '') === filtroAtual; })
+                : todos.slice();
+
+            // Com menos de 2 valores distintos, não faz sentido gráfico.
+            var valores = pontos.map(function (p) { return p.valor; });
+            var distintos = valores.filter(function (v, i) { return valores.indexOf(v) === i; });
+            if (distintos.length < 2) {
+                if (chart) { chart.destroy(); chart = null; }
+                var wrap = el.closest('.price-history-chart-wrap');
+                if (wrap) wrap.style.display = 'none';
+                return;
+            }
+            var wrap = el.closest('.price-history-chart-wrap');
+            if (wrap) wrap.style.display = '';
+
+            var labels = pontos.map(function (p) {
+                return new Date(p.data).toLocaleDateString('pt-BR', fmt);
+            });
+
+            if (chart) chart.destroy();
+
+            // pointRadius: menor preço destacado (maior, com anel branco)
+            var pointBg = pontos.map(function (p) {
+                return p.menor ? '#ffffff' : '#76b900';
+            });
+            var pointRadius = pontos.map(function (p) {
+                return p.menor ? 7 : 4;
+            });
+
+            chart = new Chart(el, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Preço (R$)',
+                        data: valores,
+                        borderColor: '#76b900',
+                        backgroundColor: 'rgba(118,185,0,0.12)',
+                        fill: true,
+                        tension: 0.25,
+                        pointBackgroundColor: pointBg,
+                        pointBorderColor: '#76b900',
+                        pointBorderWidth: 2,
+                        pointRadius: pointRadius,
+                        pointHoverRadius: 7,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    var loja = pontos[ctx.dataIndex] && pontos[ctx.dataIndex].loja;
+                                    var txt = 'R$ ' + ctx.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                                    if (loja) txt += ' · ' + loja;
+                                    if (pontos[ctx.dataIndex] && pontos[ctx.dataIndex].menor) txt += ' · menor preço';
+                                    return txt;
+                                }
                             }
                         }
-                    }
-                },
-                scales: {
-                    y: {
-                        grace: '10%',
-                        ticks: {
-                            color: '#888',
-                            callback: function (v) { return 'R$ ' + v.toLocaleString('pt-BR'); }
-                        },
-                        grid: { color: 'rgba(255,255,255,0.06)' }
                     },
-                    x: {
-                        ticks: { color: '#888' },
-                        grid: { display: false }
+                    scales: {
+                        y: {
+                            grace: '10%',
+                            ticks: {
+                                color: '#888',
+                                callback: function (v) { return 'R$ ' + v.toLocaleString('pt-BR'); }
+                            },
+                            grid: { color: 'rgba(255,255,255,0.06)' }
+                        },
+                        x: {
+                            ticks: { color: '#888' },
+                            grid: { display: false }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+
+        montar();
+
+        // ─── Filtro por loja (chips) ───
+        if (temFiltro) {
+            var chips = document.querySelectorAll('.ph-filtro');
+            var lista = document.getElementById('priceHistoryList');
+            chips.forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    chips.forEach(function (c) { c.classList.remove('is-ativo'); });
+                    chip.classList.add('is-ativo');
+                    filtroAtual = chip.getAttribute('data-loja') || '';
+                    montar();
+                    if (lista) {
+                        lista.querySelectorAll('.price-history-row').forEach(function (row) {
+                            row.style.display = (filtroAtual && row.getAttribute('data-loja') !== filtroAtual)
+                                ? 'none' : '';
+                        });
+                    }
+                });
+            });
+        }
     })();
 </script>
 {% endblock %}
