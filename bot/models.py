@@ -86,6 +86,7 @@ class Promo(models.Model):
         ('monitor', 'Monitor'),
         ('celular', 'Celular / Smartphone'),
         ('tablet', 'Tablet'),
+        ('relogio_inteligente', 'Relógio Inteligente'),
         ('tv', 'TV'),
         ('caixa_som', 'Caixa de Som / Soundbar'),
         ('headset', 'Fone / Headset'),

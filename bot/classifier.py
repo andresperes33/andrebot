@@ -419,7 +419,7 @@ def detectar_categoria(texto, titulo=None):
             r'smartband|rel[oó]gio\s*digital)\b',
             alvo_norm,
         ):
-            return 'outros'
+            return 'relogio_inteligente'
 
     # Notebook tem prioridade sobre GPU/SSD citados no título
     # ('RTX5060 Notebook ASUS TUF ... 512GB SSD' é um NOTEBOOK, não um SSD).
