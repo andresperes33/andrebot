@@ -225,10 +225,22 @@ def promos_view(request):
     if loja:
         promos = promos.filter(loja=loja)
 
-    # Busca por texto
-    q = request.GET.get('q', '')
+    # Busca por texto — multipalavra (AND), sem acento, e também na chave
+    # normalizada do produto (produto_chave) e no link.
+    q = request.GET.get('q', '').strip()
     if q:
-        promos = promos.filter(titulo__icontains=q) | Promo.objects.filter(texto_original__icontains=q)
+        from bot.classifier import sem_acento
+        tokens = [t for t in sem_acento(q).split() if t]
+        if tokens:
+            combinados = _db_models.Q()
+            for tok in tokens:
+                combinados &= (
+                    _db_models.Q(titulo__icontains=tok)
+                    | _db_models.Q(texto_original__icontains=tok)
+                    | _db_models.Q(produto_chave__icontains=tok)
+                    | _db_models.Q(link_afiliado__icontains=tok)
+                )
+            promos = promos.filter(combinados)
 
     promos = promos.order_by('-criado_em')
     total = promos.count()
