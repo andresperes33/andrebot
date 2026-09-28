@@ -120,16 +120,34 @@ def promo_detail_view(request, pk, slug=None):
     # mesma oferta é repostada (dedup desligado).
     historico = []
     chart_data = []
+    preco_minimo = None
+    preco_minimo_data = None
 
     def _normalizar_preco(p):
-        # 'R$ 335,00' -> 335.00 ; 'R$335' -> 335.0
-        m = re.search(r'R\$\s*(\d[\d.,]*)', p or '')
+        # Aceita formato BR ('R$ 1.999,99', 'R$ 999,00') e EN ('R$ 999.90',
+        # 'R$ 1,999.90'). Heurística: o ÚLTIMO separador é o decimal.
+        m = re.search(r'R\$\s*([\d.,]+)', p or '')
         if not m:
             return None
-        v = m.group(1).replace('.', '').replace(',', '.')
+        s = m.group(1)
         try:
-            return round(float(v), 2)
-        except ValueError:
+            if ',' in s and '.' in s:
+                if s.rfind(',') > s.rfind('.'):
+                    v = float(s.replace('.', '').replace(',', '.'))   # 1.999,99
+                else:
+                    v = float(s.replace(',', ''))                      # 1,999.90
+            elif ',' in s:
+                v = float(s.replace('.', '').replace(',', '.'))        # 999,00
+            else:
+                partes = s.split('.')
+                if len(partes) == 2 and len(partes[1]) == 2:
+                    v = float(s)                                       # 999.90
+                elif len(partes) > 1 and len(partes[-1]) == 3:
+                    v = float(s.replace('.', ''))                      # 1.999 (milhar)
+                else:
+                    v = float(s)
+            return round(v, 2)
+        except (ValueError, TypeError):
             return None
 
     if promo.produto_chave:
@@ -152,15 +170,17 @@ def promo_detail_view(request, pk, slug=None):
                 'link_afiliado': promo.link_afiliado, 'titulo': promo.titulo,
             })
 
-        # Agrupa por valor numérico; mantém a entrada mais recente.
+        # Agrupa por valor em REAIS INTEIROS (ignora centavos, como a regra
+        # do bot); mantém a entrada mais recente de cada valor.
         por_valor = {}
         for item in linhas:
             v = _normalizar_preco(item['preco'])
             if v is None:
                 continue
+            chave_int = int(v)
             # Como linhas está ordenada asc por data, sobrescrever faz a
             # entrada mais recente de cada valor vencer.
-            por_valor[v] = item
+            por_valor[chave_int] = item
 
         # Ordena pela data da ocorrência mais recente de cada valor.
         for item in sorted(por_valor.values(), key=lambda it: it['criado_em']):
@@ -171,11 +191,25 @@ def promo_detail_view(request, pk, slug=None):
                 'valor': _normalizar_preco(item['preco']),
             })
 
+        # Menor preço do período (para o resumo em destaque)
+        if historico:
+            precos = [_normalizar_preco(i['preco']) for i in historico]
+            precos = [p for p in precos if p is not None]
+            if precos:
+                menor = min(precos)
+                preco_minimo = menor
+                for item in historico:
+                    if _normalizar_preco(item['preco']) == menor:
+                        preco_minimo_data = item['criado_em']
+                        break
+
     return render(request, 'bot/promo_detail.html', {
         'promo': promo,
         'recentes': recentes,
         'historico': historico,
         'chart_data': chart_data,
+        'preco_minimo': preco_minimo,
+        'preco_minimo_data': preco_minimo_data,
         'rodape_canais': _RODAPE_CANAIS_HTML,
         'dicas_categoria': _CATEGORIA_DICAS.get(promo.categoria, _CATEGORIA_DICAS.get('outros', '')),
     })

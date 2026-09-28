@@ -1354,6 +1354,34 @@ body.menu-open { overflow: hidden; }
 }
 /* Histórico de preços */
 .price-history { margin-top: 14px; }
+.price-history-resumo {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    background: rgba(118, 185, 0, 0.08);
+    border: 1px solid rgba(118, 185, 0, 0.35);
+    border-radius: 8px;
+}
+.price-history-resumo .ph-resumo-tag {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--mute);
+}
+.price-history-resumo .ph-resumo-valor {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--primary);
+    font-family: var(--font-promo);
+}
+.price-history-resumo .ph-resumo-data {
+    font-size: 12px;
+    color: var(--mute);
+}
 .price-history-chart-wrap {
     position: relative;
     width: 100%;

@@ -94,6 +94,13 @@
         {% if historico %}
         <div class="card">
             <div class="detail-label"><i class="fas fa-chart-line" style="color:var(--primary);"></i> Histórico de preços</div>
+            {% if preco_minimo %}
+            <div class="price-history-resumo">
+                <span class="ph-resumo-tag">Menor preço do período</span>
+                <span class="ph-resumo-valor">{{ preco_minimo|preco_completo }}</span>
+                {% if preco_minimo_data %}<span class="ph-resumo-data">{{ preco_minimo_data|date:"d/m/y" }}</span>{% endif %}
+            </div>
+            {% endif %}
             <div class="price-history">
                 <div class="price-history-chart-wrap">
                     <canvas id="priceChart" aria-label="Evolução do preço"></canvas>
@@ -199,8 +206,14 @@
             return;
         }
 
+        // Mostra o ano no eixo X só quando o histórico atravessa mais de um ano.
+        var anos = pontos.map(function (p) { return new Date(p.data).getFullYear(); });
+        var cruzaAno = anos.some(function (a, i) { return anos.indexOf(a) !== i; });
+        var fmt = cruzaAno
+            ? { day: '2-digit', month: '2-digit', year: '2-digit' }
+            : { day: '2-digit', month: '2-digit' };
         var labels = pontos.map(function (p) {
-            return new Date(p.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            return new Date(p.data).toLocaleDateString('pt-BR', fmt);
         });
 
         new Chart(el, {
