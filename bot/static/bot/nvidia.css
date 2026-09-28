@@ -190,17 +190,26 @@ button, input { font-family: inherit; }
 .nav-search-form:focus-within { border-color: var(--primary); background: #1c1c1c; }
 .nav-search-form i { color: var(--primary); font-size: 15px; flex-shrink: 0; }
 .nav-search-form .nav-search-btn {
-    background: none;
+    background: var(--primary);
     border: none;
-    padding: 0;
-    margin: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    color: var(--on-primary);
+    transition: background .2s, transform .2s, box-shadow .2s;
 }
-.nav-search-form .nav-search-btn i { color: var(--primary); font-size: 15px; }
-.nav-search-form .nav-search-btn:hover i { color: var(--primary-dark); }
+.nav-search-form .nav-search-btn i { color: var(--on-primary); font-size: 14px; }
+.nav-search-form .nav-search-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.06);
+    box-shadow: 0 0 0 4px rgba(118, 185, 0, 0.18);
+}
+.nav-search-form .nav-search-btn:active { transform: scale(0.96); }
 .nav-search-form input {
     flex: 1;
     min-width: 0;
