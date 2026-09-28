@@ -1144,6 +1144,21 @@ def promo_repetida_recente(texto, janela_minutos=1440):
             for p in precos:
                 if _preco_reais(p) == preco_int:
                     return True
+
+        # 3) Mesmo produto (produto_chave normalizado) + mesmo preço.
+        # Cobre variações de emoji/acento/formato no título que a regra 2
+        # pode deixar passar (ex.: mesma oferta repostada com emoji diferente).
+        try:
+            pchave = _chave_produto(titulo) if titulo else ''
+        except Exception:
+            pchave = ''
+        if pchave:
+            precos2 = Promo.objects.filter(
+                produto_chave=pchave, criado_em__gte=limite
+            ).values_list('preco', flat=True)
+            for p in precos2:
+                if _preco_reais(p) == preco_int:
+                    return True
         return False
     except Exception as db_err:
         logger = logging.getLogger(__name__)
