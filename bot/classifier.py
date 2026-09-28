@@ -404,6 +404,23 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\bmonitor\b', alvo_norm):
             return 'monitor'
 
+    # Smartwatch/relógio inteligente tem prioridade sobre notebook — 'Amazfit
+    # Bip 5 ... Relógio inteligente ... tela de 1,91 polegadas' é um RELÓGIO,
+    # não um notebook (a 'tela ... polegadas' é a tela do relógio).
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if not alvo_norm:
+            continue
+        if re.search(
+            r'\b(?:rel[oó]gio\s*inteligente|smart\s*watch|smartwatch|'
+            r'apple\s*watch|galaxy\s*watch|amazfit|fitness\s*band|'
+            r'smartband|rel[oó]gio\s*digital)\b',
+            alvo_norm,
+        ):
+            return 'outros'
+
     # Notebook tem prioridade sobre GPU/SSD citados no título
     # ('RTX5060 Notebook ASUS TUF ... 512GB SSD' é um NOTEBOOK, não um SSD).
     # 'notebook' de compatibilidade ('para notebook') NÃO conta aqui.
