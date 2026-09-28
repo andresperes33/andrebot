@@ -94,10 +94,10 @@
         {% if historico %}
         <div class="card">
             <div class="detail-label"><i class="fas fa-chart-line" style="color:var(--primary);"></i> Histórico de preços</div>
-            {% if preco_minimo %}
+            {% if preco_minimo_str %}
             <div class="price-history-resumo">
                 <span class="ph-resumo-tag">Menor preço do período</span>
-                <span class="ph-resumo-valor">{{ preco_minimo|preco_completo }}</span>
+                <span class="ph-resumo-valor">{{ preco_minimo_str }}</span>
                 {% if preco_minimo_data %}<span class="ph-resumo-data">{{ preco_minimo_data|date:"d/m/y" }}</span>{% endif %}
             </div>
             {% endif %}

@@ -203,12 +203,18 @@ def promo_detail_view(request, pk, slug=None):
                         preco_minimo_data = item['criado_em']
                         break
 
+    # Formata o menor preço como 'R$ 1.999,00' (o filtro preco_completo é só p/ strings)
+    preco_minimo_str = ''
+    if preco_minimo is not None:
+        preco_minimo_str = f"R$ {preco_minimo:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+
     return render(request, 'bot/promo_detail.html', {
         'promo': promo,
         'recentes': recentes,
         'historico': historico,
         'chart_data': chart_data,
         'preco_minimo': preco_minimo,
+        'preco_minimo_str': preco_minimo_str,
         'preco_minimo_data': preco_minimo_data,
         'rodape_canais': _RODAPE_CANAIS_HTML,
         'dicas_categoria': _CATEGORIA_DICAS.get(promo.categoria, _CATEGORIA_DICAS.get('outros', '')),
