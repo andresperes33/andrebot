@@ -873,6 +873,10 @@ _TERMOS_PRODUTO = [
     'starlink', 'soprador',
     'cambio', 'câmbio', 'shifter', 'logitech', 'driving force', 'sim racing',
     'volante', 'pedaleira', 'racing wheel', 'simulator', 'simulador',
+    'parafusadeira', 'motosserra', 'furadeira', 'esmerilhadeira', 'lixadeira',
+    'serra', 'tupia', 'nakasaki', 'makita', 'dewalt', 'bosch', 'skil',
+    'ferramenta', 'ferramentas', 'broca', 'chave de fenda', 'chave de impacto',
+    'soprador', 'roçadeira', 'roçadeira', 'grampeador', 'pistola', 'maquita',
 ]
 
 
