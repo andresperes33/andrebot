@@ -159,6 +159,9 @@ def promo_detail_view(request, pk, slug=None):
         linhas = list(
             Promo.objects
             .filter(produto_chave=promo.produto_chave)
+            # Mesma categoria: não mistura jogo/cartão/acessório no histórico
+            # do console (ex.: 'Jogo PS5' não entra no histórico do PS5 console).
+            .filter(categoria=promo.categoria)
             .exclude(preco='')
             .order_by('criado_em')
             .values('preco', 'criado_em', 'pk', 'loja', 'link_afiliado', 'titulo')
