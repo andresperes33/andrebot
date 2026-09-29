@@ -966,6 +966,8 @@ _TERMOS_PRODUTO = [
     'serra', 'tupia', 'nakasaki', 'makita', 'dewalt', 'bosch', 'skil',
     'ferramenta', 'ferramentas', 'broca', 'chave de fenda', 'chave de impacto',
     'soprador', 'roçadeira', 'roçadeira', 'grampeador', 'pistola', 'maquita',
+    'camera', 'câmera', 'cameras', 'câmeras', 'seguranca', 'segurança', 'cftv',
+    'icsee', 'ip camera', 'video monitoramento', 'monitoramento', 'dvr', 'nvr',
 ]
 
 
