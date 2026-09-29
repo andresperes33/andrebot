@@ -540,6 +540,40 @@ def _tamanho_polegadas(texto_norm):
     return ''
 
 
+def _tipo_produto(texto_norm):
+    """Identifica o TIPO do produto (console/headset/controle/jogo/...), para o
+    histórico não misturar itens diferentes que compartilham o mesmo modelo.
+    Ex.: 'PlayStation 5' console ≠ 'Headset PlayStation 5' ≠ 'Controle PS5'."""
+    if not texto_norm:
+        return ''
+    t = texto_norm
+    # Acessórios de áudio
+    if re.search(r'\b(?:headset|headphone|fone|fones|auricular|earbuds|pulse\s*(?:elite|3d)|tws)\b', t):
+        return 'headset'
+    if re.search(r'\b(?:controle|controlador|dualsense|gamepad|joystick|joypad)\b', t):
+        return 'controle'
+    if re.search(r'\b(?:teclado|keyboard)\b', t):
+        return 'teclado'
+    if re.search(r'\bmouse\s*pad\b|\bmousepad\b', t):
+        return 'mousepad'
+    if re.search(r'\b(?:mouse|mice)\b', t):
+        return 'mouse'
+    if re.search(r'\b(?:monitor|ultrawide|display)\b', t):
+        return 'monitor'
+    if re.search(r'\b(?:ssd|nvme|hdd|m\.2|hard\s*disk)\b', t):
+        return 'ssd'
+    if re.search(r'\b(?:processador|cpu|ryzen|xeon|intel\s*core)\b', t):
+        return 'processador'
+    if re.search(r'\b(?:jogo|jogos|game|midia\s*fisica|blu-?ray)\b', t):
+        return 'jogo'
+    # 'playstation 5' vira 'ps5' pelo alias ANTES desta função; por isso inclui
+    # 'ps5'/'ps4' aqui (console). Acessórios (headset/controle/jogo) já
+    # retornaram acima.
+    if re.search(r'\b(?:console|videogame|playstation|xbox|nintendo|switch|handheld|ps[1-5])\b', t):
+        return 'console'
+    return ''
+
+
 def _chave_produto(titulo):
     """Gera uma chave estável por NOME do produto (normalizado), para agrupar
     o mesmo item independente da loja/link.
@@ -637,17 +671,32 @@ def _chave_produto(titulo):
     # Tamanho (polegadas) de TV/monitor — separa tamanhos diferentes do mesmo
     # modelo (ex.: M75H 50" vs 65", monitor 24" vs 27").
     tamanho = _tamanho_polegadas(t)
+    # Tipo do produto — separa 'PlayStation 5' (console) de 'Headset PS5' /
+    # 'Controle PS5' / 'Jogo PS5' que compartilham o modelo 'ps5'.
+    tipo = _tipo_produto(t)
+
+    def _dedup(seq):
+        vistos = set()
+        out = []
+        for w in seq:
+            if w not in vistos:
+                vistos.add(w)
+                out.append(w)
+        return out
+
     if modelos:
         # Inclui a MARCA na chave: 'Asus B550M' ≠ 'Asrock B550M' (mesmo
         # chipset, marcas diferentes). Sem isso, o histórico mistura placas
         # de marcas diferentes que compartilham o modelo.
         marcas = [w for w in unicos if w in _MARCAS_HARDWARE]
-        chave = ' '.join(marcas + ([tamanho] if tamanho else []) + modelos)
+        chave = ' '.join(_dedup(
+            ([tipo] if tipo else []) + marcas + ([tamanho] if tamanho else []) + modelos
+        ))
     else:
         # Ordena os tokens para que a ordem das palavras não importe
         # ('mouse redragon invader' = 'redragon invader mouse').
-        unicos = ([tamanho] if tamanho else []) + unicos
-        chave = ' '.join(sorted(unicos))
+        base = _dedup(([tipo] if tipo else []) + ([tamanho] if tamanho else []) + unicos)
+        chave = ' '.join(sorted(base))
     chave = re.sub(r'\s+', ' ', chave).strip()
     return chave
 
