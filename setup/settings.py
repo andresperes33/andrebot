@@ -198,10 +198,6 @@ SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'Promoções Game
 # capturada do canal (evita marca d'água de outros canais). Fallback: foto capturada.
 IMAGEM_DA_PAGINA_PRODUTO = os.getenv('IMAGEM_DA_PAGINA_PRODUTO', 'True') == 'True'
 
-# Janela da trava anti-repetição (minutos). Dentro dela, a mesma oferta
-# (mesmo link/título e mesmo preço em reais, ignorando centavos) é ignorada.
-JANELA_REPETICAO_MINUTOS = int(os.getenv('JANELA_REPETICAO_MINUTOS', '1440'))
-
 # Canais extras monitorados além do principal. Cada item:
 #   {'nome': '<nome ou @username>', 'filtro': '<tipo>', 'remover_marca': bool}
 #   'filtro' opcional: 'aliexpress' = captura SÓ ofertas com link AliExpress.

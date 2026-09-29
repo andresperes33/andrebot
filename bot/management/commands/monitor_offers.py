@@ -216,15 +216,14 @@ class Command(BaseCommand):
 
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
-                # ─── Trava anti-repetição (janela de 24h por padrão) ───────
+                # ─── Trava anti-repetição (dia corrido, reseta à meia-noite) ────
                 # Se a MESMA oferta (mesmo link/título + mesmo preço em reais)
-                # já foi capturada na janela, ignora — o canal costuma repostar.
+                # já foi capturada HOJE, ignora. Trocou o dia, pode postar de novo.
                 try:
                     from bot.services import promo_repetida_recente
-                    janela = int(getattr(settings, 'JANELA_REPETICAO_MINUTOS', 1440))
-                    repetida = await asyncio.to_thread(promo_repetida_recente, msg_text, janela)
+                    repetida = await asyncio.to_thread(promo_repetida_recente, msg_text)
                     if repetida:
-                        logger.info(f"⏭️ Oferta já capturada nas últimas {janela // 60}h, ignorada.")
+                        logger.info("⏭️ Oferta já capturada hoje, ignorada.")
                         return True
                 except Exception as repetida_err:
                     logger.error(f"❌ Erro na trava anti-repetição: {repetida_err}")

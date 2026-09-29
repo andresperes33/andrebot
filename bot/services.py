@@ -1193,22 +1193,26 @@ def promo_ja_postada(texto):
 
 def promo_repetida_recente(texto, janela_minutos=1440):
     """
-    Verifica se uma promoção IGUAL já foi capturada recentemente dentro da
-    janela (padrão 24h). Considera IGUAL quando bate o link OU o título, e o
+    Verifica se uma promoção IGUAL já foi capturada NO MESMO DIA (calendário,
+    meia-noite de Brasília). Considera IGUAL quando bate o link OU o título, e o
     PREÇO em REAIS (ignorando centavos): 'R$ 877,00' e 'R$ 877,98' contam como
     o mesmo valor; 'R$ 877' e 'R$ 878' contam como diferentes.
-    Evita spam quando o canal da fonte publica a MESMA oferta repetida.
 
-    Retorna True se já existir uma promo igual criada dentro da janela
-    (deve ignorar a oferta).
+    A janela reseta TODA MEIA-NOITE: uma oferta postada às 23h pode ser
+    repostada às 00h05 do dia seguinte (trocou o dia, pode). No MESMO dia,
+    a mesma oferta é ignorada.
+
+    Retorna True se já existir uma promo igual criada hoje (deve ignorar).
     """
     from django.db import close_old_connections
-    from datetime import timedelta
     from django.utils import timezone
     close_old_connections()
     from bot.models import Promo
 
-    limite = timezone.now() - timedelta(minutes=janela_minutos)
+    # Início do dia de hoje no fuso do site (America/Sao_Paulo)
+    limite = timezone.localtime(timezone.now()).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     try:
         link = _normalizar_url(_primeiro_link_produto(texto))
         preco_int = _preco_reais(_preco_do_texto(texto))
