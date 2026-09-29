@@ -524,6 +524,22 @@ def _eh_codigo_modelo(w):
     return True
 
 
+def _tamanho_polegadas(texto_norm):
+    """Extrai o tamanho em polegadas de TVs/monitores (ex.: '65' em 'smart tv 65',
+    '50' em 'tv 50 polegadas', '27' em 'monitor 27'). Retorna '65' ou ''."""
+    if not texto_norm:
+        return ''
+    # 'tv 50 polegadas', 'monitor 27"', '24 pol', '32 polegadas'
+    m = re.search(r'\b(\d{2})\s*(?:["\'\u201d]?\s*(?:pol|polegadas?|polegada))\b', texto_norm)
+    if m:
+        return m.group(1)
+    # Tamanho logo após 'tv'/'monitor' sem a palavra polegadas (ex.: 'smart tv 65')
+    m2 = re.search(r'\b(?:tv|monitor)\b[^\d]*\b(\d{2})\b', texto_norm)
+    if m2:
+        return m2.group(1)
+    return ''
+
+
 def _chave_produto(titulo):
     """Gera uma chave estável por NOME do produto (normalizado), para agrupar
     o mesmo item independente da loja/link.
@@ -618,15 +634,19 @@ def _chave_produto(titulo):
     # e é isso que faz o histórico agrupar TVs/placas/processadores de lojas e
     # textos diferentes. Se houver código de modelo, ele sozinho é a chave.
     modelos = [w for w in unicos if _eh_codigo_modelo(w)]
+    # Tamanho (polegadas) de TV/monitor — separa tamanhos diferentes do mesmo
+    # modelo (ex.: M75H 50" vs 65", monitor 24" vs 27").
+    tamanho = _tamanho_polegadas(t)
     if modelos:
         # Inclui a MARCA na chave: 'Asus B550M' ≠ 'Asrock B550M' (mesmo
         # chipset, marcas diferentes). Sem isso, o histórico mistura placas
         # de marcas diferentes que compartilham o modelo.
         marcas = [w for w in unicos if w in _MARCAS_HARDWARE]
-        chave = ' '.join(marcas + modelos)
+        chave = ' '.join(marcas + ([tamanho] if tamanho else []) + modelos)
     else:
         # Ordena os tokens para que a ordem das palavras não importe
         # ('mouse redragon invader' = 'redragon invader mouse').
+        unicos = ([tamanho] if tamanho else []) + unicos
         chave = ' '.join(sorted(unicos))
     chave = re.sub(r'\s+', ' ', chave).strip()
     return chave
