@@ -448,6 +448,22 @@ _PREFIXOS_LOJA = {
     'submarino', 'pontofrio', 'ponto', 'cnc', 'seller', 'br',
 }
 
+# Marcas de hardware que IDENTIFICAM o produto (ex.: 'Asus B550M' é diferente
+# de 'Asrock B550M'). São mantidas na chave do produto para o histórico de
+# preços não misturar marcas diferentes que compartilham o mesmo chipset/modelo.
+_MARCAS_HARDWARE = {
+    'asus', 'asrock', 'gigabyte', 'msi', 'evga', 'galax', 'pny', 'zotac',
+    'palit', 'sapphire', 'xfx', 'powercolor', 'aorus', 'biostar', 'colorful',
+    'nvidia', 'geforce', 'amd', 'radeon', 'intel', 'xeon',
+    'corsair', 'kingston', 'crucial', 'kioxia', 'seagate', 'sandisk',
+    'adata', 'hiksemi', 'kootion', 'lexar', 'patriot', 'team',
+    'logitech', 'razer', 'redragon', 'hyperx', 'havit', 'jbl', 'edifier',
+    'deepcool', 'cooler master', 'noctua', 'lian li', 'nzxt', 'fractal',
+    'cougar', 'pcyes', 'gamemax', 'liketec', 'nakasaki', 'makita', 'dewalt',
+    'bosch', 'schneider', 'nubom', 'wisetech', 'aoc', 'lg', 'samsung',
+    'benq', 'dell', 'hp', 'lenovo', 'acer', 'positivo', 'avell', 'gigastone',
+}
+
 # Normalização de sinônimos comuns (chave -> termo canônico).
 # 'gta 6' e 'grand theft auto vi' viram a mesma base 'gta6'.
 _ALIASES = [
@@ -603,7 +619,11 @@ def _chave_produto(titulo):
     # textos diferentes. Se houver código de modelo, ele sozinho é a chave.
     modelos = [w for w in unicos if _eh_codigo_modelo(w)]
     if modelos:
-        chave = ' '.join(modelos)
+        # Inclui a MARCA na chave: 'Asus B550M' ≠ 'Asrock B550M' (mesmo
+        # chipset, marcas diferentes). Sem isso, o histórico mistura placas
+        # de marcas diferentes que compartilham o modelo.
+        marcas = [w for w in unicos if w in _MARCAS_HARDWARE]
+        chave = ' '.join(marcas + modelos)
     else:
         # Ordena os tokens para que a ordem das palavras não importe
         # ('mouse redragon invader' = 'redragon invader mouse').
