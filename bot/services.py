@@ -1570,7 +1570,7 @@ def get_product_info(url):
 # Links de loja que valem tentar baixar a imagem principal do produto
 _RE_LINK_LOJA = re.compile(
     r'(?:amazon\.com\.br|amzn\.to|link\.amazon|aoferta\.net|shopee\.com\.br|s\.shopee|'
-    r'mercadolivre|meli\.la|mlstatic|aliexpress\.com|s\.click\.ali|a\.aliexpress|'
+    r'mercadolivre|meli\.la|seuhardware|mlstatic|aliexpress\.com|s\.click\.ali|a\.aliexpress|'
     r'kabum\.com\.br|magazineluiza\.com\.br|magalu\.com|mgl\.io)',
     re.IGNORECASE,
 )
@@ -1604,9 +1604,15 @@ def _extrair_imagem_da_pagina(html, final_url=''):
             img = mm.group(1).strip()
             if 'favicon' in img.lower() or 'logo' in img.lower():
                 continue
-            # Mercado Livre: prefere a versão de alta resolução
-            if 'mlstatic' in img and '-O.' in img:
-                img = img.replace('-O.', '-F.')
+            # Mercado Livre: prefere a versão de alta resolução (-F). A página
+            # social usa sufixos -P/-O/-V (miniaturas); trocamos por -F.
+            if 'mlstatic' in img:
+                img = re.sub(
+                    r'-(?:P|O|V|D)\.(?=(?:webp|jpe?g|png)$)',
+                    '-F.',
+                    img,
+                    flags=re.IGNORECASE,
+                )
             # AliExpress: remove sufixo de tamanho (ex.: xxx_220x220.jpg)
             if 'alicdn' in img or 'aliexpress-media' in img:
                 img = re.sub(r'_\d+x\d+(?=\.\w+$)', '', img)
