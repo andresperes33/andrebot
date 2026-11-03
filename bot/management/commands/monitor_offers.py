@@ -366,9 +366,10 @@ class Command(BaseCommand):
 
                     if is_seuhardware:
                         # Canal Iskandar (seuhardware.com/s/...): o link faz
-                        # redirect HTTP (301/302) para a página social do
-                        # Mercado Livre. Seguimos o redirect e convertemos o
-                        # produto encontrado para o NOSSO link de afiliado.
+                        # redirect HTTP (301/302) para a loja de destino
+                        # (Mercado Livre, Amazon, Shopee, AliExpress, etc.).
+                        # Seguimos o redirect e convertemos para o NOSSO link
+                        # de afiliado da loja encontrada.
                         try:
                             resp_seu = requests.get(
                                 link,
@@ -377,9 +378,11 @@ class Command(BaseCommand):
                                 headers={"User-Agent": "Mozilla/5.0"},
                             )
                             real_url = resp_seu.url or ''
-                            if 'mercadolivre' in real_url or 'mercadolibre' in real_url:
+                            if real_url and real_url != link:
                                 converted = convert_to_affiliate_link(real_url)
                                 if converted:
+                                    if 'aliexpress' in real_url:
+                                        has_ali = True
                                     modified_text = modified_text.replace(link, converted)
                                     modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
                                     converted_any = True
