@@ -2393,6 +2393,14 @@ def strip_promo_footer(text):
         '',
         cleaned_text,
     )
+    # Remove recomendação de admin (ex.: '- adm Sophie usa e recomenda',
+    # '👑 ADM usa e recomenda') — não deve ser repassada.
+    cleaned_text = re.sub(
+        r'(?im)^\s*(?:[-–—•*]|💡|📌|👉|✅|👑)?\s*adm(?:in|inistrador(?:a)?)?\b[^\n]*'
+        r'\b(?:usa|recomenda)\b[^\n]*$',
+        '',
+        cleaned_text,
+    )
     # AliExpress/canais: remove linhas de divulgação de BOTS (ex.: '💰 Bot de
     # Moedas: https://cutt.ly/...', '⭐ Bot de descontos AliExpress: ...').
     cleaned_text = re.sub(r'(?im)^[^\n]*\bbot\s+de\s+(?:moedas?|descontos?|desconto)\b[^\n]*$', '', cleaned_text)
