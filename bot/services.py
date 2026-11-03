@@ -2386,6 +2386,13 @@ def strip_promo_footer(text):
     )
     # Remove a marca '(anuncio)'/'(anúncio)' isolada
     cleaned_text = re.sub(r'(?im)^\s*\(\s*an[uú]ncio\s*\)\s*$', '', cleaned_text)
+    # Remove "dica" de terceiros (ex.: '- Dica do Paulo', 'Dica da Camila',
+    # '💡 Dica de alguém') — não deve ser repassada.
+    cleaned_text = re.sub(
+        r'(?im)^\s*(?:[-–—•*]|💡|📌|👉|✅)?\s*dica\s+(?:do|da|de)\b[^\n]*$',
+        '',
+        cleaned_text,
+    )
     # AliExpress/canais: remove linhas de divulgação de BOTS (ex.: '💰 Bot de
     # Moedas: https://cutt.ly/...', '⭐ Bot de descontos AliExpress: ...').
     cleaned_text = re.sub(r'(?im)^[^\n]*\bbot\s+de\s+(?:moedas?|descontos?|desconto)\b[^\n]*$', '', cleaned_text)
