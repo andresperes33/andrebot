@@ -484,11 +484,19 @@ class Command(BaseCommand):
                     except Exception as img_err:
                         logger.warning(f"⚠️ Falha ao baixar imagem do produto: {img_err}")
 
-                # 2) Fallback: usa a foto capturada do canal (sem corte)
+                # 2) Fallback: usa a foto capturada do canal. Como é a foto do
+                # próprio canal (com rodapé/crédito dele), corta 100px da base.
+                # Se a imagem original do produto foi obtida acima, NÃO corta.
                 if not photo_path and message.photo:
                     photo_path = await message.download_media(file=temp_dir)
                     if photo_path:
                         photo_path = os.path.abspath(photo_path)
+                        try:
+                            from bot.services import cortar_rodape_imagem
+                            photo_path = await asyncio.to_thread(cortar_rodape_imagem, photo_path, 100)
+                            logger.info("✂️ Rodapé da foto do canal cortado (100px).")
+                        except Exception as crop_err:
+                            logger.warning(f"⚠️ Falha ao cortar rodapé da foto do canal: {crop_err}")
                         logger.info(f"📸 Foto capturada baixada: {photo_path}")
 
                 # Marca d'água 'Andre Indica' no canto inferior esquerdo
