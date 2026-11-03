@@ -305,7 +305,7 @@ def _link_produto_compra(texto):
 # '[^\s<>"\']*?' (zero ou mais) permite marcas logo após '://' (ex.: amzn.to).
 _RE_LINKS_LOJA = re.compile(
     r'https?://[^\s<>"\']*?(?:amazon|amzn\.to|link\.amazon|aoferta|shopee|'
-    r'mercadolivre|mercadolibre|meli\.la|aliexpress|s\.click\.ali|kabum|'
+    r'mercadolivre|mercadolibre|meli\.la|seuhardware|aliexpress|s\.click\.ali|kabum|'
     r'magazineluiza|magalu|mgl\.io|pichau|terabyte|americanas|casasbahia|'
     r'pontofrio|submarino|cnc|fastshop|walmart|renner|extra)[^\s<>"\']*',
     re.IGNORECASE,
@@ -348,6 +348,7 @@ def _nome_loja_por_url(url):
         ('shopee', 'Shopee'), ('s.shopee', 'Shopee'),
         ('mercadolivre', 'Mercado Livre'), ('mercadolibre', 'Mercado Livre'),
         ('meli.la', 'Mercado Livre'), ('mlstatic', 'Mercado Livre'),
+        ('seuhardware', 'Mercado Livre'),
         ('aliexpress', 'AliExpress'), ('s.click.ali', 'AliExpress'),
         ('kabum', 'KaBuM'), ('tidd.ly', 'KaBuM'), ('awin1.com', 'Awin'),
         ('magazineluiza', 'Magazine Luíza'), ('magalu', 'Magazine Luíza'), ('mgl.io', 'Magazine Luíza'),

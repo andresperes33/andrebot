@@ -304,6 +304,7 @@ class Command(BaseCommand):
                     is_kabum = 'kabum.com.br' in link
                     is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link
                     is_pcdofafa = 'pcdofafa.com.br' in link
+                    is_seuhardware = 'seuhardware.com' in link
 
                     if is_telegram or is_tecnan:
                         modified_text = modified_text.replace(link, '') # Remove links de outros telegrams
@@ -363,6 +364,31 @@ class Command(BaseCommand):
                         # Se falhou, não conta como convertido (vai sair no 'nenhum link')
                         continue
 
+                    if is_seuhardware:
+                        # Canal Iskandar (seuhardware.com/s/...): o link faz
+                        # redirect HTTP (301/302) para a página social do
+                        # Mercado Livre. Seguimos o redirect e convertemos o
+                        # produto encontrado para o NOSSO link de afiliado.
+                        try:
+                            resp_seu = requests.get(
+                                link,
+                                allow_redirects=True,
+                                timeout=12,
+                                headers={"User-Agent": "Mozilla/5.0"},
+                            )
+                            real_url = resp_seu.url or ''
+                            if 'mercadolivre' in real_url or 'mercadolibre' in real_url:
+                                converted = convert_to_affiliate_link(real_url)
+                                if converted:
+                                    modified_text = modified_text.replace(link, converted)
+                                    modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
+                                    converted_any = True
+                                    continue
+                        except Exception as seu_err:
+                            logger.warning(f"⚠️ seuhardware expand erro: {seu_err}")
+                        # Se falhou, não conta como convertido (vai sair no 'nenhum link')
+                        continue
+
                     if canal_filtro == 'aliexpress':
                         # Canal configurado para capturar SÓ AliExpress: remove
                         # qualquer outro link de loja e mantém apenas os da Ali.
@@ -373,7 +399,7 @@ class Command(BaseCommand):
                                 modified_text = modified_text.replace(link, converted)
                                 modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
                                 converted_any = True
-                        elif is_amazon or is_shopee or is_ml or is_kabum or is_magalu or is_awin or is_pcdofafa:
+                        elif is_amazon or is_shopee or is_ml or is_kabum or is_magalu or is_awin or is_pcdofafa or is_seuhardware:
                             modified_text = modified_text.replace(link, '')
                             modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
                         continue
