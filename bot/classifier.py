@@ -240,6 +240,16 @@ def detectar_categoria(texto, titulo=None):
     # 'compatível com laptop/notebook' não é confundido com o produto.
     haystack = _norm(_limpar_compat(texto))
 
+    # Título que COMEÇA por 'cupom'/'novo cupom' (ex.: 'Novo Cupom Mercado
+    # Livre', 'Cupom Shopee') é anúncio de cupom — mesmo que o corpo tenha
+    # alguma linha com termo de produto (ex.: 'Com Cartão de Crédito',
+    # 'SSD' citado num cupom). Isso evita cair em 'outros'/categoria errada.
+    if titulo and re.match(
+        r'^\s*(?:novo|novos|nova|novas)?\s*(?:cupom|cupons|cupoms)\b',
+        _norm(_limpar_compat(titulo)),
+    ):
+        return 'cupom'
+
     # Sem produto identificado, a postagem NÃO vira cupom automaticamente:
     # cai para 'outros' (a menção a 'cupom' no texto não caracteriza a
     # postagem como cupom — só um produto real define a categoria).
