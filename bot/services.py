@@ -2195,72 +2195,85 @@ def convert_aliexpress_link(url, base_on_clean_url=False):
         return None
 
 
-def send_whatsapp_message(text, image_path=None):
-    """
-    Envia mensagem para o WhatsApp via Evolution API v2.
-    Formato correto: JSON com base64 no campo 'media' (sem wrapper 'mediaMessage').
-    """
+def _waha_base_url():
+    url_base = (getattr(settings, 'WAHA_URL', '') or '').strip().rstrip('/')
+    if not url_base:
+        return ''
+    if not url_base.endswith('/api'):
+        url_base += '/api'
+    return url_base
+
+
+def _waha_chat_id(value):
+    value = (value or '').strip()
+    if not value:
+        return ''
+    if '@' in value:
+        return value
+    digitos = re.sub(r'\D', '', value)
+    if not digitos:
+        return ''
+    return f"{digitos}@c.us"
+
+
+def _waha_send(chat_id, text, image_path=None):
     import os
     import base64
 
-    url_base = getattr(settings, 'EVOLUTION_API_URL', '').strip('/')
-    instance = getattr(settings, 'EVOLUTION_API_INSTANCE', '')
-    token = getattr(settings, 'EVOLUTION_API_TOKEN', '')
-    jid = getattr(settings, 'WHATSAPP_GROUP_JID', '')
-
-    if not all([url_base, instance, token, jid]) or jid == 'seu_jid_do_grupo_aqui@g.us':
-        print("WhatsApp: Credenciais ou JID não configurados.")
+    url_base = _waha_base_url()
+    if not url_base:
+        print("WhatsApp (WAHA): WAHA_URL não configurado.")
+        return False
+    if not chat_id:
+        print("WhatsApp (WAHA): destino não configurado.")
         return False
 
-    headers = {
-        "apikey": token,
-        "Content-Type": "application/json"
-    }
+    session = getattr(settings, 'WAHA_SESSION', '') or 'default'
+    api_key = getattr(settings, 'WAHA_API_KEY', '')
+
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["X-Api-Key"] = api_key
+
+    payload = {"session": session, "chatId": chat_id}
 
     try:
-        if image_path and os.path.exists(image_path):
-            # Evolution Go: envia imagem em base64 no campo 'url' (v0.7.0+)
-            endpoint = f"{url_base}/send/media"
+        if image_path and isinstance(image_path, str) and image_path.startswith('http'):
+            payload["caption"] = text
+            payload["file"] = {
+                "mimetype": "image/jpeg",
+                "filename": "promo.jpg",
+                "url": image_path,
+            }
+            endpoint = f"{url_base}/sendImage"
+        elif image_path and os.path.exists(image_path):
             with open(image_path, "rb") as img_file:
                 b64 = base64.b64encode(img_file.read()).decode('utf-8')
-
-            payload = {
-                "number": jid,
-                "caption": text,
-                "type": "image",
+            payload["caption"] = text
+            payload["file"] = {
                 "mimetype": "image/jpeg",
-                "url": b64
+                "filename": os.path.basename(image_path),
+                "data": b64,
             }
-            response = requests.post(endpoint, headers=headers, json=payload, timeout=40)
-            print(f"WhatsApp (imagem) Status: {response.status_code} - {response.text[:200]}")
-
-        elif image_path and image_path.startswith('http'):
-            # Envio via URL pública
-            endpoint = f"{url_base}/send/media"
-            payload = {
-                "number": jid,
-                "caption": text,
-                "type": "image",
-                "mimetype": "image/jpeg",
-                "url": image_path
-            }
-            response = requests.post(endpoint, headers=headers, json=payload, timeout=30)
-            print(f"WhatsApp (url) Status: {response.status_code} - {response.text[:200]}")
-
+            endpoint = f"{url_base}/sendImage"
         else:
-            # Apenas texto
-            endpoint = f"{url_base}/send/text"
-            payload = {
-                "number": jid,
-                "text": text
-            }
-            response = requests.post(endpoint, headers=headers, json=payload, timeout=30)
-            print(f"WhatsApp (texto) Status: {response.status_code}")
+            payload["text"] = text
+            endpoint = f"{url_base}/sendText"
 
-        return response.status_code in [200, 201]
+        response = requests.post(endpoint, headers=headers, json=payload, timeout=40)
+        print(f"WhatsApp (WAHA {endpoint.rsplit('/', 1)[-1]}) Status: {response.status_code} - {response.text[:200]}")
+        return 200 <= response.status_code < 300
     except Exception as e:
-        print(f"Erro crítico no WhatsApp: {e}")
+        print(f"Erro crítico no WhatsApp (WAHA): {e}")
         return False
+
+
+def send_whatsapp_message(text, image_path=None):
+    """
+    Envia mensagem para o grupo do WhatsApp via WAHA.
+    """
+    jid = _waha_chat_id(getattr(settings, 'WHATSAPP_GROUP_JID', ''))
+    return _waha_send(jid, text, image_path)
 
 
 def normalizar_whatsapp(numero):
@@ -2279,73 +2292,17 @@ def normalizar_whatsapp(numero):
 
 def send_whatsapp_to_user(numero, text, image_path=None):
     """
-    Envia mensagem de WhatsApp para um NÚMERO específico (conta individual),
-    via Evolution API. Difere do send_whatsapp_message (que envia para o grupo).
+    Envia mensagem de WhatsApp para um NÚMERO específico via WAHA.
+    Difere do send_whatsapp_message (que envia para o grupo).
     """
-    import os
-    import base64
-
-    url_base = getattr(settings, 'EVOLUTION_API_URL', '').strip('/')
-    instance = getattr(settings, 'EVOLUTION_API_INSTANCE', '')
-    token = getattr(settings, 'EVOLUTION_API_TOKEN', '')
-
-    if not all([url_base, instance, token]):
-        print("WhatsApp: credenciais não configuradas.")
-        return False
-
-    number = normalizar_whatsapp(numero)
-    if not number:
+    if isinstance(numero, str) and '@' in numero:
+        chat_id = _waha_chat_id(numero)
+    else:
+        chat_id = _waha_chat_id(normalizar_whatsapp(numero))
+    if not chat_id:
         print("WhatsApp: número inválido.")
         return False
-
-    headers = {
-        "apikey": token,
-        "Content-Type": "application/json"
-    }
-
-    try:
-        if image_path and (isinstance(image_path, str) and image_path.startswith('http')):
-            # Envio via URL pública da imagem
-            endpoint = f"{url_base}/send/media"
-            payload = {
-                "number": number,
-                "caption": text,
-                "type": "image",
-                "mimetype": "image/jpeg",
-                "url": image_path
-            }
-            response = requests.post(endpoint, headers=headers, json=payload, timeout=40)
-            print(f"WhatsApp usuário {number} (url) Status: {response.status_code} - {response.text[:120]}")
-            return response.status_code in [200, 201]
-
-        if image_path and os.path.exists(image_path):
-            # Envio via base64 (arquivo local)
-            endpoint = f"{url_base}/send/media"
-            with open(image_path, "rb") as img_file:
-                b64 = base64.b64encode(img_file.read()).decode('utf-8')
-            payload = {
-                "number": number,
-                "caption": text,
-                "type": "image",
-                "mimetype": "image/jpeg",
-                "url": b64
-            }
-            response = requests.post(endpoint, headers=headers, json=payload, timeout=40)
-            print(f"WhatsApp usuário {number} (imagem) Status: {response.status_code} - {response.text[:120]}")
-            return response.status_code in [200, 201]
-
-        # Apenas texto
-        endpoint = f"{url_base}/send/text"
-        payload = {
-            "number": number,
-            "text": text
-        }
-        response = requests.post(endpoint, headers=headers, json=payload, timeout=30)
-        print(f"WhatsApp usuário {number} Status: {response.status_code} - {response.text[:120]}")
-        return response.status_code in [200, 201]
-    except Exception as e:
-        print(f"Erro ao enviar WhatsApp individual: {e}")
-        return False
+    return _waha_send(chat_id, text, image_path)
 
 
 def extract_links(text):

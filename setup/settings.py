@@ -192,7 +192,7 @@ MERCADO_LIVRE_COOKIE = os.getenv('MERCADO_LIVRE_COOKIE')
 TELEGRAM_API_ID = os.getenv('TELEGRAM_API_ID')
 TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH')
 TELEGRAM_STRING_SESSION = os.getenv('TELEGRAM_STRING_SESSION')
-SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'Promoções Gamer')
+SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'Iskandar Souza - Promoções')
 
 # Usa a imagem principal da PÁGINA do produto (link da oferta) em vez da foto
 # capturada do canal (evita marca d'água de outros canais). Fallback: foto capturada.
@@ -220,10 +220,10 @@ EXTRA_SOURCE_CHANNELS = _parse_extra_channels()
 PERSONAL_CHANNEL_LINK = os.getenv('PERSONAL_CHANNEL_LINK', 'https://t.me/andreindica33')
 PERSONAL_CHANNEL_NAME = os.getenv('PERSONAL_CHANNEL_NAME', 'andreindicatech')
 
-# Evolution API (WhatsApp) Settings
-EVOLUTION_API_URL = os.getenv('EVOLUTION_API_URL') or ''
-EVOLUTION_API_INSTANCE = os.getenv('EVOLUTION_API_INSTANCE') or ''
-EVOLUTION_API_TOKEN = os.getenv('EVOLUTION_API_TOKEN') or ''
+# WAHA (WhatsApp HTTP API) Settings
+WAHA_URL = os.getenv('WAHA_URL') or ''
+WAHA_API_KEY = os.getenv('WAHA_API_KEY') or ''
+WAHA_SESSION = os.getenv('WAHA_SESSION') or 'default'
 WHATSAPP_GROUP_JID = os.getenv('WHATSAPP_GROUP_JID') or ''
 
 # Instagram Stories Settings
