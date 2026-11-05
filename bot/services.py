@@ -1044,7 +1044,7 @@ def _linha_titulo(texto):
     cupom_candidata = None
 
     for linha in texto.split('\n'):
-        limpa = re.sub(r'[^\w\s.,!?-]', '', linha).strip()
+        limpa = re.sub(r'[^\w\s.,!?/-]', '', linha).strip()
         baixa = limpa.casefold()
         if not limpa or len(limpa) <= 5:
             continue
@@ -1060,7 +1060,8 @@ def _linha_titulo(texto):
         # Mas modelos de produto (ex.: 'iPhone 15/16', 'Galaxy S24/25') NÃO são datas.
         _eh_produto_modelo = re.search(
             r'\b(?:iphone|ipad|galaxy|celular|phone|samsung|xiaomi|realme|poco|motorola|'
-            r'notebook|monitor|mouse|teclado|headset|fone|gpu|rtx|ssd|placa)\b', baixa
+            r'notebook|monitor|mouse|teclado|headset|fone|gpu|rtx|ssd|placa|'
+            r'ryzen|processador|cpu|intel|athlon|xeon|threadripper|ddr)\b', baixa
         )
         if not _eh_produto_modelo and (
             re.search(r'\b\d{1,2}[/:][0-9]{1,2}\b', linha) or
