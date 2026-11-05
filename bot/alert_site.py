@@ -26,7 +26,7 @@ def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None):
     if not alertas.exists():
         return
 
-    site_link = getattr(settings, 'SITE_URL', 'https://promos.andreindicatech.com.br')
+    site_link = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
 
     for alerta in alertas:
         try:
