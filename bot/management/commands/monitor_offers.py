@@ -610,9 +610,16 @@ class Command(BaseCommand):
                     logger.error(f"❌ Erro ao enviar alertas: {alert_err}")
 
                 # ─── Dispara alertas do André Alerta (site → WhatsApp) ──────
+                # Usa o texto com os links já trocados pela página do site,
+                # igual ao Telegram/grupo do WhatsApp. O matching de keyword
+                # continua no texto original (texto_para_alertas).
                 try:
                     from bot.alert_site import send_alerts_site
-                    await asyncio.to_thread(send_alerts_site, texto_para_alertas, photo_path, categoria_oferta)
+                    texto_para_alertas_site = _texto_sem_rodape(modified_text)
+                    await asyncio.to_thread(
+                        send_alerts_site, texto_para_alertas, photo_path, categoria_oferta,
+                        offer_text_site=texto_para_alertas_site,
+                    )
                     logger.info("🔔 André Alerta (WhatsApp) verificado/enviado")
                 except Exception as site_err:
                     logger.error(f"❌ Erro no André Alerta: {site_err}")

@@ -9,7 +9,8 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
-def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None):
+def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None,
+                     offer_text_site=None):
     """
     Percorre os alertas cadastrados no site (AlertaSite) e envia a oferta
     para o WhatsApp de cada usuário cuja palavra-chave combina.
@@ -17,6 +18,10 @@ def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None):
 
     oferta_categoria: categoria da promoção (ex.: 'placa_video'). Quando
     informada, o alerta só dispara se a categoria da keyword corresponder.
+
+    offer_text_site: texto com os links já trocados pela página do site.
+    Quando informado, é usado na mensagem; o matching de keyword continua
+    usando o texto original (offer_text), para não perder nomes de lojas.
     """
     from bot.models import AlertaSite
     from bot.alert_sender import keyword_matches, _categoria_bate
@@ -27,6 +32,7 @@ def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None):
         return
 
     site_link = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
+    texto_exibicao = offer_text_site or offer_text
 
     for alerta in alertas:
         try:
@@ -45,7 +51,7 @@ def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None):
                 f"{alerta.nome or 'Olá'}, o André Alerta acabou de encontrar o seu produto "
                 f"*{alerta.keyword}*!\n\n"
                 f"*Aqui está a oferta:*\n\n"
-                f"{offer_text}\n\n"
+                f"{texto_exibicao}\n\n"
                 f"📲 Confira mais ofertas: {site_link}\n"
                 f"────────────────\n"
                 f"🔕 Para parar de receber, clique aqui: {site_link}/nitro-alerta/cancelar/{alerta.token}"

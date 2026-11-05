@@ -6,6 +6,7 @@ Uso:
     python manage.py disparar_alerta --promo 1234
     python manage.py disparar_alerta --texto "Placa de Vídeo ... Link: https://..."
 """
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from bot.models import Promo
 
@@ -44,10 +45,18 @@ class Command(BaseCommand):
         else:
             raise CommandError('Informe --promo <id> ou --texto "<oferta>".')
 
+        texto_site = None
+        if promo_id:
+            from bot.services import trocar_links_loja_por_site
+            base_site = (getattr(settings, 'SITE_URL', '') or '').rstrip('/')
+            if base_site:
+                texto_site = trocar_links_loja_por_site(texto, promo_id, base_site)
+
         self.stdout.write('Enviando alertas Telegram...')
         send_alerts(texto, photo_path=foto, oferta_categoria=categoria)
 
         self.stdout.write('Enviando André Alerta (WhatsApp)...')
-        send_alerts_site(texto, photo_path=foto, oferta_categoria=categoria)
+        send_alerts_site(texto, photo_path=foto, oferta_categoria=categoria,
+                         offer_text_site=texto_site)
 
         self.stdout.write(self.style.SUCCESS('Disparo concluído.'))
