@@ -9,6 +9,39 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
+def _site_link():
+    return (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
+
+
+def _montar_mensagem(nome, keyword, offer_text, site_link, token=None):
+    mensagem = (
+        f"🔔 *André Alerta*\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"{nome or 'Olá'}, o André Alerta acabou de encontrar o seu produto "
+        f"*{keyword}*!\n\n"
+        f"*Aqui está a oferta:*\n\n"
+        f"{offer_text}\n\n"
+        f"📲 Confira mais ofertas: {site_link}\n"
+    )
+    if token:
+        mensagem += (
+            f"────────────────\n"
+            f"🔕 Para parar de receber, clique aqui: {site_link}/nitro-alerta/cancelar/{token}"
+        )
+    return mensagem
+
+
+def enviar_alerta_site_para(numero, nome, keyword, offer_text, photo_path=None,
+                            offer_text_site=None, token=None):
+    """Envia o André Alerta para um número específico (envio manual)."""
+    from bot.services import send_whatsapp_to_user
+
+    mensagem = _montar_mensagem(
+        nome, keyword, offer_text_site or offer_text, _site_link(), token
+    )
+    return send_whatsapp_to_user(numero, mensagem, image_path=photo_path)
+
+
 def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None,
                      offer_text_site=None):
     """
@@ -31,7 +64,7 @@ def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None,
     if not alertas.exists():
         return
 
-    site_link = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
+    site_link = _site_link()
     texto_exibicao = offer_text_site or offer_text
 
     for alerta in alertas:
@@ -45,16 +78,8 @@ def send_alerts_site(offer_text: str, photo_path=None, oferta_categoria=None,
             if not numero:
                 continue
 
-            mensagem = (
-                f"🔔 *André Alerta*\n"
-                f"━━━━━━━━━━━━━━━━━━\n"
-                f"{alerta.nome or 'Olá'}, o André Alerta acabou de encontrar o seu produto "
-                f"*{alerta.keyword}*!\n\n"
-                f"*Aqui está a oferta:*\n\n"
-                f"{texto_exibicao}\n\n"
-                f"📲 Confira mais ofertas: {site_link}\n"
-                f"────────────────\n"
-                f"🔕 Para parar de receber, clique aqui: {site_link}/nitro-alerta/cancelar/{alerta.token}"
+            mensagem = _montar_mensagem(
+                alerta.nome, alerta.keyword, texto_exibicao, site_link, alerta.token or None
             )
 
             ok = send_whatsapp_to_user(numero, mensagem, image_path=photo_path)
