@@ -2217,6 +2217,49 @@ def _waha_chat_id(value):
     return f"{digitos}@c.us"
 
 
+def _waha_resolve_chat_id(value):
+    """Resolve o JID real de um contato via WAHA.
+
+    Números brasileiros podem ter o 9º dígito omitido no WhatsApp. O
+    endpoint check-exists devolve o JID canônico (ex.: 553899400711@c.us),
+    evitando enviar para um chat que não existe.
+    """
+    value = (value or '').strip()
+    if not value:
+        return ''
+    if '@' in value and not value.endswith('@c.us'):
+        return value
+    digitos = re.sub(r'\D', '', value)
+    if not digitos:
+        return ''
+    fallback = f"{digitos}@c.us"
+
+    url_base = _waha_base_url()
+    if not url_base:
+        return fallback
+    session = getattr(settings, 'WAHA_SESSION', '') or 'default'
+    api_key = getattr(settings, 'WAHA_API_KEY', '')
+    headers = {}
+    if api_key:
+        headers['X-Api-Key'] = api_key
+    try:
+        response = requests.get(
+            f"{url_base}/contacts/check-exists",
+            params={'phone': digitos, 'session': session},
+            headers=headers,
+            timeout=15,
+        )
+        if 200 <= response.status_code < 300:
+            data = response.json() or {}
+            if data.get('numberExists'):
+                return data.get('pn') or data.get('chatId') or fallback
+            print(f"WhatsApp (WAHA): número {digitos} não está no WhatsApp.")
+            return ''
+    except Exception as e:
+        print(f"WhatsApp (WAHA check-exists): {e}")
+    return fallback
+
+
 def _waha_send(chat_id, text, image_path=None):
     import os
     import base64
@@ -2297,9 +2340,9 @@ def send_whatsapp_to_user(numero, text, image_path=None):
     Difere do send_whatsapp_message (que envia para o grupo).
     """
     if isinstance(numero, str) and '@' in numero:
-        chat_id = _waha_chat_id(numero)
+        chat_id = _waha_resolve_chat_id(numero)
     else:
-        chat_id = _waha_chat_id(normalizar_whatsapp(numero))
+        chat_id = _waha_resolve_chat_id(normalizar_whatsapp(numero))
     if not chat_id:
         print("WhatsApp: número inválido.")
         return False
