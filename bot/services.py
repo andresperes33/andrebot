@@ -801,6 +801,12 @@ _TERMOS_CABECALHO = [
     'encerrar a qualquer momento', 'a promoção pode encerrar', 'a promocao pode encerrar',
     'imagem da postagem', 'imagem da publicação', 'imagens da postagem',
     'compartilhar', 'compartilhe',
+    # Chamadas do canal para entrar nos grupos/canais — não são título.
+    'participe dos nossos', 'participe do nosso', 'participe dos canais',
+    'participe do canal', 'participe dos grupos', 'participe do grupo',
+    'siga nosso', 'siga nossos', 'siga o canal', 'entre no canal',
+    'entre no nosso', 'acesse o canal', 'acesse nosso',
+    'nossos canais', 'nosso canal', 'nossos grupos', 'nosso grupo',
 ]
 _LOJAS = [
     'aliexpress', 'mercadolivre', 'mercado livre', 'amazon', 'shopee',
