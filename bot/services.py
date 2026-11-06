@@ -2417,6 +2417,17 @@ def strip_promo_footer(text):
         r'(?im)^\s*https?://(?:cutt\.ly|bit\.ly|tinyurl\.com|rebrand\.ly)/\S*\s*$',
         '', cleaned_text,
     )
+    # Chamadas do canal para entrar em grupos/canais (ex.: '👍 Participe dos
+    # nossos canais no WhatsApp ou Telegram') — não fazem parte da oferta.
+    cleaned_text = re.sub(
+        r'(?im)^\s*(?:👍\s*)?(?:participe|siga|entre|acesse)\s+'
+        r'(?:dos|do|no|o)?\s*(?:noss[oa]s?\s+)?(?:canais|canal|grupos|grupo)\b[^\n]*$',
+        '', cleaned_text,
+    )
+    cleaned_text = re.sub(
+        r'(?im)^\s*(?:👍\s*)?(?:canal|grupo)s?\s+(?:no|do)\s+(?:whatsapp|telegram)\b[^\n]*$',
+        '', cleaned_text,
+    )
     cleaned_text = re.sub(r'(?im)^\s*_{5,}\s*$', '', cleaned_text)
     cleaned_text = re.sub(r'\n{3,}', '\n\n', cleaned_text)
     return cleaned_text.strip()
