@@ -280,22 +280,44 @@ def _link_produto_compra(texto):
     if not itens:
         return _primeiro_link_produto(texto)
 
+    from bot.classifier import detectar_loja
+
+    def _tem_loja_conhecida(link):
+        return bool(detectar_loja(link))
+
     # 1) Rótulo explícito de produto ('Link APP', 'Link PC', 'Link do produto',
     #    'Comprar', ...). No AliExpress o 'Link APP'/'Link PC' é o produto.
-    for rotulo, link in itens:
+    #    Se um dos links for um redirecionador não expandido (ex.:
+    #    seuhardware.com/s/...) e o outro identificar a loja, prefere o da loja.
+    candidatos = [
+        (rotulo, link) for rotulo, link in itens
         if any(marc in rotulo for marc in (
             'produto', 'comprar', 'compre', 'link app', 'link pc',
             'link da', 'link para', 'este link', 'link do',
-        )):
+        ))
+    ]
+    for rotulo, link in candidatos:
+        if _tem_loja_conhecida(link):
             return link
+    if candidatos:
+        return candidatos[0][1]
 
     # 2) Ignora rótulos que não são do produto (bot, moedas, cupom, canal...)
-    for rotulo, link in itens:
+    candidatos = [
+        (rotulo, link) for rotulo, link in itens
         if not any(marc in rotulo for marc in (
             'bot', 'moeda', 'desconto', 'cupom', 'canal', 'grupo',
-        )):
+        ))
+    ]
+    for rotulo, link in candidatos:
+        if _tem_loja_conhecida(link):
             return link
+    if candidatos:
+        return candidatos[0][1]
 
+    for _, link in itens:
+        if _tem_loja_conhecida(link):
+            return link
     return itens[0][1]
 
 
@@ -1332,9 +1354,13 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     # 'Link do produto' em vez do link do cupom, quando ambos aparecem.
     link_afiliado = _link_produto_compra(texto)
 
-    # Loja detectada pelo domínio do link de compra
+    # Loja detectada pelo domínio do link de compra. Alguns links de
+    # afiliado usam domínio curto (ex.: s.click.ali, amzn.to, meli.la);
+    # se o link de compra não identificar a loja, tenta pelo texto.
     from bot.classifier import detectar_loja
     loja = detectar_loja(link_afiliado)
+    if not loja:
+        loja = detectar_loja(texto)
 
     # Preço básico para filtro
     preco = _preco_do_texto(texto)
