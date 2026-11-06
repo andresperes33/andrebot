@@ -136,51 +136,65 @@ def _enviar_dm(token, ig_user_id, recipient_id, texto, comment_id=None, imagem_u
         m = re.search(r'(https?://\S+)', t or '')
         return m.group(1).rstrip('.,;|)') if m else ''
 
+    def _card_payload():
+        element = {
+            "title": titulo,
+            "subtitle": subtitle,
+            "image_url": imagem_url,
+        }
+        if link:
+            element["default_action"] = {"type": "web_url", "url": link}
+            element["buttons"] = [{"type": "web_url", "url": link, "title": "Ver oferta"}]
+        return {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "generic",
+                    "elements": [element],
+                },
+            }
+        }
+
+    def _enviar_card(rec):
+        st, dt = _post_msg(rec, _card_payload())
+        if st == 200 and 'error' not in dt:
+            logger.info("✅ IG webhook: card (imagem+link) enviado na DM.")
+            return True
+        logger.warning(f"⚠️ IG webhook: template falhou: {dt}")
+        return False
+
     try:
         link = _link_no_texto(texto)
         titulo = (titulo or '').strip()[:80] or 'Aproveite a promoção!'
         subtitle = 'Toque para ver a oferta' if link else (texto or '')[:80]
 
-        # 1) Intro (antes do card)
-        intro_ok = False
+        # Private Reply (comentário): só é permitida UMA mensagem por comment_id.
+        # Por isso ela precisa levar o link — intro sozinha não serve, pois o
+        # Instagram pode bloquear mensagens seguintes para quem não segue a conta.
+        if comment_id and recipient_reply:
+            if imagem_url and _enviar_card(recipient_reply):
+                logger.info(f"✅ IG webhook: DM enviado para {recipient_id} (comment_id={comment_id}).")
+                return True
+            st, dt = _post_msg(recipient_reply, {"text": texto})
+            if st == 200 and 'error' not in dt:
+                logger.info(f"✅ IG webhook: link enviado via private reply (comment_id={comment_id}).")
+                return True
+            logger.error(f"❌ IG webhook: falha no private reply: {dt}")
+            return False
+
+        # DM normal: intro antes do card e, se o card falhar, texto com o link.
         if recipient_reply:
             st, dt = _post_msg(recipient_reply, {"text": _INTRO_DM})
-            intro_ok = st == 200 and 'error' not in dt
-            if not intro_ok:
+            if st != 200 or 'error' in dt:
                 logger.warning(f"⚠️ IG webhook: intro não enviada: {dt}")
             else:
                 logger.info("💬 IG webhook: intro enviada antes do card.")
 
-        # 2) Card na conversa (se houver recipient.id; senão, no mesmo target)
         alvo_card = recipient_conv or recipient_reply
-        if imagem_url and alvo_card:
-            element = {
-                "title": titulo,
-                "subtitle": subtitle,
-                "image_url": imagem_url,
-            }
-            if link:
-                element["default_action"] = {"type": "web_url", "url": link}
-                element["buttons"] = [{"type": "web_url", "url": link, "title": "Ver oferta"}]
-            st, dt = _post_msg(alvo_card, {
-                "attachment": {
-                    "type": "template",
-                    "payload": {
-                        "template_type": "generic",
-                        "elements": [element],
-                    },
-                }
-            })
-            if st == 200 and 'error' not in dt:
-                logger.info("✅ IG webhook: card (imagem+link) enviado na DM.")
-                logger.info(f"✅ IG webhook: DM enviado para {recipient_id} (comment_id={comment_id or '-'}).")
-                return True
-            logger.warning(f"⚠️ IG webhook: template falhou: {dt}")
-            # Se o card falhou mas a intro saiu, ainda é sucesso parcial
-            if intro_ok:
-                return True
+        if imagem_url and alvo_card and _enviar_card(alvo_card):
+            logger.info(f"✅ IG webhook: DM enviado para {recipient_id} (comment_id={comment_id or '-'}).")
+            return True
 
-        # 3) Fallback: texto puro com o link
         if alvo_card:
             st, dt = _post_msg(alvo_card, {"text": texto})
         elif recipient_reply:
@@ -439,8 +453,20 @@ def _processar_comentario(value, entry_id=None):
             _responder_comentario(token, comment_id, "✅ Prontinho! Te mandei o link na sua DM 📩")
             return
 
-    # 2ª tentativa (fallback): só avisa no comentário (sem expor o link)
-    _responder_comentario(token, comment_id, "📩 Link do produto enviado na sua DM!")
+    # 2ª tentativa (fallback): se a DM falhou, responde no comentário com o
+    # link da página do site (não é o link de afiliado) para não deixar o
+    # usuário sem a oferta.
+    if dm_link:
+        _responder_comentario(
+            token, comment_id,
+            f"📩 Não consegui enviar a DM. Acesse a oferta aqui: {dm_link}",
+        )
+    else:
+        site = (getattr(settings, 'SITE_URL', '') or 'https://promos.andreindicatech.com.br').rstrip('/')
+        _responder_comentario(
+            token, comment_id,
+            f"📩 Não consegui enviar a DM. Confira as ofertas no site: {site}",
+        )
 
 
 def _acha_conta(contas, *ids):
