@@ -988,6 +988,8 @@ _TERMOS_PRODUTO = [
     'iphone', 'xiaomi', 'redmi', 'poco', 'realme', 'samsung', 'galaxy', 'motorola',
     'tablet', 'ipad', 'ar condicionado', 'condicionador', 'smart tv', 'qled', 'oled',
     'starlink', 'soprador',
+    'bomba', 'bomba de ar', 'compressor', 'compressor de ar', 'inflador',
+    'inflavel', 'calibrador', 'pneu', 'pneus',
     'cambio', 'câmbio', 'shifter', 'logitech', 'driving force', 'sim racing',
     'volante', 'pedaleira', 'racing wheel', 'simulator', 'simulador',
     'parafusadeira', 'motosserra', 'furadeira', 'esmerilhadeira', 'lixadeira',
