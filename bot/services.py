@@ -2394,6 +2394,18 @@ def extract_links(text):
     return re.findall(r'(https?://\S+)', text)
 
 
+def substituir_nomes_canais(texto, channel_name):
+    """Troca menções a canais de terceiros sem alterar linhas de cupom."""
+    padrao = re.compile(r'(?i)\b(?:zFinnY|Iskandar|CaCau|André Indica|Tecnan|PC DO FAFA)\b')
+    linhas = []
+    for linha in (texto or '').splitlines():
+        if 'cupom' in linha.casefold():
+            linhas.append(linha)
+        else:
+            linhas.append(padrao.sub(channel_name, linha))
+    return '\n'.join(linhas)
+
+
 def strip_promo_footer(text):
     """
     Remove rodapés promocionais/copys que não devem ser reenviados pelo bot.
@@ -2574,8 +2586,8 @@ async def process_offer_to_group(bot_app, text, photo=None):
     personal_link = getattr(settings, 'PERSONAL_CHANNEL_LINK', '')
     channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
     
-    # Limpa nomes de outros canais
-    modified_text = re.sub(r'(?i)zFinnY|Iskandar|CaCau|André Indica|Tecnan|PC DO FAFA', channel_name, modified_text)
+    # Limpa nomes de outros canais, sem alterar cupons
+    modified_text = substituir_nomes_canais(modified_text, channel_name)
 
     # Substitui links do Linktree pelo link personalizado
     modified_text = re.sub(r'https?://linktr\.ee/\S+', 'https://links.andreindica.com.br/', modified_text)

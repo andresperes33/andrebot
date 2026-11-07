@@ -41,10 +41,24 @@ def _texto_sem_rodape(texto):
     return (texto or '').replace(f"\n\n{_AVISO_PROMOCAO}", '').strip()
 
 
-def _eh_divulgacao_grupo_impulso(texto):
-    """Detecta posts que apenas divulgam o grupo de Impulso no WhatsApp."""
-    t = (texto or '').casefold()
-    return 'grupo de impulso no whatsapp' in t or 'seuhardware.com/s/kkdmpdl' in t
+def _remover_divulgacao_grupo_impulso(texto):
+    """Remove convites de grupo e links do jogo de Impulso, preservando a oferta."""
+    remover_linha = (
+        'grupo de impulso no whatsapp',
+        'seuhardware.com/s/kkdmpdl',
+        'chat.whatsapp.com',
+        'whatsapp.com/channel',
+    )
+    linhas = []
+    for linha in (texto or '').splitlines():
+        baixa = linha.casefold()
+        if any(marcador in baixa for marcador in remover_linha):
+            continue
+        if 'joguinho de impulso' in baixa:
+            # Mantém o texto, mas remove qualquer link relacionado a ele.
+            linha = re.sub(r'https?://\S+', '', linha).rstrip()
+        linhas.append(linha)
+    return '\n'.join(linhas)
 
 
 def _eh_link_grupo(url):
@@ -225,11 +239,6 @@ class Command(BaseCommand):
                     logger.info(f"ℹ️ Mensagem ignorada (não contém links)")
                     return False
 
-                # ─── Filtro: divulgação do grupo de Impulso no WhatsApp ────────
-                if _eh_divulgacao_grupo_impulso(msg_text):
-                    logger.info("🚫 Mensagem ignorada (divulgação do grupo de Impulso no WhatsApp)")
-                    return False
-
                 # ─── Filtro do canal (ex.: só AliExpress) ─────────────────────
                 if canal_filtro == 'aliexpress':
                     if not re.search(r'(?:aliexpress\.com|s\.click\.ali|a\.aliexpress\.com)', msg_text, re.I):
@@ -269,14 +278,17 @@ class Command(BaseCommand):
                     return False
 
                 # ─── Converte links e processa texto ─────────────────────────
-                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer, normaliza_emoji_inicial
+                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer, normaliza_emoji_inicial, substituir_nomes_canais
 
                 channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
 
                 modified_text = msg_text
-                
-                # 1. Substitui nomes de canais
-                modified_text = re.sub(r'(?i)zFinnY|Iskandar|CaCau|André Indica|Tecnan|PC DO FAFA', channel_name, modified_text)
+
+                # Remove divulgação do grupo/jogo de Impulso sem perder a oferta
+                modified_text = _remover_divulgacao_grupo_impulso(modified_text)
+
+                # 1. Substitui nomes de canais, sem alterar cupons
+                modified_text = substituir_nomes_canais(modified_text, channel_name)
 
                 # 2. Remove o rodapé antigo do grupo (Limpeza Pesada)
                 # Remove o emoji da sacola (várias versões) e qualquer linha residual
@@ -402,8 +414,13 @@ class Command(BaseCommand):
                             )
                             real_url = resp_seu.url or ''
                             if _eh_link_grupo(real_url):
-                                logger.info("🚫 Mensagem ignorada (link camuflado para grupo no WhatsApp/Telegram)")
-                                return False
+                                # Remove a linha do convite e continua com a oferta.
+                                modified_text = '\n'.join(
+                                    ln for ln in modified_text.splitlines() if link not in ln
+                                )
+                                modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
+                                logger.info("🧹 Link de grupo removido da oferta")
+                                continue
                             if real_url and real_url != link:
                                 converted = convert_to_affiliate_link(real_url)
                                 if converted:
