@@ -40,6 +40,23 @@ def _texto_sem_rodape(texto):
     """Remove o aviso de promoção — ele fica só no site, não no TG/Zap."""
     return (texto or '').replace(f"\n\n{_AVISO_PROMOCAO}", '').strip()
 
+
+def _eh_divulgacao_grupo_impulso(texto):
+    """Detecta posts que apenas divulgam o grupo de Impulso no WhatsApp."""
+    t = (texto or '').casefold()
+    return 'grupo de impulso no whatsapp' in t or 'seuhardware.com/s/kkdmpdl' in t
+
+
+def _eh_link_grupo(url):
+    """Detecta links que levam para grupos/canais de WhatsApp ou Telegram."""
+    u = (url or '').casefold()
+    return (
+        'chat.whatsapp.com' in u
+        or 'whatsapp.com/channel' in u
+        or 't.me/' in u
+        or 'telegram.me/' in u
+    )
+
 # ─── Cache em memória para last_processed_id ─────────────────────────────────
 # Evita chamadas constantes ao banco em contexto async — mais seguro e rápido.
 # Na inicialização, carrega do banco (persiste entre deploys).
@@ -206,6 +223,11 @@ class Command(BaseCommand):
                 # ─── Filtro: Ignora mensagens sem links (comentários/avisos) ───
                 if not re.search(r'https?://\S+', msg_text):
                     logger.info(f"ℹ️ Mensagem ignorada (não contém links)")
+                    return False
+
+                # ─── Filtro: divulgação do grupo de Impulso no WhatsApp ────────
+                if _eh_divulgacao_grupo_impulso(msg_text):
+                    logger.info("🚫 Mensagem ignorada (divulgação do grupo de Impulso no WhatsApp)")
                     return False
 
                 # ─── Filtro do canal (ex.: só AliExpress) ─────────────────────
@@ -379,6 +401,9 @@ class Command(BaseCommand):
                                 headers={"User-Agent": "Mozilla/5.0"},
                             )
                             real_url = resp_seu.url or ''
+                            if _eh_link_grupo(real_url):
+                                logger.info("🚫 Mensagem ignorada (link camuflado para grupo no WhatsApp/Telegram)")
+                                return False
                             if real_url and real_url != link:
                                 converted = convert_to_affiliate_link(real_url)
                                 if converted:
