@@ -2220,16 +2220,21 @@ def convert_aliexpress_link(url, base_on_clean_url=False):
     sign_str += app_secret
     params["sign"] = hashlib.md5(sign_str.encode('utf-8')).hexdigest().upper()
 
-    try:
-        response = requests.get(endpoint, params=params)
-        data = response.json()
-        result = data.get("aliexpress_affiliate_link_generate_response", {}).get("resp_result", {}).get("result", {})
-        links = result.get("promotion_links", {}).get("promotion_link", [])
-        if links:
-            return links[0].get("promotion_link")
-    except Exception as e:
-        print(f"Erro AliExpress API: {e}")
-        return None
+    # A API da AliExpress às vezes responde sem promotion_links (falha
+    # transitória/limite de taxa). Tenta novamente antes de desistir.
+    for tentativa in range(3):
+        try:
+            response = requests.get(endpoint, params=params, timeout=20)
+            data = response.json()
+            result = data.get("aliexpress_affiliate_link_generate_response", {}).get("resp_result", {}).get("result", {})
+            links = result.get("promotion_links", {}).get("promotion_link", [])
+            if links:
+                return links[0].get("promotion_link")
+        except Exception as e:
+            print(f"Erro AliExpress API (tentativa {tentativa + 1}): {e}")
+        if tentativa < 2:
+            time.sleep(1)
+    return None
 
 
 def _waha_base_url():

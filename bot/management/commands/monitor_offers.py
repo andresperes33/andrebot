@@ -413,6 +413,7 @@ class Command(BaseCommand):
                                     modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
                                     converted_any = True
                                     continue
+                                logger.warning(f"⚠️ seuhardware sem conversão: {real_url[:120]}")
                         except Exception as seu_err:
                             logger.warning(f"⚠️ seuhardware expand erro: {seu_err}")
                         # Se falhou, não conta como convertido (vai sair no 'nenhum link')
