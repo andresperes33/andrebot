@@ -299,7 +299,8 @@ class Command(BaseCommand):
                     is_awin = 'awin1.com' in link or 'tidd.ly' in link
                     is_amazon = 'amazon.com.br' in link or 'amzn.to' in link or 'link.amazon' in link or 'aoferta.net' in link
                     is_shopee = 'shopee.com.br' in link or 's.shopee' in link
-                    is_ml = 'mercadolivre' in link or 'meli.la' in link or 'mlstatic' in link
+                    is_ofertei = 'ofertei.net' in link
+                    is_ml = 'mercadolivre' in link or 'meli.la' in link or 'mlstatic' in link or is_ofertei
                     is_ali = 'aliexpress.com' in link or 's.click.ali' in link
                     is_kabum = 'kabum.com.br' in link
                     is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link

@@ -871,6 +871,7 @@ _LOJA_POR_DOMINIO = [
     ('mercadolivre', 'Mercado Livre'),
     ('mercadolibre', 'Mercado Livre'),
     ('meli.la', 'Mercado Livre'),
+    ('ofertei.net/meli', 'Mercado Livre'),
     ('mlstatic', 'Mercado Livre'),
     ('mercado', 'Mercado Livre'),
     ('magazineluiza', 'Magazine Luíza'),

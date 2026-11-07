@@ -326,7 +326,7 @@ def _link_produto_compra(texto):
 # nome da loja no texto (ex.: '#Kabum', 'Mercado Livre', 'Shopee').
 # '[^\s<>"\']*?' (zero ou mais) permite marcas logo após '://' (ex.: amzn.to).
 _RE_LINKS_LOJA = re.compile(
-    r'https?://[^\s<>"\']*?(?:amazon|amzn\.to|link\.amazon|aoferta|shopee|'
+    r'https?://[^\s<>"\']*?(?:amazon|amzn\.to|link\.amazon|aoferta|ofertei|shopee|'
     r'mercadolivre|mercadolibre|meli\.la|seuhardware|aliexpress|s\.click\.ali|kabum|'
     r'magazineluiza|magalu|mgl\.io|pichau|terabyte|americanas|casasbahia|'
     r'pontofrio|submarino|cnc|fastshop|walmart|renner|extra)[^\s<>"\']*',
@@ -369,7 +369,8 @@ def _nome_loja_por_url(url):
         ('aoferta', 'Amazon'),
         ('shopee', 'Shopee'), ('s.shopee', 'Shopee'),
         ('mercadolivre', 'Mercado Livre'), ('mercadolibre', 'Mercado Livre'),
-        ('meli.la', 'Mercado Livre'), ('mlstatic', 'Mercado Livre'),
+        ('meli.la', 'Mercado Livre'), ('ofertei.net/meli', 'Mercado Livre'),
+        ('mlstatic', 'Mercado Livre'),
         ('aliexpress', 'AliExpress'), ('s.click.ali', 'AliExpress'),
         ('kabum', 'KaBuM'), ('tidd.ly', 'KaBuM'), ('awin1.com', 'Awin'),
         ('magazineluiza', 'Magazine Luíza'), ('magalu', 'Magazine Luíza'), ('mgl.io', 'Magazine Luíza'),
@@ -1604,7 +1605,7 @@ def get_product_info(url):
 
 # Links de loja que valem tentar baixar a imagem principal do produto
 _RE_LINK_LOJA = re.compile(
-    r'(?:amazon\.com\.br|amzn\.to|link\.amazon|aoferta\.net|shopee\.com\.br|s\.shopee|'
+    r'(?:amazon\.com\.br|amzn\.to|link\.amazon|aoferta\.net|ofertei\.net|shopee\.com\.br|s\.shopee|'
     r'mercadolivre|meli\.la|seuhardware|mlstatic|aliexpress\.com|s\.click\.ali|a\.aliexpress|'
     r'kabum\.com\.br|magazineluiza\.com\.br|magalu\.com|mgl\.io)',
     re.IGNORECASE,
@@ -1857,9 +1858,10 @@ def convert_to_affiliate_link(url, final_url=None):
     Decide qual API usar com base na URL.
     """
     # URLs encurtadas que NÃO identificam a loja pelo domínio (ex.:
-    # aoferta.net → Amazon.com.br) precisam ser expandidas primeiro, senão
-    # o roteamento abaixo não reconhece a loja e retorna None.
-    if 'aoferta.net' in url or 'aoferta.net/' in url:
+    # aoferta.net → Amazon.com.br, ofertei.net/meli/... → Mercado Livre)
+    # precisam ser expandidas primeiro, senão o roteamento abaixo não
+    # reconhece a loja e retorna None.
+    if 'aoferta.net' in url or 'ofertei.net' in url:
         try:
             resp = requests.get(
                 url,
@@ -2578,7 +2580,8 @@ async def process_offer_to_group(bot_app, text, photo=None):
     for link in links:
         is_shopee = 'shopee.com.br' in link or 's.shopee' in link
         is_aliexpress = 'aliexpress.com' in link or 's.click.aliexpress' in link
-        is_ml = 'mercadolivre.com' in link or 'mlstatic.com' in link or 'mercadolivre.com.br' in link
+        is_ml = ('mercadolivre.com' in link or 'mlstatic.com' in link
+                 or 'mercadolivre.com.br' in link or 'ofertei.net' in link)
         is_amazon = 'amazon.com.br' in link or 'amzn.to' in link or 'link.amazon' in link
         is_kabum = 'kabum.com.br' in link or 'tidd.ly' in link
         is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link
