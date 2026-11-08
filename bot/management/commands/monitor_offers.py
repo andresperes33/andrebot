@@ -250,14 +250,26 @@ class Command(BaseCommand):
                 # ─── Trava anti-repetição (dia corrido, reseta à meia-noite) ────
                 # Se a MESMA oferta (mesmo link/título + mesmo preço em reais)
                 # já foi capturada HOJE, ignora. Trocou o dia, pode postar de novo.
+                # Cupons são exceção: mudam pouco e devem ser postados todos,
+                # mesmo com link/título/preço parecidos.
+                eh_cupom_msg = False
                 try:
-                    from bot.services import promo_repetida_recente
-                    repetida = await asyncio.to_thread(promo_repetida_recente, msg_text)
-                    if repetida:
-                        logger.info("⏭️ Oferta já capturada hoje, ignorada.")
-                        return True
-                except Exception as repetida_err:
-                    logger.error(f"❌ Erro na trava anti-repetição: {repetida_err}")
+                    from bot.classifier import detectar_categoria
+                    eh_cupom_msg = detectar_categoria(msg_text) == 'cupom'
+                except Exception as cupom_err:
+                    logger.warning(f"⚠️ Falha ao detectar cupom na trava anti-repetição: {cupom_err}")
+
+                if eh_cupom_msg:
+                    logger.info("🎟️ Cupom detectado: anti-repetição ignorada; postando todas as ofertas.")
+                else:
+                    try:
+                        from bot.services import promo_repetida_recente
+                        repetida = await asyncio.to_thread(promo_repetida_recente, msg_text)
+                        if repetida:
+                            logger.info("⏭️ Oferta já capturada hoje, ignorada.")
+                            return True
+                    except Exception as repetida_err:
+                        logger.error(f"❌ Erro na trava anti-repetição: {repetida_err}")
 
                 # ─── Deduplicação: já foi postada antes? ─────────────────────
                 # DESATIVADO a pedido do usuário: nenhuma oferta é ignorada
