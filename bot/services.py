@@ -1083,6 +1083,8 @@ def _linha_titulo(texto):
             continue  # código de cupom sem espaços (ex: S3M4N488)
         if limpa.lstrip().startswith('-'):
             continue  # nota/bullet (ex.: '-Direto do Brasil')
+        if re.match(r'^\d+\s*[-–—.)]\s+', limpa):
+            continue  # instrução numerada (ex.: '2 - No canto INFERIOR DIREITO...')
         if _eh_linha_nota(baixa):
             continue  # nota do canal (ex.: 'dica do brendo3d')
         if _eh_linha_quantidade(baixa):
