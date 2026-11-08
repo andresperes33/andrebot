@@ -3,6 +3,7 @@ import time
 import os
 import hashlib
 import json
+import logging
 import urllib.parse
 import unicodedata
 import requests
@@ -77,6 +78,167 @@ def _normalizar_url(url):
     url = re.sub(r'^www\.', '', url, flags=re.I)
     url = url.rstrip('/')
     return url.lower()
+
+
+def _extrair_url_destino(url):
+    """Extrai a URL de destino quando ela vem embutida na query.
+
+    Alguns canais usam redirecionadores/links de afiliado que carregam o
+    produto real em parâmetros como `ued` (Awin), `origin_link` (Shopee) ou
+    `url` (Magalu). Extrair esse destino deixa a deduplicação muito mais
+    confiável, pois dois canais podem usar links de rastreio diferentes para
+    a mesma página de produto.
+    """
+    url = (url or '').strip()
+    if not url:
+        return ''
+    try:
+        parsed = urllib.parse.urlparse(url)
+        host = (parsed.netloc or '').casefold()
+        qs = urllib.parse.parse_qs(parsed.query)
+    except Exception:
+        return url
+
+    # Só interpreta parâmetros de destino em domínios de redirecionadores
+    # conhecidos (evita confundir um parâmetro qualquer com o produto).
+    if not any(d in host for d in (
+        'awin1.com', 'tidd.ly', 'shopee', 'magalu', 'magazineluiza',
+        'magazinevoce', 'divulgador.magalu', 'seuhardware', 'pcdofafa',
+    )):
+        return url
+
+    alvos = ('ued', 'origin_link', 'originurl', 'origin_url',
+             'destinationurl', 'destination_url', 'url')
+    for chave, valores in qs.items():
+        if chave.casefold() not in alvos or not valores:
+            continue
+        candidato = urllib.parse.unquote(valores[0]).strip()
+        if candidato.lower().startswith(('http://', 'https://')):
+            return candidato
+    return url
+
+
+def _chave_link_produto(url):
+    """Chave canônica do PRODUTO a partir de uma URL (sem preço/rastreio).
+
+    Identifica o mesmo produto mesmo quando os canais usam formatos
+    diferentes de link (link direto, link curto de afiliado, redirecionador).
+    É usada para não postar a mesma oferta duas vezes no mesmo dia.
+    """
+    url = (url or '').strip().rstrip('.,;|)')
+    if not url:
+        return ''
+    url = _extrair_url_destino(url)
+    norm = _normalizar_url(url)
+    if not norm:
+        return ''
+    host, _, caminho = norm.partition('/')
+    caminho = '/' + caminho if caminho else ''
+
+    # Amazon: /dp/ASIN, /gp/product/ASIN, /exec/obidos/ASIN/...
+    if 'amazon.' in host or host.endswith('amzn.to'):
+        m = re.search(
+            r'/(?:dp|gp/product|gp/aw/d|exec/obidos/asin|o/asin)/'
+            r'([a-z0-9]{10})(?:[/?]|$)',
+            caminho,
+        )
+        if m:
+            return f'amazon:{m.group(1)}'
+
+    # Mercado Livre: /p/MLB123..., /up/MLBU123..., MLB-123...-_JM
+    if 'mercadolivre' in host or 'mercadolibre' in host:
+        m = re.search(r'mlbu?[-_/]?(\d{6,})', caminho)
+        if m:
+            prefixo = 'mlbu' if m.group(0).casefold().startswith('mlbu') else 'mlb'
+            return f'mercadolivre:{prefixo}{m.group(1)}'
+
+    # Shopee: /product/<shop_id>/<item_id> ou ...-i.<shop_id>.<item_id>
+    if 'shopee' in host:
+        m = re.search(r'/product/(\d+)/(\d+)', caminho)
+        if m:
+            return f'shopee:{m.group(1)}:{m.group(2)}'
+        m = re.search(r'-i\.(\d+)\.(\d+)', caminho)
+        if m:
+            return f'shopee:{m.group(1)}:{m.group(2)}'
+
+    # AliExpress: /item/<id>.html ou /i/<id>.html
+    if 'aliexpress' in host:
+        m = re.search(r'/(?:item|i)/(\d{6,})(?:\.html)?', caminho)
+        if m:
+            return f'aliexpress:{m.group(1)}'
+
+    # KaBuM: /produto/<id>
+    if 'kabum' in host:
+        m = re.search(r'/produto/(\d+)', caminho)
+        if m:
+            return f'kabum:{m.group(1)}'
+
+    # Magalu / Magazine Você: /p/<pid>/ ou /produto/<pid>/
+    if (
+        'magalu' in host
+        or 'magazineluiza' in host
+        or 'magazinevoce' in host
+    ):
+        m = re.search(r'/(?:p|produto)/([a-z0-9]{4,})', caminho)
+        if m:
+            return f'magalu:{m.group(1)}'
+
+    # Genérico: host + caminho (sem parâmetros), estável para o mesmo link.
+    return f'{host}{caminho}'.rstrip('/')
+
+
+# Cache em memória dos links curtos já expandidos (limpo diariamente).
+_CACHE_LINKS_CURTOS = {}
+_CACHE_LINKS_CURTOS_DIA = None
+
+_DOMINIOS_CURTOS = (
+    's.shopee.com.br', 'shp.ee', 's.click.aliexpress.com',
+    'a.aliexpress.com', 'amzn.to', 'link.amazon', 'meli.la',
+    'mgl.io', 'bit.ly', 'tidd.ly', 'aoferta.net', 'ofertei.net',
+)
+
+
+def _expandir_link_curto(url):
+    """Segue redirecionamentos de um link curto até a URL real do produto.
+
+    Usado apenas na deduplicação (nunca no backfill de migração), com cache
+    em memória para não repetir requisições. Se falhar, devolve a URL original.
+    """
+    global _CACHE_LINKS_CURTOS_DIA
+    url = (url or '').strip()
+    if not url:
+        return url
+    try:
+        host = (urllib.parse.urlparse(url).netloc or '').casefold()
+    except Exception:
+        return url
+    if not any(d in host for d in _DOMINIOS_CURTOS):
+        return url
+    # Se o destino já está embutido na query, não precisa de rede.
+    if _extrair_url_destino(url) != url:
+        return url
+
+    hoje = time.strftime('%Y-%m-%d')
+    if _CACHE_LINKS_CURTOS_DIA != hoje:
+        _CACHE_LINKS_CURTOS.clear()
+        _CACHE_LINKS_CURTOS_DIA = hoje
+    if url in _CACHE_LINKS_CURTOS:
+        return _CACHE_LINKS_CURTOS[url]
+
+    destino = url
+    try:
+        resp = requests.get(
+            url,
+            allow_redirects=True,
+            timeout=8,
+            headers={'User-Agent': 'Mozilla/5.0'},
+        )
+        if resp.url:
+            destino = resp.url
+    except Exception:
+        pass
+    _CACHE_LINKS_CURTOS[url] = destino
+    return destino
 
 
 def cortar_rodape_imagem(caminho, rodape_px=10):
@@ -1225,6 +1387,66 @@ def promo_ja_postada(texto):
         return False
 
 
+def _limite_do_dia():
+    """Início do dia de hoje no fuso do site (America/Sao_Paulo)."""
+    from django.utils import timezone
+    return timezone.localtime(timezone.now()).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+
+def promo_link_ja_postada_hoje(*urls):
+    """True se o PRODUTO de alguma dessas URLs já foi postado hoje.
+
+    A comparação é feita pelo link canônico do produto (sem preço nem
+    parâmetros de rastreio). A janela zera à meia-noite: a mesma oferta pode
+    ser postada novamente no dia seguinte.
+
+    Cupons são ignorados nesta checagem (o monitor não grava chave de link
+    para eles), pois podem se repetir com o mesmo link.
+    """
+    from django.db import close_old_connections
+    close_old_connections()
+    from bot.models import Promo
+
+    limite = _limite_do_dia()
+
+    chaves = set()
+    urls_normalizadas = set()
+    for url in urls:
+        if not url:
+            continue
+        chave = _chave_link_produto(url)
+        if chave:
+            chaves.add(chave)
+        normalizada = _normalizar_url(url)
+        if normalizada:
+            urls_normalizadas.add(normalizada)
+
+    if not chaves and not urls_normalizadas:
+        return False
+
+    try:
+        # 1) Chave canônica do produto (funciona entre canais/formatos).
+        if chaves and Promo.objects.filter(
+            link_produto_chave__in=chaves, criado_em__gte=limite
+        ).exists():
+            return True
+
+        # 2) Fallback para registros antigos (sem link_produto_chave), que
+        # guardaram o link bruto normalizado em url_chave (link|preço).
+        for normalizada in urls_normalizadas:
+            if Promo.objects.filter(
+                url_chave__startswith=normalizada + '|', criado_em__gte=limite
+            ).exists():
+                return True
+        return False
+    except Exception as db_err:
+        logger = logging.getLogger(__name__)
+        logger.warning(f"⚠️ Erro ao verificar link já postado hoje: {db_err}")
+        return False
+
+
 def promo_repetida_recente(texto, janela_minutos=1440):
     """
     Verifica se uma promoção IGUAL já foi capturada NO MESMO DIA (calendário,
@@ -1239,14 +1461,10 @@ def promo_repetida_recente(texto, janela_minutos=1440):
     Retorna True se já existir uma promo igual criada hoje (deve ignorar).
     """
     from django.db import close_old_connections
-    from django.utils import timezone
     close_old_connections()
     from bot.models import Promo
 
-    # Início do dia de hoje no fuso do site (America/Sao_Paulo)
-    limite = timezone.localtime(timezone.now()).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
+    limite = _limite_do_dia()
     try:
         link = _normalizar_url(_primeiro_link_produto(texto))
         preco_int = _preco_reais(_preco_do_texto(texto))
@@ -1326,12 +1544,15 @@ def _converter_para_webp(origem, destino_dir, prefixo='promo', max_lado=900, qua
         return None, None
 
 
-def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
+def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None,
+                     link_produto_chave=None):
     """
     Salva a promoção no banco de dados para exibição na página web.
     Réplica fiel do texto enviado ao Telegram.
     photo_path pode ser um caminho local ou uma URL de imagem.
     url_chave: chave normalizada do link bruto original (para deduplicação estável).
+    link_produto_chave: chave canônica do produto (link sem preço/rastreio),
+        usada para não repetir a mesma oferta no mesmo dia entre canais.
     """
     from django.db import close_old_connections
     close_old_connections()
@@ -1433,6 +1654,16 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
     # qualquer loja/link, mesmo que o preço mude ou a postagem seja repetida).
     produto_chave = _chave_produto(titulo)
 
+    # Chave canônica do link do produto (sem preço/rastreio). É a base da
+    # trava de ofertas repetidas entre canais no mesmo dia. Cupons ficam sem
+    # chave de propósito: eles podem se repetir com o mesmo link.
+    if not link_produto_chave:
+        link_produto_chave = _chave_link_produto(
+            link_afiliado or _primeiro_link_produto(texto)
+        )
+    if categoria == 'cupom':
+        link_produto_chave = ''
+
     # Salva
     try:
         promo = Promo.objects.create(
@@ -1442,6 +1673,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None):
             link_afiliado=link_afiliado,
             url_chave=url_chave,
             produto_chave=produto_chave,
+            link_produto_chave=link_produto_chave,
             imagem_url=imagem_url,
             categoria=categoria,
             loja=loja,

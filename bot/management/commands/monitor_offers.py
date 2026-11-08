@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import time
+import unicodedata
 import requests
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -70,6 +71,64 @@ def _eh_link_grupo(url):
         or 't.me/' in u
         or 'telegram.me/' in u
     )
+
+
+def _normalizar_nome_canal(nome):
+    """Normaliza nome/@username para comparação tolerante a acentos/emoji.
+
+    Ex.: 'Promoções Gamer' casa com 'Promocoes Gamer' e com
+    'Promoções Gamer 🔥' (o usuário pode configurar com ou sem acento).
+    """
+    nome = (nome or '').strip().lstrip('@').casefold()
+    nome = unicodedata.normalize('NFKD', nome)
+    nome = ''.join(c for c in nome if not unicodedata.combining(c))
+    nome = re.sub(r'\s+', ' ', nome).strip()
+    return nome
+
+
+def _links_relevantes_para_dedup(urls):
+    """Remove links que não são de produto (grupos, redes, assinaturas)."""
+    ignorar = (
+        't.me/', 'telegram.me/', 'linktr.ee', 'youtube', 'youtu.be',
+        'tecnan.com.br', 'links.andreindica', 'chat.whatsapp.com',
+        'whatsapp.com/channel',
+    )
+    vistos = set()
+    resultado = []
+    for url in urls:
+        url = (url or '').strip().rstrip('.,;|)')
+        if not url or _eh_link_grupo(url):
+            continue
+        if any(marcador in url.casefold() for marcador in ignorar):
+            continue
+        if url not in vistos:
+            vistos.add(url)
+            resultado.append(url)
+    return resultado
+
+
+def _expandir_urls_para_dedup(urls):
+    """Expande links curtos quando ainda não há uma chave específica.
+
+    Ex.: um link `s.shopee.com.br/abc` não revela o ID do produto. Seguindo
+    o redirecionamento, ele vira `shopee.com.br/product/...`, permitindo
+    reconhecer a mesma oferta postada por outro canal.
+    """
+    from bot.services import _chave_link_produto, _expandir_link_curto
+
+    extras = []
+    for url in urls:
+        chave = _chave_link_produto(url)
+        if chave and ':' in chave:
+            # Já identifica o produto (ex.: 'shopee:111:222'); não precisa
+            # de requisição de rede.
+            continue
+        expandida = _expandir_link_curto(url)
+        if expandida and expandida != url:
+            extras.append(expandida)
+    if not extras:
+        return urls
+    return _links_relevantes_para_dedup(urls + extras)
 
 # ─── Cache em memória para last_processed_id ─────────────────────────────────
 # Evita chamadas constantes ao banco em contexto async — mais seguro e rápido.
@@ -177,13 +236,20 @@ class Command(BaseCommand):
             # Resolve o ID de cada canal e faz o cold start individual
             for canal in canais:
                 canal_nome = canal['nome']
-                canal_norm = canal_nome.casefold()
+                canal_norm = _normalizar_nome_canal(canal_nome)
+                canal_sem_espaco = canal_norm.replace(' ', '')
                 logger.info(f"🔍 Localizando ID do canal {canal_nome}...")
                 target_id = None
                 async for dialog in client.iter_dialogs():
-                    dialog_name = (dialog.name or '').casefold()
-                    dialog_username = (getattr(dialog, 'username', None) or '').casefold()
-                    if canal_norm in dialog_name or canal_norm == dialog_username:
+                    dialog_name = _normalizar_nome_canal(dialog.name)
+                    dialog_username = _normalizar_nome_canal(
+                        getattr(dialog, 'username', None)
+                    )
+                    if (
+                        canal_norm in dialog_name
+                        or canal_sem_espaco == dialog_username.replace(' ', '')
+                        or canal_sem_espaco in dialog_username.replace(' ', '')
+                    ):
                         target_id = dialog.id
                         logger.info(f"✅ CANAL ENCONTRADO: {dialog.name} (ID: {target_id})")
                         break
@@ -224,6 +290,11 @@ class Command(BaseCommand):
             # várias mensagens em paralelo (listener + polling) passariam na
             # checagem e publicariam juntas.
             publicacao_lock = asyncio.Lock()
+
+            # Serializa a checagem de oferta repetida + gravação no banco.
+            # Sem isso, dois canais podem postar a mesma oferta ao mesmo tempo:
+            # os dois passam na checagem antes de qualquer um salvar.
+            dedup_lock = asyncio.Lock()
 
             async def process_message(message, canal=None):
                 """Converte links e envia para Telegram + WhatsApp"""
@@ -318,6 +389,10 @@ class Command(BaseCommand):
                 links = re.findall(r'(https?://\S+)', modified_text)
                 converted_any = False
                 has_ali = False
+                # URLs reais obtidas ao expandir redirecionadores (seuhardware,
+                # pcdofafa, Awin...). Ajudam a identificar o mesmo produto
+                # entre canais que usam links/rastreios diferentes.
+                links_resolvidos = []
 
                 # Deduplicação: remove links repetidos mantendo a ordem
                 seen_links = []
@@ -369,6 +444,7 @@ class Command(BaseCommand):
                             except:
                                 pass
                         if extracted_url:
+                            links_resolvidos.append(extracted_url)
                             new_awin = convert_awin_link(extracted_url)
                             if new_awin:
                                 modified_text = modified_text.replace(link, new_awin)
@@ -399,6 +475,7 @@ class Command(BaseCommand):
                             if m_refresh:
                                 real_url = m_refresh.group(1).strip()
                             if real_url:
+                                links_resolvidos.append(real_url)
                                 converted = convert_to_affiliate_link(real_url)
                                 if converted:
                                     modified_text = modified_text.replace(link, converted)
@@ -434,6 +511,7 @@ class Command(BaseCommand):
                                 logger.info("🧹 Link de grupo removido da oferta")
                                 continue
                             if real_url and real_url != link:
+                                links_resolvidos.append(real_url)
                                 converted = convert_to_affiliate_link(real_url)
                                 if converted:
                                     if 'aliexpress' in real_url:
@@ -480,6 +558,50 @@ class Command(BaseCommand):
                 if not converted_any:
                     logger.info("🚫 Mensagem ignorada (nenhum link de loja detectado).")
                     return False
+
+                # ─── Trava de oferta repetida por LINK (mesmo dia) ───────────
+                # Compara o link canônico do produto (sem preço/rastreio),
+                # inclusive o destino real de encurtadores/redirecionadores.
+                # Vale entre canais: se a oferta já foi postada hoje por
+                # qualquer canal, a segunda é ignorada. À meia-noite libera.
+                chave_link_produto = ''
+                urls_dedup = _links_relevantes_para_dedup(
+                    links_resolvidos
+                    + re.findall(r'(https?://\S+)', modified_text)
+                    + links
+                )
+                # Encurtadores (Shopee, AliExpress, etc.) escondem o ID do
+                # produto; segue o redirecionamento para comparar o destino.
+                if not eh_cupom_msg and urls_dedup:
+                    urls_dedup = await asyncio.to_thread(
+                        _expandir_urls_para_dedup, urls_dedup
+                    )
+                if not eh_cupom_msg and urls_dedup:
+                    try:
+                        from bot.services import (
+                            promo_link_ja_postada_hoje,
+                            _chave_link_produto,
+                        )
+                        if await asyncio.to_thread(
+                            promo_link_ja_postada_hoje, *urls_dedup
+                        ):
+                            logger.info("⏭️ Oferta já postada hoje (mesmo link), ignorada.")
+                            return True
+                        # Prefere a chave específica do produto (ex.:
+                        # 'shopee:123:456') à chave genérica de um link curto
+                        # (ex.: 's.shopee.com.br/abc'), que muda a cada geração.
+                        chaves_calculadas = []
+                        for url_dedup in urls_dedup:
+                            chave = _chave_link_produto(url_dedup)
+                            if chave and chave not in chaves_calculadas:
+                                chaves_calculadas.append(chave)
+                        if chaves_calculadas:
+                            chave_link_produto = next(
+                                (c for c in chaves_calculadas if ':' in c),
+                                chaves_calculadas[0],
+                            )
+                    except Exception as dedup_err:
+                        logger.error(f"❌ Erro na trava por link: {dedup_err}")
 
                 # 4. Adiciona o novo rodapé do site
                 # Remove seções PELO PC residuais e outras linhas de rodapé do canal fonte
@@ -564,11 +686,37 @@ class Command(BaseCommand):
                 # ─── Salva a promo no banco para a página web ─────────────────
                 promo_id = None
                 try:
-                    from bot.services import save_promo_to_db, _chave_dedup
+                    from bot.services import (
+                        save_promo_to_db,
+                        _chave_dedup,
+                        promo_link_ja_postada_hoje,
+                    )
                     # Chave estável baseada no link BRUTO + preço (msg_text),
                     # para não ignorar ofertas novas do mesmo produto com preço/cupom diferente.
                     chave_estavel = _chave_dedup(msg_text)
-                    promo_id = await asyncio.to_thread(save_promo_to_db, modified_text, photo_path, canal['nome'], chave_estavel)
+                    async with dedup_lock:
+                        # Recheca dentro do lock: dois canais podem ter passado
+                        # na checagem anterior ao mesmo tempo. Só a primeira
+                        # oferta é salva/postada; a segunda é ignorada.
+                        if not eh_cupom_msg and urls_dedup:
+                            if await asyncio.to_thread(
+                                promo_link_ja_postada_hoje, *urls_dedup
+                            ):
+                                logger.info("⏭️ Oferta já postada hoje (mesmo link), ignorada.")
+                                if photo_path and not imagem_cupom_usada:
+                                    try:
+                                        os.remove(photo_path)
+                                    except Exception:
+                                        pass
+                                return True
+                        promo_id = await asyncio.to_thread(
+                            save_promo_to_db,
+                            modified_text,
+                            photo_path,
+                            canal['nome'],
+                            chave_estavel,
+                            chave_link_produto,
+                        )
                     logger.info("💾 Promo salva no banco de dados")
                 except Exception as db_err:
                     logger.error(f"❌ Erro ao salvar promo no banco: {db_err}")

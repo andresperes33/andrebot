@@ -24,6 +24,8 @@ Este projeto é um bot do Telegram construído com Django que converte links env
    TELEGRAM_BOT_TOKEN=seu_token_aqui
    TELEGRAM_GROUP_ID=seu_id_do_grupo_aqui
    SOURCE_CHANNEL_USERNAME=Iskandar Souza - Promoções
+   EXTRA_SOURCE_CHANNELS_JSON=[{"nome": "Promoções Gamer"}]
+   # Também aceita nomes simples separados por vírgula: EXTRA_SOURCE_CHANNELS_JSON=Promoções Gamer
    SHOPEE_AFFILIATE_ID=seu_id_de_rastreamento_aqui
    ```
 

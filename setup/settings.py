@@ -202,18 +202,33 @@ IMAGEM_DA_PAGINA_PRODUTO = os.getenv('IMAGEM_DA_PAGINA_PRODUTO', 'True') == 'Tru
 #   {'nome': '<nome ou @username>', 'filtro': '<tipo>', 'remover_marca': bool}
 #   'filtro' opcional: 'aliexpress' = captura SÓ ofertas com link AliExpress.
 #   'remover_marca' opcional: True = remove marca d'água verde do canto inferior esquerdo.
-# Formato: JSON (ex.: '[{"nome": "Promoções Gamer", "filtro": "aliexpress"}]')
+# Formato preferido: JSON (ex.: '[{"nome": "Promoções Gamer", "filtro": "aliexpress"}]')
+# Também aceita nomes simples separados por vírgula (ex.: 'Promoções Gamer, Outro Canal').
 import json as _json_extra
 def _parse_extra_channels():
     raw = os.getenv('EXTRA_SOURCE_CHANNELS_JSON', '').strip()
-    if raw:
-        try:
-            data = _json_extra.loads(raw)
-            if isinstance(data, list):
-                return [c for c in data if isinstance(c, dict) and c.get('nome')]
-        except Exception:
-            pass
-    return []
+    if not raw:
+        return []
+    tentou_json = raw.lstrip().startswith(('[', '{'))
+    try:
+        data = _json_extra.loads(raw)
+        if isinstance(data, dict):
+            data = [data]
+        if isinstance(data, list):
+            canais = [
+                c for c in data
+                if isinstance(c, dict) and (c.get('nome') or '').strip()
+            ]
+            if canais:
+                return canais
+    except Exception:
+        pass
+    # Se começou com [ ou { mas o JSON é inválido, não tenta adivinhar.
+    if tentou_json:
+        return []
+    # Fallback amigável: "Promoções Gamer, Outro Canal" ou separado por ";".
+    nomes = raw.replace(';', ',').split(',')
+    return [{'nome': n.strip()} for n in nomes if n.strip()]
 EXTRA_SOURCE_CHANNELS = _parse_extra_channels()
 
 # Personal Settings (Overrides)
