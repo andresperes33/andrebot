@@ -123,12 +123,37 @@ def _chave_link_produto(url):
 
     Identifica o mesmo produto mesmo quando os canais usam formatos
     diferentes de link (link direto, link curto de afiliado, redirecionador).
-    É usada para não postar a mesma oferta duas vezes no mesmo dia.
+    É usada para não postar a mesma oferta duas vezes na mesma janela.
     """
     url = (url or '').strip().rstrip('.,;|)')
     if not url:
         return ''
     url = _extrair_url_destino(url)
+
+    # Alguns links de loja escondem o ID do produto na query. O caso mais
+    # comum é o link de "moedas" da AliExpress
+    # (m.aliexpress.com/p/coin-index/...?productIds=123...), que é
+    # compartilhado por várias ofertas mas aponta para o produto certo.
+    # Extrair o ID antes de remover a query evita que ofertas diferentes
+    # caiam na mesma chave genérica e sejam bloqueadas como duplicadas.
+    try:
+        parsed_url = urllib.parse.urlparse(url)
+        host_query = (parsed_url.netloc or '').casefold()
+        query = urllib.parse.parse_qs(parsed_url.query)
+    except Exception:
+        host_query = ''
+        query = {}
+    if 'aliexpress' in host_query:
+        for chave_query in ('productIds', 'productId', 'product_id'):
+            for valor in query.get(chave_query) or []:
+                m_id = re.search(r'\d{6,}', valor)
+                if m_id:
+                    return f'aliexpress:{m_id.group(0)}'
+        # Página de moedas/cupons sem ID de produto não identifica um produto.
+        caminho_query = (parsed_url.path or '').casefold()
+        if 'coin-index' in caminho_query or '/p/coin' in caminho_query:
+            return ''
+
     norm = _normalizar_url(url)
     if not norm:
         return ''
@@ -1407,12 +1432,16 @@ def _limite_do_dia():
     )
 
 
-def promo_link_ja_postada_hoje(*urls):
-    """True se o PRODUTO de alguma dessas URLs já foi postado na janela atual.
+def promo_duplicada_na_janela(*urls):
+    """Retorna a Promo já postada nesta janela de 3h, ou None.
 
     A comparação é feita pelo link canônico do produto (sem preço nem
     parâmetros de rastreio). A janela zera a cada 3 horas: ao final de cada
     janela, a mesma oferta pode ser repostada.
+
+    Chaves genéricas (sem ':') só são consideradas quando não há nenhuma
+    chave específica. Isso evita falsos positivos de páginas compartilhadas
+    (ex.: página de moedas da AliExpress, usada por ofertas diferentes).
 
     Cupons são ignorados nesta checagem (o monitor não grava chave de link
     para eles), pois podem se repetir com o mesmo link.
@@ -1423,40 +1452,60 @@ def promo_link_ja_postada_hoje(*urls):
 
     limite = _limite_janela_3h()
 
-    chaves = set()
+    chaves_especificas = set()
+    chaves_genericas = set()
     urls_normalizadas = set()
     for url in urls:
         if not url:
             continue
         chave = _chave_link_produto(url)
-        if chave:
-            chaves.add(chave)
+        if not chave:
+            continue
+        if ':' in chave:
+            chaves_especificas.add(chave)
+        else:
+            chaves_genericas.add(chave)
         normalizada = _normalizar_url(url)
         if normalizada:
             urls_normalizadas.add(normalizada)
 
-    if not chaves and not urls_normalizadas:
-        return False
+    # Se há chave específica do produto, ignora as genéricas: uma página
+    # compartilhada (moedas, cupons, home da loja) não pode bloquear um
+    # produto diferente.
+    chaves = chaves_especificas or chaves_genericas
 
     try:
         # 1) Chave canônica do produto (funciona entre canais/formatos).
-        if chaves and Promo.objects.filter(
-            link_produto_chave__in=chaves, criado_em__gte=limite
-        ).exists():
-            return True
+        if chaves:
+            promo = Promo.objects.filter(
+                link_produto_chave__in=chaves, criado_em__gte=limite
+            ).order_by('-criado_em').first()
+            if promo:
+                return promo
 
-        # 2) Fallback para registros antigos (sem link_produto_chave), que
-        # guardaram o link bruto normalizado em url_chave (link|preço).
-        for normalizada in urls_normalizadas:
-            if Promo.objects.filter(
-                url_chave__startswith=normalizada + '|', criado_em__gte=limite
-            ).exists():
-                return True
-        return False
+        # 2) Fallback apenas para registros antigos (sem link_produto_chave),
+        # que guardaram o link bruto normalizado em url_chave (link|preço).
+        # Restringir a link_produto_chave='' evita que uma chave genérica
+        # recente (ex.: página de moedas) bloqueie ofertas diferentes.
+        if not chaves_especificas:
+            for normalizada in urls_normalizadas:
+                promo = Promo.objects.filter(
+                    url_chave__startswith=normalizada + '|',
+                    link_produto_chave='',
+                    criado_em__gte=limite,
+                ).order_by('-criado_em').first()
+                if promo:
+                    return promo
+        return None
     except Exception as db_err:
         logger = logging.getLogger(__name__)
         logger.warning(f"⚠️ Erro ao verificar link já postado hoje: {db_err}")
-        return False
+        return None
+
+
+def promo_link_ja_postada_hoje(*urls):
+    """True se o PRODUTO de alguma dessas URLs já foi postado na janela atual."""
+    return promo_duplicada_na_janela(*urls) is not None
 
 
 def promo_repetida_recente(texto, janela_minutos=1440):

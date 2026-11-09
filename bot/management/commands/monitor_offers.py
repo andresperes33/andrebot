@@ -579,13 +579,21 @@ class Command(BaseCommand):
                 if not eh_cupom_msg and urls_dedup:
                     try:
                         from bot.services import (
-                            promo_link_ja_postada_hoje,
+                            promo_duplicada_na_janela,
                             _chave_link_produto,
                         )
-                        if await asyncio.to_thread(
-                            promo_link_ja_postada_hoje, *urls_dedup
-                        ):
-                            logger.info("⏭️ Oferta já postada hoje (mesmo link), ignorada.")
+                        duplicada = await asyncio.to_thread(
+                            promo_duplicada_na_janela, *urls_dedup
+                        )
+                        if duplicada:
+                            logger.info(
+                                "⏭️ Oferta já postada nesta janela de 3h "
+                                "(mesmo link), ignorada. "
+                                f"[id={duplicada.id} "
+                                f"criado_em={duplicada.criado_em} "
+                                f"chave={duplicada.link_produto_chave!r} "
+                                f"titulo={duplicada.titulo!r}]"
+                            )
                             return True
                         # Prefere a chave específica do produto (ex.:
                         # 'shopee:123:456') à chave genérica de um link curto
@@ -689,7 +697,7 @@ class Command(BaseCommand):
                     from bot.services import (
                         save_promo_to_db,
                         _chave_dedup,
-                        promo_link_ja_postada_hoje,
+                        promo_duplicada_na_janela,
                     )
                     # Chave estável baseada no link BRUTO + preço (msg_text),
                     # para não ignorar ofertas novas do mesmo produto com preço/cupom diferente.
@@ -699,10 +707,18 @@ class Command(BaseCommand):
                         # na checagem anterior ao mesmo tempo. Só a primeira
                         # oferta é salva/postada; a segunda é ignorada.
                         if not eh_cupom_msg and urls_dedup:
-                            if await asyncio.to_thread(
-                                promo_link_ja_postada_hoje, *urls_dedup
-                            ):
-                                logger.info("⏭️ Oferta já postada hoje (mesmo link), ignorada.")
+                            duplicada = await asyncio.to_thread(
+                                promo_duplicada_na_janela, *urls_dedup
+                            )
+                            if duplicada:
+                                logger.info(
+                                    "⏭️ Oferta já postada nesta janela de 3h "
+                                    "(mesmo link), ignorada. "
+                                    f"[id={duplicada.id} "
+                                    f"criado_em={duplicada.criado_em} "
+                                    f"chave={duplicada.link_produto_chave!r} "
+                                    f"titulo={duplicada.titulo!r}]"
+                                )
                                 if photo_path and not imagem_cupom_usada:
                                     try:
                                         os.remove(photo_path)
