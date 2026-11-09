@@ -1387,6 +1387,18 @@ def promo_ja_postada(texto):
         return False
 
 
+def _limite_janela_3h():
+    """Início da janela de 3 horas atual no fuso do site (America/Sao_Paulo).
+
+    As janelas são: 00-02, 03-05, 06-08, 09-11, 12-14, 15-17, 18-20, 21-23.
+    No final de cada janela, a mesma oferta pode ser repostada.
+    """
+    from django.utils import timezone
+    agora = timezone.localtime(timezone.now())
+    hora_janela = (agora.hour // 3) * 3
+    return agora.replace(hour=hora_janela, minute=0, second=0, microsecond=0)
+
+
 def _limite_do_dia():
     """Início do dia de hoje no fuso do site (America/Sao_Paulo)."""
     from django.utils import timezone
@@ -1396,11 +1408,11 @@ def _limite_do_dia():
 
 
 def promo_link_ja_postada_hoje(*urls):
-    """True se o PRODUTO de alguma dessas URLs já foi postado hoje.
+    """True se o PRODUTO de alguma dessas URLs já foi postado na janela atual.
 
     A comparação é feita pelo link canônico do produto (sem preço nem
-    parâmetros de rastreio). A janela zera à meia-noite: a mesma oferta pode
-    ser postada novamente no dia seguinte.
+    parâmetros de rastreio). A janela zera a cada 3 horas: ao final de cada
+    janela, a mesma oferta pode ser repostada.
 
     Cupons são ignorados nesta checagem (o monitor não grava chave de link
     para eles), pois podem se repetir com o mesmo link.
@@ -1409,7 +1421,7 @@ def promo_link_ja_postada_hoje(*urls):
     close_old_connections()
     from bot.models import Promo
 
-    limite = _limite_do_dia()
+    limite = _limite_janela_3h()
 
     chaves = set()
     urls_normalizadas = set()
