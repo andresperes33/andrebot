@@ -212,6 +212,73 @@ def _chave_link_produto(url):
     return f'{host}{caminho}'.rstrip('/')
 
 
+def _normalizar_texto_chave(texto):
+    """Normaliza texto para comparação (sem acento, pontuação ou espaços extras)."""
+    t = unicodedata.normalize('NFKD', texto or '').encode('ascii', 'ignore').decode('ascii')
+    t = re.sub(r'[^\w\s]', ' ', t).lower()
+    return re.sub(r'\s+', ' ', t).strip()
+
+
+def _codigos_cupom(texto):
+    """Extrai códigos de cupom do texto.
+
+    Considera apenas linhas que falam de cupom/código e tokens com letra e
+    dígito (ex.: 'AEMEGA2', 'AFFNOV02'), evitando confundir modelos de
+    produto (ex.: 'RTX5060') com código.
+    """
+    marcadores = (
+        'cupom', 'cupons', 'codigo', 'código', 'code', 'use ', 'usar',
+        'resgate', 'resgatar', 'aplique', 'aplicar', 'válido', 'valido',
+    )
+    codigos = []
+    for linha in (texto or '').splitlines():
+        baixa = linha.casefold()
+        if not any(m in baixa for m in marcadores):
+            continue
+        for token in re.findall(r'\b[A-Z0-9]{4,20}\b', linha):
+            if re.search(r'[A-Z]', token) and re.search(r'\d', token):
+                codigos.append(token)
+
+    vistos = set()
+    unicos = []
+    for codigo in codigos:
+        if codigo not in vistos:
+            vistos.add(codigo)
+            unicos.append(codigo)
+    return unicos
+
+
+def _chave_cupom(texto):
+    """Chave estável de um cupom: códigos ou título/loja normalizados.
+
+    Usada na janela de deduplicação de 3h dos cupons. Diferente do link,
+    permite que cupons diferentes da mesma loja sejam postados mesmo que
+    compartilhem a mesma página/URL.
+    """
+    codigos = _codigos_cupom(texto)
+    if codigos:
+        return 'cupom:' + '+'.join(sorted(codigos))
+
+    try:
+        titulo = _linha_titulo(texto)
+    except Exception:
+        titulo = ''
+    base = _normalizar_texto_chave(titulo)
+    if not base:
+        base = _normalizar_texto_chave(texto)[:160]
+    if not base:
+        return ''
+
+    try:
+        from bot.classifier import detectar_loja
+        loja = _normalizar_texto_chave(detectar_loja(texto) or '')
+    except Exception:
+        loja = ''
+    if loja:
+        return f'cupom:{loja}:{base}'
+    return f'cupom:{base}'
+
+
 # Cache em memória dos links curtos já expandidos (limpo diariamente).
 _CACHE_LINKS_CURTOS = {}
 _CACHE_LINKS_CURTOS_DIA = None
@@ -1508,6 +1575,32 @@ def promo_link_ja_postada_hoje(*urls):
     return promo_duplicada_na_janela(*urls) is not None
 
 
+def promo_chave_duplicada_na_janela(chave):
+    """Retorna a Promo com essa chave já postada na janela de 3h, ou None.
+
+    Usada pelos CUPONS, que são deduplicados pelo código/título (chave
+    ``cupom:...``) em vez do link, já que vários cupons da mesma loja podem
+    compartilhar a mesma página.
+    """
+    chave = (chave or '').strip()
+    if not chave:
+        return None
+
+    from django.db import close_old_connections
+    close_old_connections()
+    from bot.models import Promo
+
+    limite = _limite_janela_3h()
+    try:
+        return Promo.objects.filter(
+            link_produto_chave=chave, criado_em__gte=limite
+        ).order_by('-criado_em').first()
+    except Exception as db_err:
+        logger = logging.getLogger(__name__)
+        logger.warning(f"⚠️ Erro ao verificar cupom já postado: {db_err}")
+        return None
+
+
 def promo_repetida_recente(texto, janela_minutos=1440):
     """
     Verifica se uma promoção IGUAL já foi capturada NO MESMO DIA (calendário,
@@ -1715,15 +1808,17 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None,
     # qualquer loja/link, mesmo que o preço mude ou a postagem seja repetida).
     produto_chave = _chave_produto(titulo)
 
-    # Chave canônica do link do produto (sem preço/rastreio). É a base da
-    # trava de ofertas repetidas entre canais no mesmo dia. Cupons ficam sem
-    # chave de propósito: eles podem se repetir com o mesmo link.
-    if not link_produto_chave:
+    # Chave usada na trava de deduplicação de 3 horas:
+    # - Cupons: código/título do cupom (vários cupons da mesma loja podem
+    #   compartilhar a mesma página, então o link não serve).
+    # - Demais ofertas: link canônico do produto (sem preço/rastreio).
+    if categoria == 'cupom':
+        if not (link_produto_chave or '').startswith('cupom:'):
+            link_produto_chave = _chave_cupom(texto)
+    elif not link_produto_chave:
         link_produto_chave = _chave_link_produto(
             link_afiliado or _primeiro_link_produto(texto)
         )
-    if categoria == 'cupom':
-        link_produto_chave = ''
 
     # Salva
     try:

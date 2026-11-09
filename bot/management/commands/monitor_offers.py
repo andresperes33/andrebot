@@ -318,12 +318,13 @@ class Command(BaseCommand):
 
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
-                # ─── Trava anti-repetição (dia corrido, reseta à meia-noite) ────
-                # Se a MESMA oferta (mesmo link/título + mesmo preço em reais)
-                # já foi capturada HOJE, ignora. Trocou o dia, pode postar de novo.
-                # Cupons são exceção: mudam pouco e devem ser postados todos,
-                # mesmo com link/título/preço parecidos.
+                # ─── Trava anti-repetição ────────────────────────────────────
+                # Ofertas comuns: mesma oferta (link/título + preço) já
+                # capturada hoje é ignorada.
+                # Cupons: deduplicados pelo CÓDIGO/TÍTULO na janela de 3h
+                # (cupons diferentes da mesma loja podem usar o mesmo link).
                 eh_cupom_msg = False
+                chave_cupom = ''
                 try:
                     from bot.classifier import detectar_categoria
                     eh_cupom_msg = detectar_categoria(msg_text) == 'cupom'
@@ -331,7 +332,31 @@ class Command(BaseCommand):
                     logger.warning(f"⚠️ Falha ao detectar cupom na trava anti-repetição: {cupom_err}")
 
                 if eh_cupom_msg:
-                    logger.info("🎟️ Cupom detectado: anti-repetição ignorada; postando todas as ofertas.")
+                    try:
+                        from bot.services import (
+                            _chave_cupom,
+                            promo_chave_duplicada_na_janela,
+                        )
+                        chave_cupom = _chave_cupom(msg_text)
+                        duplicada_cupom = await asyncio.to_thread(
+                            promo_chave_duplicada_na_janela, chave_cupom
+                        )
+                        if duplicada_cupom:
+                            logger.info(
+                                "⏭️ Cupom já postado nesta janela de 3h, "
+                                "ignorado. "
+                                f"[id={duplicada_cupom.id} "
+                                f"criado_em={duplicada_cupom.criado_em} "
+                                f"chave={duplicada_cupom.link_produto_chave!r} "
+                                f"titulo={duplicada_cupom.titulo!r}]"
+                            )
+                            return True
+                        logger.info(
+                            f"🎟️ Cupom detectado (chave={chave_cupom!r}); "
+                            "sem duplicata na janela de 3h."
+                        )
+                    except Exception as cupom_dedup_err:
+                        logger.error(f"❌ Erro na trava de cupom: {cupom_dedup_err}")
                 else:
                     try:
                         from bot.services import promo_repetida_recente
@@ -698,6 +723,7 @@ class Command(BaseCommand):
                         save_promo_to_db,
                         _chave_dedup,
                         promo_duplicada_na_janela,
+                        promo_chave_duplicada_na_janela,
                     )
                     # Chave estável baseada no link BRUTO + preço (msg_text),
                     # para não ignorar ofertas novas do mesmo produto com preço/cupom diferente.
@@ -706,7 +732,26 @@ class Command(BaseCommand):
                         # Recheca dentro do lock: dois canais podem ter passado
                         # na checagem anterior ao mesmo tempo. Só a primeira
                         # oferta é salva/postada; a segunda é ignorada.
-                        if not eh_cupom_msg and urls_dedup:
+                        if eh_cupom_msg:
+                            duplicada_cupom = await asyncio.to_thread(
+                                promo_chave_duplicada_na_janela, chave_cupom
+                            )
+                            if duplicada_cupom:
+                                logger.info(
+                                    "⏭️ Cupom já postado nesta janela de 3h, "
+                                    "ignorado. "
+                                    f"[id={duplicada_cupom.id} "
+                                    f"criado_em={duplicada_cupom.criado_em} "
+                                    f"chave={duplicada_cupom.link_produto_chave!r} "
+                                    f"titulo={duplicada_cupom.titulo!r}]"
+                                )
+                                if photo_path and not imagem_cupom_usada:
+                                    try:
+                                        os.remove(photo_path)
+                                    except Exception:
+                                        pass
+                                return True
+                        elif urls_dedup:
                             duplicada = await asyncio.to_thread(
                                 promo_duplicada_na_janela, *urls_dedup
                             )
@@ -731,7 +776,7 @@ class Command(BaseCommand):
                             photo_path,
                             canal['nome'],
                             chave_estavel,
-                            chave_link_produto,
+                            chave_cupom if eh_cupom_msg else chave_link_produto,
                         )
                     logger.info("💾 Promo salva no banco de dados")
                 except Exception as db_err:
