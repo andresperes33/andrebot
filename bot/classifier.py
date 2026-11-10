@@ -699,6 +699,29 @@ def detectar_categoria(texto, titulo=None):
         ) and re.search(r'\b(?:ps[0-9]|playstation|xbox|nintendo|switch|pc\b|steam)\b', alvo_norm):
             return 'jogo'
 
+        # Jogo vendido pelo NOME + plataforma ao final, sem a palavra 'jogo'
+        # no título (ex.: 'Resident Evil Requiem - Ps5', 'Mortal Kombat 1 PS5',
+        # 'Resident Evil 4 (PS5)'). Console NÃO entra: 'Console PlayStation 5'
+        # tem 'console' antes da plataforma, 'Sony PlayStation 5' tem só uma
+        # palavra antes, e acessórios (controle/headset/SSD/capa) já foram
+        # tratados acima ou são excluídos pelo nome.
+        linha_titulo = _norm(_limpar_compat((alvo or '').split('\n')[0]))
+        m_jogo = re.search(
+            r'^(?P<nome>.+?)\s*(?:[-–—|]|\()?\s*'
+            r'(?:ps\s*[1-5]|playstation\s*[1-5]|xbox(?:\s*series\s*[sx])?|'
+            r'nintendo\s*switch|switch)\s*\)?\s*$',
+            linha_titulo,
+        )
+        if m_jogo:
+            nome_jogo = m_jogo.group('nome')
+            if len(re.findall(r'[a-z0-9]+', nome_jogo)) >= 2 and not re.search(
+                r'\b(?:console|videogame|sony|microsoft|kit|'
+                r'capa|case|suporte|controle|controlador|gamepad|joystick|'
+                r'headset|fone|carregador|cabo|ssd|hd|memoria)\b',
+                nome_jogo,
+            ):
+                return 'jogo'
+
     # PROJETOR: 'Projetor HY300 ... Celular TV Box Xbox PS5 PC' — os consoles
     # citados são só compatibilidade; o produto é o projetor → 'outros'.
     for alvo in (titulo, texto,):
