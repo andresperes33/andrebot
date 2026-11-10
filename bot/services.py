@@ -219,12 +219,24 @@ def _normalizar_texto_chave(texto):
     return re.sub(r'\s+', ' ', t).strip()
 
 
+_CUPOM_PALAVRAS_IGNORADAS = {
+    'OFF', 'CUPOM', 'CUPONS', 'CUPOMS', 'LIMITE', 'VER', 'OFERTA', 'CONFIRA',
+    'RESGATE', 'AQUI', 'APP', 'LINK', 'BRL', 'DESCONTO', 'ACIMA', 'ABAIXO',
+    'APARTIR', 'MINIMO', 'MAXIMO', 'TOTAL', 'PRECO',
+    'VALOR', 'FRETE', 'GRATIS', 'PARA', 'COM', 'SEM', 'POR',
+    'PARCELADO', 'JUROS', 'COMPRA', 'PRIMEIRA', 'ACESSAR', 'CLIQUE',
+}
+
+
 def _codigos_cupom(texto):
     """Extrai códigos de cupom do texto.
 
-    Considera apenas linhas que falam de cupom/código e tokens com letra e
-    dígito (ex.: 'AEMEGA2', 'AFFNOV02'), evitando confundir modelos de
-    produto (ex.: 'RTX5060') com código.
+    Considera linhas que falam de cupom/código OU que terminam com
+    ': CODIGO' (formato comum de listas de cupons, ex.:
+    '25% OFF a partir de R$ 99,00: SEMPRENOMELI'). Aceita códigos com
+    letra e dígito (ex.: 'AEMEGA2') e códigos só de letras maiúsculas com
+    6+ caracteres (ex.: 'CUPOMTECH', 'OFFHOJE'), evitando confundir
+    modelos de produto (ex.: 'RTX5060') com código.
     """
     marcadores = (
         'cupom', 'cupons', 'codigo', 'código', 'code', 'use ', 'usar',
@@ -233,10 +245,26 @@ def _codigos_cupom(texto):
     codigos = []
     for linha in (texto or '').splitlines():
         baixa = linha.casefold()
-        if not any(m in baixa for m in marcadores):
+        tem_marcador = any(m in baixa for m in marcadores)
+        # Código no fim da linha após ':' (ex.: '... R$ 40,00: FULL1011').
+        m_final = re.search(r':\s*([A-Z0-9]{4,20})\s*$', linha)
+        if not tem_marcador and not m_final:
             continue
-        for token in re.findall(r'\b[A-Z0-9]{4,20}\b', linha):
-            if re.search(r'[A-Z]', token) and re.search(r'\d', token):
+
+        candidatos = []
+        if m_final:
+            candidatos.append(m_final.group(1))
+        if tem_marcador:
+            candidatos.extend(re.findall(r'\b[A-Z0-9]{4,20}\b', linha))
+
+        for token in candidatos:
+            if token.upper() in _CUPOM_PALAVRAS_IGNORADAS:
+                continue
+            if not re.search(r'[A-Z]', token):
+                continue
+            # Letra+dígito (AEMEGA2) ou palavra toda maiúscula longa
+            # (CUPOMTECH, SEMPRENOMELI) — esta última é claramente um código.
+            if re.search(r'\d', token) or (token.isupper() and len(token) >= 6):
                 codigos.append(token)
 
     vistos = set()
@@ -1060,6 +1088,9 @@ _TERMOS_CABECALHO = [
     'confira todos os detalhes da oferta', 'confira todos os detalhes',
     'veja todos os detalhes da oferta', 'veja todos os detalhes',
     'todos os detalhes da oferta', 'confira a oferta', 'confira as nossas ofertas',
+    # Chamadas de ação que aparecem em cada item de cupom/lista e não são título.
+    'confira ver oferta', 'confira: ver oferta', 'ver oferta', 'veja a oferta',
+    'veja oferta', 'resgate aqui', 'confira aqui', 'clique aqui',
     'disponivel', 'disponível', 'estoque limitado', 'ultimas unidades',
     'poucas unidades', 'últimas unidades', 'ultima chance', 'última chance',
     'corre que ainda', 'corre que', 'saiu rapidinho', 'está acabando', 'ta acabando',
@@ -1329,7 +1360,11 @@ def _linha_titulo(texto):
     cupom_candidata = None
 
     for linha in texto.split('\n'):
-        limpa = re.sub(r'[^\w\s.,!?/-]', '', linha).strip()
+        # Linha que é/contém um link (ex.: 'Confira https://produto...') não
+        # serve de título: o slug da URL pode ter nome de outro produto
+        # ('suporte-cockpit-volante-simulador...') e confundir a categoria.
+        linha_sem_url = re.sub(r'(?:https?:?//|www\.)\S+', ' ', linha, flags=re.I)
+        limpa = re.sub(r'[^\w\s.,!?/-]', '', linha_sem_url).strip()
         baixa = limpa.casefold()
         if not limpa or len(limpa) <= 5:
             continue
@@ -1379,7 +1414,9 @@ def _linha_titulo(texto):
     # R$200 OFF') e não há outra linha — usa a própria linha, pra não deixar
     # o card sem título.
     for linha in texto.split('\n'):
-        limpa = re.sub(r'[^\w\s.,!?%-]', '', linha).strip()
+        # Remove links antes de montar o título (o slug pode virar "título").
+        linha_sem_url = re.sub(r'(?:https?:?//|www\.)\S+', ' ', linha, flags=re.I)
+        limpa = re.sub(r'[^\w\s.,!?%-]', '', linha_sem_url).strip()
         baixa_fb = limpa.casefold()
         if len(limpa) <= 6 or not re.search(r'\s', limpa):
             continue

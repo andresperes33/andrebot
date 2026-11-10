@@ -42,8 +42,9 @@ def _limpar_compat(texto):
     base = sem_acento(texto or '')
     # Remove URLs (o slug do link pode conter nome de outro produto, ex.:
     # link de cupom apontando para 'monitor-gamer-aoc...' — não deve
-    # influenciar a categoria do anúncio).
-    base = re.sub(r'https?://[^\s<>"\']+', ' ', base, flags=re.I)
+    # influenciar a categoria do anúncio). Aceita também link sem ':' após
+    # o esquema ('https//...'), que aparece em alguns canais.
+    base = re.sub(r'https?:?//[^\s<>"\']+', ' ', base, flags=re.I)
     # Apaga desde 'compatível' até o fim da cláusula (vírgula, ponto ou fim).
     base = re.sub(r'\s+compativel\s*(com\b|para\b|:|\s)*[^,;.]*', ' ', base, flags=re.I)
     # Apaga 'para <aparelho>' quando o aparelho citado é só compatibilidade
@@ -841,11 +842,11 @@ def detectar_categoria(texto, titulo=None):
     # ('AUMENTOU O LIMITE!!', '10% OFF') continuam em 'outros'.
     from bot.services import _eh_anuncio_cupom, _eh_linha_titulo_produto
     tem_produto_real = any(
-        _eh_linha_titulo_produto(_norm(linha))
+        _eh_linha_titulo_produto(_norm(_limpar_compat(linha)))
         for alvo in (titulo, texto)
         if alvo
         for linha in alvo.split('\n')
-        if _norm(linha)
+        if _norm(_limpar_compat(linha))
     )
     if not tem_produto_real:
         for alvo in (titulo, texto):
