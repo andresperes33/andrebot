@@ -362,7 +362,15 @@ class Command(BaseCommand):
                         from bot.services import promo_repetida_recente
                         repetida = await asyncio.to_thread(promo_repetida_recente, msg_text)
                         if repetida:
-                            logger.info("⏭️ Oferta já capturada hoje, ignorada.")
+                            logger.info(
+                                "⏭️ Oferta já capturada hoje, ignorada. "
+                                f"[id={repetida.id} "
+                                f"criado_em={repetida.criado_em} "
+                                f"titulo={repetida.titulo!r} "
+                                f"preco={repetida.preco!r} "
+                                f"produto_chave={repetida.produto_chave!r} "
+                                f"url_chave={repetida.url_chave!r}]"
+                            )
                             return True
                     except Exception as repetida_err:
                         logger.error(f"❌ Erro na trava anti-repetição: {repetida_err}")

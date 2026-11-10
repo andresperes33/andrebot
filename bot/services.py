@@ -212,6 +212,43 @@ def _chave_link_produto(url):
     return f'{host}{caminho}'.rstrip('/')
 
 
+# Caminhos genéricos de loja (home, busca, listas) que NÃO identificam um
+# produto específico e por isso não devem bloquear ofertas diferentes.
+_CAMINHOS_GENERICOS = {
+    '', 'busca', 'buscar', 'search', 'pesquisa', 'pesquisar',
+    'ofertas', 'oferta', 'promocoes', 'promocao', 'promoções', 'promoção',
+    'cupons', 'cupom', 'home', 'categoria', 'categorias', 'produtos',
+    'produto', 'mais-vendidos', 'bestsellers', 'deals', 'ofertas-do-dia',
+    'todas-as-ofertas', 'black-friday', 'blackfriday',
+}
+
+
+def _link_identifica_produto(chave):
+    """True se a chave de link identifica um produto (e não uma página geral).
+
+    Chaves específicas (com ':', ex.: 'amazon:B0ABC12345') sempre
+    identificam. Chaves genéricas (host+caminho) só identificam quando o
+    caminho é de fato de um produto, não a home/busca/lista de ofertas da
+    loja — essas páginas são compartilhadas por várias ofertas.
+    """
+    chave = (chave or '').strip()
+    if not chave:
+        return False
+    if ':' in chave:
+        return True
+    _, _, caminho = chave.partition('/')
+    caminho = caminho.strip('/').casefold()
+    if caminho in _CAMINHOS_GENERICOS:
+        return False
+    # Um único segmento curto (ex.: 'br') ainda é página geral.
+    segmentos = [s for s in caminho.split('/') if s]
+    if not segmentos:
+        return False
+    if len(segmentos) == 1 and len(segmentos[0]) <= 3:
+        return False
+    return True
+
+
 def _normalizar_texto_chave(texto):
     """Normaliza texto para comparação (sem acento, pontuação ou espaços extras)."""
     t = unicodedata.normalize('NFKD', texto or '').encode('ascii', 'ignore').decode('ascii')
@@ -1641,15 +1678,25 @@ def promo_chave_duplicada_na_janela(chave):
 def promo_repetida_recente(texto, janela_minutos=1440):
     """
     Verifica se uma promoção IGUAL já foi capturada NO MESMO DIA (calendário,
-    meia-noite de Brasília). Considera IGUAL quando bate o link OU o título, e o
-    PREÇO em REAIS (ignorando centavos): 'R$ 877,00' e 'R$ 877,98' contam como
-    o mesmo valor; 'R$ 877' e 'R$ 878' contam como diferentes.
+    meia-noite de Brasília). Retorna a Promo que causou o bloqueio, ou None.
+
+    Considera IGUAL quando:
+      1) o LINK identifica o produto (link específico, não home de loja) e o
+         PREÇO em reais inteiros é o mesmo; ou
+      2) o TÍTULO é exatamente o mesmo e o preço é o mesmo; ou
+      3) a CHAVE DO PRODUTO tem código de modelo (ex.: 'rtx4060') e o preço
+         é o mesmo.
+
+    Preço desconhecido NÃO bloqueia: antes, dois preços vazios contavam como
+    iguais e ofertas diferentes (ex.: dois kits Starlink) eram ignoradas.
+
+    Chaves genéricas de produto (ex.: 'starlink', que agrupa Mini, Mini X e
+    Standard porque 'mini'/'x' são removidos na normalização) também não
+    bloqueiam, para não confundir modelos diferentes.
 
     A janela reseta TODA MEIA-NOITE: uma oferta postada às 23h pode ser
     repostada às 00h05 do dia seguinte (trocou o dia, pode). No MESMO dia,
     a mesma oferta é ignorada.
-
-    Retorna True se já existir uma promo igual criada hoje (deve ignorar).
     """
     from django.db import close_old_connections
     close_old_connections()
@@ -1657,51 +1704,60 @@ def promo_repetida_recente(texto, janela_minutos=1440):
 
     limite = _limite_do_dia()
     try:
-        link = _normalizar_url(_primeiro_link_produto(texto))
+        link_bruto = _primeiro_link_produto(texto)
+        link = _normalizar_url(link_bruto)
         preco_int = _preco_reais(_preco_do_texto(texto))
 
-        # 1) Mesmo link (preço comparado em reais inteiros)
-        if link:
-            chaves = Promo.objects.filter(
-                url_chave__startswith=link + '|', criado_em__gte=limite
-            ).values_list('url_chave', flat=True)
-            for uc in chaves:
-                p = uc.split('|', 1)[1] if '|' in uc else ''
-                if _preco_reais(p) == preco_int:
-                    return True
+        # Sem preço conhecido não dá para comparar com segurança.
+        if preco_int is None:
+            return None
 
-        # 2) Mesmo título (link pode ter mudado; preço em reais inteiros)
+        def _mesmo_preco(preco_salvo):
+            return _preco_reais(preco_salvo) == preco_int
+
+        # 1) Mesmo link específico do produto (preço em reais inteiros).
+        # Links genéricos (home da loja, página institucional) não bloqueiam:
+        # podem ser usados por produtos diferentes.
+        if link and _link_identifica_produto(_chave_link_produto(link_bruto)):
+            for promo in Promo.objects.filter(
+                url_chave__startswith=link + '|', criado_em__gte=limite
+            ):
+                uc = promo.url_chave or ''
+                p = uc.split('|', 1)[1] if '|' in uc else ''
+                if _mesmo_preco(p):
+                    return promo
+
         try:
             titulo = _linha_titulo(texto)[:500]
         except Exception:
             titulo = ''
-        if titulo:
-            precos = Promo.objects.filter(
-                titulo=titulo, criado_em__gte=limite
-            ).values_list('preco', flat=True)
-            for p in precos:
-                if _preco_reais(p) == preco_int:
-                    return True
 
-        # 3) Mesmo produto (produto_chave normalizado) + mesmo preço.
-        # Cobre variações de emoji/acento/formato no título que a regra 2
-        # pode deixar passar (ex.: mesma oferta repostada com emoji diferente).
+        # 2) Mesmo título exato (link pode ter mudado; preço em reais inteiros)
+        if titulo:
+            for promo in Promo.objects.filter(
+                titulo=titulo, criado_em__gte=limite
+            ).order_by('-criado_em'):
+                if _mesmo_preco(promo.preco):
+                    return promo
+
+        # 3) Mesmo produto (produto_chave normalizado) + mesmo preço, mas só
+        # quando a chave contém código de modelo (ex.: 'rtx4060', 'b550m').
+        # Chaves genéricas (ex.: 'starlink') agrupam modelos diferentes.
         try:
             pchave = _chave_produto(titulo) if titulo else ''
         except Exception:
             pchave = ''
-        if pchave:
-            precos2 = Promo.objects.filter(
+        if pchave and re.search(r'\d', pchave):
+            for promo in Promo.objects.filter(
                 produto_chave=pchave, criado_em__gte=limite
-            ).values_list('preco', flat=True)
-            for p in precos2:
-                if _preco_reais(p) == preco_int:
-                    return True
-        return False
+            ).order_by('-criado_em'):
+                if _mesmo_preco(promo.preco):
+                    return promo
+        return None
     except Exception as db_err:
         logger = logging.getLogger(__name__)
         logger.warning(f"⚠️ Erro ao verificar promo repetida recente: {db_err}")
-        return False
+        return None
 
 
 def _converter_para_webp(origem, destino_dir, prefixo='promo', max_lado=900, qualidade=82):
