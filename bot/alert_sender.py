@@ -127,11 +127,26 @@ def smart_phrase_matches(text_norm: str, keyword_norm: str) -> bool:
                 remaining = remaining.replace(term, '', 1).strip()
                 break
 
-    # Palavras restantes = termos específicos obrigatórios
+    # Palavras restantes = termos específicos obrigatórios.
+    # Números de 1 dígito NÃO podem ser descartados: em 'playstation 5' o '5'
+    # era ignorado e a keyword virava só 'playstation', casando com qualquer
+    # produto PlayStation (ex.: 'PlayStation Portal', que não é um PS5).
     stopwords = {'de', 'do', 'da', 'dos', 'das', 'o', 'a', 'os', 'as', 'um', 'uma', 'e', 'em', 'no', 'na'}
-    remaining_words = [w for w in remaining.split() if w and w not in stopwords and len(w) > 1]
+    remaining_words = [
+        w for w in remaining.split()
+        if w and w not in stopwords and (len(w) > 1 or w.isdigit())
+    ]
+
+    # Para números de 1 dígito, exigir que estejam colados à palavra anterior
+    # da keyword ('playstation 5', 'playstation5', 'playstation™ 5'). Sozinhos
+    # eles casariam com quantidade/parcela ('5x sem juros') ou preço, gerando
+    # falso positivo em outro produto.
+    ancoras = [None] * len(required_groups)
+    anterior = None
     for word in remaining_words:
         required_groups.append(get_plural_variants(word))
+        ancoras.append(anterior if (word.isdigit() and len(word) == 1) else None)
+        anterior = word
 
     # Se não detectou nada (keyword desconhecida), faz busca direta
     if not required_groups:
@@ -144,7 +159,7 @@ def smart_phrase_matches(text_norm: str, keyword_norm: str) -> bool:
     # (produtos diferentes). Se a própria keyword já pede o sufixo, vale.
     import re as _re
     _SUFIXOS_LINHA = ('ti', 'super', 's', 'ultra', 'max')
-    for variants in required_groups:
+    for variants, ancora in zip(required_groups, ancoras):
         casou = False
         for v in variants:
             if any(c.isdigit() for c in v):
@@ -156,6 +171,19 @@ def smart_phrase_matches(text_norm: str, keyword_norm: str) -> bool:
                         if suf not in keyword_norm:
                             variante_nao_pedida = True
                 if variante_nao_pedida:
+                    continue
+                # Número de 1 dígito ancorado a uma palavra da keyword
+                # (ex.: 'playstation 5'): precisa vir colado a ela. Assim
+                # 'PlayStation Portal' NÃO casa, mas 'PlayStation 5',
+                # 'PlayStation5' e 'PlayStation™ 5' casam.
+                if ancora:
+                    padrao_ancorado = (
+                        r'(?<![a-z0-9])' + _re.escape(ancora) +
+                        r'[^a-z0-9]{0,3}' + _re.escape(v) + r'(?![0-9])'
+                    )
+                    if _re.search(padrao_ancorado, text_norm):
+                        casou = True
+                        break
                     continue
                 # número como palavra (ex.: '5060' isolado) ou colado a letra
                 # de modelo (ex.: 'rtx5060', 'gtx4060ti') — aceita desde que
