@@ -106,7 +106,7 @@ def promo_detail_view(request, pk, slug=None):
     Se o slug não bater (título alterado/link legado), redireciona 301 para a URL canônica.
     """
     import re
-    from bot.services import _RODAPE_CANAIS_HTML
+    from bot.services import _RODAPE_CANAIS_HTML, _AVISOS_OFERTA_HTML
     promo = get_object_or_404(Promo, pk=pk)
     if slug is None or promo.slug != slug:
         from django.http import HttpResponsePermanentRedirect
@@ -255,6 +255,7 @@ def promo_detail_view(request, pk, slug=None):
         'eh_menor_preco': eh_menor_preco,
         'lojas_historico': lojas_historico,
         'rodape_canais': _RODAPE_CANAIS_HTML,
+        'avisos_oferta': _AVISOS_OFERTA_HTML,
         'dicas_categoria': _CATEGORIA_DICAS.get(promo.categoria, _CATEGORIA_DICAS.get('outros', '')),
     })
 

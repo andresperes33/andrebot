@@ -81,6 +81,7 @@
         <div class="card">
             <span class="detail-label">Postagem original</span>
             <div class="detail-text">{{ promo.texto_original|preco_completo|urlize_botao|destacar_valores|linebreaksbr }}</div>
+            {{ avisos_oferta|safe }}
             {{ rodape_canais|safe }}
         </div>
 

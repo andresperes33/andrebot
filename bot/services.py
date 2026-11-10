@@ -69,6 +69,11 @@ _RODAPE_CANAIS_HTML = """
     <a href="https://www.tiktok.com/@andreperes.dev" target="_blank" rel="noopener">🎵 TikTok</a>
     <a href="https://www.facebook.com/profile.php?id=100069882953168" target="_blank" rel="noopener">📘 Facebook</a>
 </div>
+"""
+
+# Avisos exibidos na página da oferta logo após o texto/links, na mesma
+# ordem do Telegram/WhatsApp: dica do app da loja e aviso de automação.
+_AVISOS_OFERTA_HTML = """
 <p class="detail-channels-aviso" style="margin-top:12px;font-size:13px;color:var(--mute);">
     📲 Comprando pelo app da loja o valor final pode sair MAIS BARATO! Muitas lojas liberam cupons, moedas e descontos exclusivos só no aplicativo. Vale conferir antes de finalizar a compra.
 </p>
