@@ -354,8 +354,47 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:caixas?\s*de\s*som|caixas?\s*som|caixinha\s*(?:de\s*som|bluetooth|tws|bt\b|portatil|speaker)|soundbar|speaker)\b', alvo_norm) and \
            re.search(r'\bcontrole\b', alvo_norm):
             continue
-        if re.search(r'\b(?:controle|controlador|controller|gamepad|joystick|joypad)\b', alvo_norm):
+        # Console com controle incluso ('Console PlayStation 5 Pro ... Com
+        # Controle Sem Fio DualSense') é um CONSOLE: o 'controle' é item do
+        # bundle, não um gamepad avulso. Só vale quando 'console' vem ANTES do
+        # 'controle' — 'Controle ... para console PlayStation 5' continua sendo
+        # um controle avulso.
+        m_console = re.search(r'\bconsole\b', alvo_norm)
+        m_controle = re.search(r'\b(?:controle|controlador|controller|gamepad|joystick|joypad)\b', alvo_norm)
+        if m_console and re.search(
+            r'\b(?:playstation|ps[0-9]|xbox|nintendo|switch)\b', alvo_norm
+        ) and (not m_controle or m_console.start() < m_controle.start()):
+            continue
+        if m_controle:
             return 'controle'
+
+    # Console com itens inclusos ('Console PlayStation 5 Pro Sony, SSD 2TB,
+    # Com Controle Sem Fio DualSense') é um CONSOLE: SSD/controle citados
+    # DEPOIS de 'console' são itens do bundle, não o produto principal. Roda
+    # antes dos blocos de SSD/componentes, que senão roubariam a oferta.
+    # Acessório vendido para console ('SSD NVMe ... para console PS5',
+    # 'Controle ... para console Xbox') tem o termo do acessório ANTES de
+    # 'console' e não entra aqui.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        primeira_linha = _norm(_limpar_compat((alvo or '').split('\n')[0]))
+        if not primeira_linha:
+            continue
+        m_console = re.search(r'\bconsole\b', primeira_linha)
+        if not m_console:
+            continue
+        if not re.search(r'\b(?:playstation|ps[0-9]|xbox|nintendo|switch)\b', primeira_linha):
+            continue
+        antes = primeira_linha[:m_console.start()]
+        if re.search(
+            r'\b(?:controle|controlador|controller|gamepad|joystick|joypad|'
+            r'headset|fone|auricular|capa|case|suporte|carregador|cabo|'
+            r'ssd|nvme|hd|memoria|disco|fonte|pelicula)\b',
+            antes,
+        ):
+            continue  # acessório citado antes de 'console' -> não é o console
+        return 'console'
 
     # Ar condicionado tem prioridade — 'Ar Condicionado Inverter Hi Wall' é um
     # ar-condicionado, não um 'inverter' genérico nem outro componente.
