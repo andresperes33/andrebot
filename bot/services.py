@@ -1302,6 +1302,18 @@ def _eh_anuncio_cupom(limpa):
     return True
 
 
+def _eh_linha_valor_cupom(linha):
+    """True para linha de VALOR de cupom ('R$ 170,00 em R$ 1.000,00: AEMEGA15').
+
+    Não é nome de produto: o token final é o CÓDIGO do cupom. Aceita com ou
+    sem '$' porque o título é limpo (símbolos removidos) antes desta checagem.
+    """
+    return bool(re.search(
+        r'\br\$?\s*[\d.,]+(?:\s+(?:off|de|desconto))?\s*\bem\b\s*r\$?\s*[\d.,]+',
+        linha or '',
+    ))
+
+
 # Termos fortes que indicam que a linha é o nome de um produto real
 # (não um código de cupom, rótulo de loja ou instrução).
 _TERMOS_PRODUTO = [
@@ -1366,6 +1378,11 @@ def _eh_linha_titulo_produto(linha):
         return False
     if tem_termo:
         return True
+    # Linha de VALOR de cupom ('R$ 170,00 em R$ 1.000,00: AEMEGA15',
+    # 'R$ 170 em R$ 1.000: CODIGO') não é nome de produto: o token final é
+    # o CÓDIGO do cupom, não um modelo de produto.
+    if _eh_linha_valor_cupom(linha):
+        return False
     # Linha só de desconto ('R$ 150,00 OFF a partir de R$ 999,00: 3SQUENT4150')
     # sem termo de produto: o token com letra+dígito é o CÓDIGO do cupom, não
     # um modelo de produto — senão a heurística de 'modelo' faria a postagem
@@ -1428,6 +1445,8 @@ def _linha_titulo(texto):
             continue  # nota do canal (ex.: 'dica do brendo3d')
         if _eh_linha_quantidade(baixa):
             continue  # quantidade de itens (ex.: '2 Peças!') — não é o produto
+        if _eh_linha_valor_cupom(baixa):
+            continue  # valor de cupom ('R$ 170 em R$ 1.000: CODIGO')
         # Data/hora (ex.: '11/09 às 07:58', 'hoje 09:00') não é título de produto.
         # Mas modelos de produto (ex.: 'iPhone 15/16', 'Galaxy S24/25') NÃO são datas.
         _eh_produto_modelo = re.search(
