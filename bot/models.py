@@ -101,6 +101,7 @@ class Promo(models.Model):
         ('cooler', 'Cooler / Water Cooler / Fan'),
         ('pasta_termica', 'Pasta Térmica'),
         ('controle', 'Controle / Gamepad'),
+        ('acessorio', 'Acessórios'),
         ('webcam', 'Webcam'),
         ('cabo', 'Cabo / Carregador'),
         ('microfone', 'Microfone'),

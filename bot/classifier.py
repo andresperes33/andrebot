@@ -228,6 +228,38 @@ _REGEX_CATEGORIA = [
 ]
 
 
+# Prefixo de loja que pode anteceder o produto no título ('Kabum - PlayStation
+# 5'). Lista fechada de propósito: um prefixo genérico acabaria engolindo o
+# nome do jogo ('Resident Evil Requiem - PS5') e classificando-o como console.
+_PREFIXO_LOJA = (
+    r'(?:(?:mercado\s*livre|magazine\s*luiza|casas\s*bahia|terabyte\s*shop|'
+    r'gk\s*infostore|gkinfostore|fast\s*shop|kabum!?|amazon|aliexpress|'
+    r'magalu|pichau|terabyte|americanas|shopee|gigantec)'
+    r'\s*[-|:]\s*)?'
+)
+
+# Plataforma que ABRE o título indica console — mesmo sem a palavra 'console'
+# ('PlayStation 5 Pro SSD 2TB', 'PS5 Slim Digital 1TB SSD', 'Xbox Series X
+# 1TB SSD'). Admitindo só prefixo de loja e marca/'console'/'novo' antes.
+_PLATAFORMA_ABRE = re.compile(
+    r'^' + _PREFIXO_LOJA +
+    r'(?:console\s+|novo\s+|sony\s+|microsoft\s+)*'
+    r'(?:'
+    r'(?:playstation|ps[0-9]|xbox|nintendo|steam\s*deck|ok\s*1|anbernic)\b'
+    r'|\bswitch\b(?=\s*(?:nintendo|oled|lite|2\b|\d|joy|v2))'
+    r')'
+)
+
+
+def _plataforma_abre_titulo(texto_norm):
+    """Retorna o match se a plataforma (PlayStation/PS5/Xbox/Switch...) abre o
+    título, admitindo prefixo de loja e marca. Usado para reconhecer console
+    sem exigir a palavra 'console' e para não confundir com jogos/acessórios."""
+    if not texto_norm:
+        return None
+    return _PLATAFORMA_ABRE.match(texto_norm)
+
+
 def detectar_categoria(texto, titulo=None):
     """Classifica um texto de promoção em uma das categorias do site.
     Se 'titulo' (linha do produto) for informado, usa-o com prioridade,
@@ -330,6 +362,40 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:roteador|router|starlink)\b', alvo_norm):
             return 'roteador'
 
+    # ACESSÓRIO GENÉRICO de console/game (capa, case, película, suporte, base,
+    # stand, volante, manete, dock, carregador de controle, kit de limpeza...).
+    # Só quando o acessório é o PRODUTO principal (vem no início do título) e
+    # há contexto de videogame — assim 'Controle ... com capa inclusa' segue
+    # como controle e 'Suporte para Monitor' segue como monitor.
+    _ACESSORIO = (
+        r'^(?:cabo|cable|capa|case|protetor(?:a)?|pelicula|suporte|base|stand|'
+        r'volante|manete|dock|carregador|carregadora|kit\s+de\s+limpeza|'
+        r'organizador|bolsa|mochila|maleta|grip|adesivo|skin)\b'
+    )
+    _CONTEXTO_GAME = (
+        r'\b(?:playstation|ps[0-9]|xbox|nintendo|switch|console|'
+        r'controle|controlador|gamepad|joystick|dualsense|dualshock|'
+        r'joy-?con|steam\s*deck|gamer)\b'
+    )
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        primeira_linha = _norm(_limpar_compat((alvo or '').split('\n')[0]))
+        if not primeira_linha:
+            continue
+        m_acessorio = re.match(_ACESSORIO, primeira_linha)
+        if not m_acessorio:
+            # Ignora prefixo de loja ('Kabum - Capa para PS5').
+            m_prefixo = re.match(
+                r'^[a-z0-9&.\' ]{1,25}\s*[-|:]\s*(.+)$', primeira_linha
+            )
+            if m_prefixo:
+                m_acessorio = re.match(_ACESSORIO, m_prefixo.group(1))
+        if m_acessorio and re.search(_CONTEXTO_GAME, primeira_linha):
+            if re.match(r'(?:cabo|cable)\b', m_acessorio.group(0)):
+                return 'cabo'
+            return 'acessorio'
+
     # Controle/gamepad tem prioridade — 'Controle GameSir ... iPhone/Android'
     # é um controle para celular, não um celular. Mas se o anúncio é de uma TV
     # ('Smart TV ... Controle AI Magic'), o 'controle' é o controle remoto
@@ -354,47 +420,50 @@ def detectar_categoria(texto, titulo=None):
         if re.search(r'\b(?:caixas?\s*de\s*som|caixas?\s*som|caixinha\s*(?:de\s*som|bluetooth|tws|bt\b|portatil|speaker)|soundbar|speaker)\b', alvo_norm) and \
            re.search(r'\bcontrole\b', alvo_norm):
             continue
+        m_controle = re.search(
+            r'\b(?:controle|controlador|controller|gamepad|joystick|joypad|'
+            r'joy-?con|dualsense|dualshock)\b',
+            alvo_norm,
+        )
         # Console com controle incluso ('Console PlayStation 5 Pro ... Com
-        # Controle Sem Fio DualSense') é um CONSOLE: o 'controle' é item do
-        # bundle, não um gamepad avulso. Só vale quando 'console' vem ANTES do
-        # 'controle' — 'Controle ... para console PlayStation 5' continua sendo
-        # um controle avulso.
-        m_console = re.search(r'\bconsole\b', alvo_norm)
-        m_controle = re.search(r'\b(?:controle|controlador|controller|gamepad|joystick|joypad)\b', alvo_norm)
-        if m_console and re.search(
-            r'\b(?:playstation|ps[0-9]|xbox|nintendo|switch)\b', alvo_norm
-        ) and (not m_controle or m_console.start() < m_controle.start()):
+        # Controle Sem Fio DualSense', 'PlayStation 5 Pro Sony SSD 2TB Controle
+        # DualSense') é um CONSOLE: o 'controle' é item do bundle, não um
+        # gamepad avulso. Mas um CONTROLE avulso também pode começar pela
+        # plataforma ('Nintendo Switch Pro Controller', 'Xbox Wireless
+        # Controller'): aí não há 'console' nem especificação de console
+        # (SSD/armazenamento/'Series S|X'). 'Controle ... para console
+        # PlayStation 5' já não abre pela plataforma e segue como controle.
+        if _plataforma_abre_titulo(alvo_norm) and m_controle:
+            eh_bundle_console = (
+                re.search(r'\bconsole\b', alvo_norm)
+                or re.search(
+                    r'\b(?:ssd|nvme|\d+\s*tb|\d+\s*gb|digital|slim)\b',
+                    alvo_norm,
+                )
+                or re.search(r'\bseries\s*[sx]\b', alvo_norm)
+            )
+            if not eh_bundle_console:
+                return 'controle'
             continue
         if m_controle:
             return 'controle'
 
     # Console com itens inclusos ('Console PlayStation 5 Pro Sony, SSD 2TB,
     # Com Controle Sem Fio DualSense') é um CONSOLE: SSD/controle citados
-    # DEPOIS de 'console' são itens do bundle, não o produto principal. Roda
+    # DEPOIS da plataforma são itens do bundle, não o produto principal. Roda
     # antes dos blocos de SSD/componentes, que senão roubariam a oferta.
-    # Acessório vendido para console ('SSD NVMe ... para console PS5',
-    # 'Controle ... para console Xbox') tem o termo do acessório ANTES de
-    # 'console' e não entra aqui.
+    # Não exige a palavra 'console': 'PlayStation 5 Pro SSD 2TB', 'PS5 Slim
+    # Digital 1TB SSD' e 'Xbox Series X 1TB SSD' também são consoles. A
+    # plataforma precisa ABRIR o título (admitindo prefixo de loja/marca),
+    # então 'SSD NVMe 1TB para PS5' e 'Controle DualSense PS5' não entram.
     for alvo in (titulo, texto,):
         if not alvo:
             continue
         primeira_linha = _norm(_limpar_compat((alvo or '').split('\n')[0]))
         if not primeira_linha:
             continue
-        m_console = re.search(r'\bconsole\b', primeira_linha)
-        if not m_console:
-            continue
-        if not re.search(r'\b(?:playstation|ps[0-9]|xbox|nintendo|switch)\b', primeira_linha):
-            continue
-        antes = primeira_linha[:m_console.start()]
-        if re.search(
-            r'\b(?:controle|controlador|controller|gamepad|joystick|joypad|'
-            r'headset|fone|auricular|capa|case|suporte|carregador|cabo|'
-            r'ssd|nvme|hd|memoria|disco|fonte|pelicula)\b',
-            antes,
-        ):
-            continue  # acessório citado antes de 'console' -> não é o console
-        return 'console'
+        if _plataforma_abre_titulo(primeira_linha):
+            return 'console'
 
     # Ar condicionado tem prioridade — 'Ar Condicionado Inverter Hi Wall' é um
     # ar-condicionado, não um 'inverter' genérico nem outro componente.
@@ -755,8 +824,12 @@ def detectar_categoria(texto, titulo=None):
             nome_jogo = m_jogo.group('nome')
             if len(re.findall(r'[a-z0-9]+', nome_jogo)) >= 2 and not re.search(
                 r'\b(?:console|videogame|sony|microsoft|kit|'
-                r'capa|case|suporte|controle|controlador|gamepad|joystick|'
-                r'headset|fone|carregador|cabo|ssd|hd|memoria)\b',
+                r'capa|case|suporte|base|stand|pelicula|protetor|'
+                r'controle|controlador|controller|gamepad|joystick|joypad|'
+                r'joy-?con|dualsense|dualshock|volante|manete|dock|'
+                r'headset|fone|teclado|keyboard|mouse|mice|webcam|monitor|'
+                r'microfone|caixa|soundbar|carregador|cabo|ssd|hd|memoria|'
+                r'fonte|gabinete|placa|processador|notebook|roteador|impressora)\b',
                 nome_jogo,
             ):
                 return 'jogo'
@@ -792,9 +865,23 @@ def detectar_categoria(texto, titulo=None):
             alvo_norm,
         )
         console_info = re.search(
-            r'\b(?:playstation|ps[0-9]|xbox|nintendo|switch|handheld)\b',
+            r'\b(?:playstation|ps[0-9]|xbox|nintendo|switch|handheld|'
+            r'steam\s*deck|ok\s*1|anbernic)\b',
             alvo_norm,
         )
+        # Periférico vendido PARA o console ('Teclado para PS5', 'Mouse para
+        # Xbox', 'Webcam para PS5') não é o console: o tipo do produto vem
+        # antes da plataforma. Deixa o bloco específico classificar.
+        tipo_periferico = re.search(
+            r'\b(?:teclado|keyboard|mouse|mice|webcam|monitor|caixa\s*de\s*som|'
+            r'soundbar|microfone|ssd|nvme|placa\s*de\s*video|processador|'
+            r'roteador|impressora|notebook|laptop)\b',
+            alvo_norm,
+        )
+        if tipo_periferico and (
+            not console_info or tipo_periferico.start() < console_info.start()
+        ):
+            continue
         if tv_marca and (not console_info or tv_marca.start() <= console_info.start()):
             continue  # é TV; console citado vem depois (é compatibilidade)
         eh_console = re.search(
