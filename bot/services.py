@@ -17,6 +17,14 @@ def site_base_url(request):
         url = 'https://' + url[len('http://'):]
     return url.rstrip('/')
 
+# Aviso sobre cupons incluído em TODAS as ofertas (Telegram, WhatsApp e site).
+# Deve ficar depois dos links e antes das dicas/avisos.
+AVISO_CUPOM = (
+    "🚨 ATENÇÃO! Os cupons de desconto podem acabar rapidamente ou atingir o "
+    "limite de utilizações. Se você gostou do produto e pretende comprar, "
+    "aproveite enquanto o desconto ainda está disponível!"
+)
+
 # Rodapé de canais anexado às promoções (Telegram/WhatsApp/site). Em texto puro.
 _RODAPE_CANAIS_TEXTO = (
     "\n\n"
@@ -1211,7 +1219,7 @@ def _eh_linha_nota(baixa):
     'cade os chefs do grupo'), não um título de produto/cupom."""
     if bool(re.search(r'(?<!\w)dica(?!\w)', baixa)):
         return True
-    if any(nota in baixa for nota in ('obs:', 'nota:', 'atencao:', 'atenção:')):
+    if any(nota in baixa for nota in ('obs:', 'nota:', 'atencao:', 'atenção:', 'atencao!', 'atenção!')):
         return True
     # Linha que é só um cabeçalho de garantia ('compra garantida',
     # 'nota fiscal', 'enviamos para todo brasil') — descarta se a linha é só
@@ -3192,6 +3200,11 @@ async def process_offer_to_group(bot_app, text, photo=None):
 
     if not converted_any:
         return False
+
+    # Aviso sobre cupons: entra em todas as ofertas, depois dos links e
+    # antes das dicas/avisos.
+    if AVISO_CUPOM not in modified_text:
+        modified_text += f"\n\n{AVISO_CUPOM}"
 
     # Adiciona as instruções do AliExpress apenas uma vez no final se houver links dele
     if has_aliexpress:

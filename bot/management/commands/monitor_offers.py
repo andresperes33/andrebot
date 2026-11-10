@@ -8,6 +8,7 @@ import requests
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from bot.models import Promo
+from bot.services import AVISO_CUPOM
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 from asgiref.sync import sync_to_async
@@ -651,6 +652,10 @@ class Command(BaseCommand):
                 modified_text = modified_text.strip()
 
                 if modified_text:
+                    # Aviso sobre cupons: entra em todas as ofertas, depois
+                    # dos links e antes das dicas/avisos.
+                    if AVISO_CUPOM not in modified_text:
+                        modified_text += f"\n\n{AVISO_CUPOM}"
                     if has_ali:
                         modified_text += (
                             "\n\n💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
