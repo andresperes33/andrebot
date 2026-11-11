@@ -350,7 +350,7 @@ def _codigos_cupom(texto):
 def _chave_cupom(texto):
     """Chave estável de um cupom: códigos ou título/loja normalizados.
 
-    Usada na janela de deduplicação de 3h dos cupons. Diferente do link,
+    Usada na janela de deduplicação de 30 minutos dos cupons. Diferente do link,
     permite que cupons diferentes da mesma loja sejam postados mesmo que
     compartilhem a mesma página/URL.
     """
@@ -1733,16 +1733,16 @@ def promo_ja_postada(texto):
         return False
 
 
-def _limite_janela_3h():
-    """Início da janela de 3 horas atual no fuso do site (America/Sao_Paulo).
+def _limite_janela_30min():
+    """Início da janela de 30 minutos atual no fuso do site (America/Sao_Paulo).
 
-    As janelas são: 00-02, 03-05, 06-08, 09-11, 12-14, 15-17, 18-20, 21-23.
+    As janelas são: 00:00-00:29, 00:30-00:59, 01:00-01:29, ...
     No final de cada janela, a mesma oferta pode ser repostada.
     """
     from django.utils import timezone
     agora = timezone.localtime(timezone.now())
-    hora_janela = (agora.hour // 3) * 3
-    return agora.replace(hour=hora_janela, minute=0, second=0, microsecond=0)
+    minuto_janela = (agora.minute // 30) * 30
+    return agora.replace(minute=minuto_janela, second=0, microsecond=0)
 
 
 def _limite_do_dia():
@@ -1754,11 +1754,11 @@ def _limite_do_dia():
 
 
 def promo_duplicada_na_janela(*urls):
-    """Retorna a Promo já postada nesta janela de 3h, ou None.
+    """Retorna a Promo já postada nesta janela de 30 minutos, ou None.
 
     A comparação é feita pelo link canônico do produto (sem preço nem
-    parâmetros de rastreio). A janela zera a cada 3 horas: ao final de cada
-    janela, a mesma oferta pode ser repostada.
+    parâmetros de rastreio). A janela zera a cada 30 minutos: ao final de
+    cada janela, a mesma oferta pode ser repostada.
 
     Chaves genéricas (sem ':') só são consideradas quando não há nenhuma
     chave específica. Isso evita falsos positivos de páginas compartilhadas
@@ -1776,7 +1776,7 @@ def promo_duplicada_na_janela(*urls):
     close_old_connections()
     from bot.models import Promo
 
-    limite = _limite_janela_3h()
+    limite = _limite_janela_30min()
 
     chaves_especificas = set()
     chaves_genericas = set()
@@ -1837,7 +1837,7 @@ def promo_link_ja_postada_hoje(*urls):
 
 
 def promo_chave_duplicada_na_janela(chave):
-    """Retorna a Promo com essa chave já postada na janela de 3h, ou None.
+    """Retorna a Promo com essa chave já postada na janela de 30 min, ou None.
 
     Usada pelos CUPONS, que são deduplicados pelo código/título (chave
     ``cupom:...``) em vez do link, já que vários cupons da mesma loja podem
@@ -1851,7 +1851,7 @@ def promo_chave_duplicada_na_janela(chave):
     close_old_connections()
     from bot.models import Promo
 
-    limite = _limite_janela_3h()
+    limite = _limite_janela_30min()
     try:
         return Promo.objects.filter(
             link_produto_chave=chave, criado_em__gte=limite
@@ -2088,7 +2088,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None,
     # qualquer loja/link, mesmo que o preço mude ou a postagem seja repetida).
     produto_chave = _chave_produto(titulo)
 
-    # Chave usada na trava de deduplicação de 3 horas:
+    # Chave usada na trava de deduplicação de 30 minutos:
     # - Cupons: código/título do cupom (vários cupons da mesma loja podem
     #   compartilhar a mesma página, então o link não serve).
     # - Demais ofertas: link canônico do produto (sem preço/rastreio).
@@ -2103,7 +2103,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None,
     # Não grava chave que não identifica um produto (live, compartilhar,
     # home, busca, listas de ofertas). Essas páginas são compartilhadas por
     # ofertas diferentes e, se gravadas, bloqueiam um produto novo na janela
-    # de 3h (ex.: 'live.shopee.com.br/universal-link/share').
+    # de 30 min (ex.: 'live.shopee.com.br/universal-link/share').
     if link_produto_chave and not link_produto_chave.startswith('cupom:'):
         if not _link_identifica_produto(link_produto_chave):
             link_produto_chave = ''

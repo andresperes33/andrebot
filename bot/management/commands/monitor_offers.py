@@ -364,10 +364,10 @@ class Command(BaseCommand):
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
                 # ─── Trava anti-repetição ────────────────────────────────────
-                # Cupons: deduplicados pelo CÓDIGO/TÍTULO na janela de 3h
+                # Cupons: deduplicados pelo CÓDIGO/TÍTULO na janela de 30 min
                 # (cupons diferentes da mesma loja podem usar o mesmo link).
                 # Ofertas comuns: a trava diária ("já capturada hoje") foi
-                # DESATIVADA a pedido do usuário. Vale apenas a janela de 3h
+                # DESATIVADA a pedido do usuário. Vale apenas a janela de 30 min
                 # por link, aplicada mais abaixo em promo_duplicada_na_janela.
                 eh_cupom_msg = False
                 chave_cupom = ''
@@ -389,7 +389,7 @@ class Command(BaseCommand):
                         )
                         if duplicada_cupom:
                             logger.info(
-                                "⏭️ Cupom já postado nesta janela de 3h, "
+                                "⏭️ Cupom já postado nesta janela de 30 min, "
                                 "ignorado. "
                                 f"[id={duplicada_cupom.id} "
                                 f"criado_em={duplicada_cupom.criado_em} "
@@ -399,12 +399,12 @@ class Command(BaseCommand):
                             return True
                         logger.info(
                             f"🎟️ Cupom detectado (chave={chave_cupom!r}); "
-                            "sem duplicata na janela de 3h."
+                            "sem duplicata na janela de 30 min."
                         )
                     except Exception as cupom_dedup_err:
                         logger.error(f"❌ Erro na trava de cupom: {cupom_dedup_err}")
                 # Trava diária por oferta repetida (promo_repetida_recente)
-                # DESATIVADA: só a janela de 3h deve bloquear reposts.
+                # DESATIVADA: só a janela de 30 min deve bloquear reposts.
                 # try:
                 #     from bot.services import promo_repetida_recente
                 #     repetida = await asyncio.to_thread(promo_repetida_recente, msg_text)
@@ -647,12 +647,12 @@ class Command(BaseCommand):
                     logger.info("🚫 Mensagem ignorada (nenhum link de loja detectado).")
                     return False
 
-                # ─── Trava de oferta repetida por LINK (janela de 3h) ─────────
+                # ─── Trava de oferta repetida por LINK (janela de 30 min) ─────────
                 # Compara o link canônico do produto (sem preço/rastreio),
                 # inclusive o destino real de encurtadores/redirecionadores.
                 # Vale entre canais: se a oferta já foi postada nesta janela
-                # de 3h por qualquer canal, a segunda é ignorada. A janela
-                # zera a cada 3 horas (00h, 03h, 06h...).
+                # de 30 min por qualquer canal, a segunda é ignorada. A janela
+                # zera a cada 30 minutos (00h00, 00h30, 01h00...).
                 chave_link_produto = ''
                 urls_dedup = _links_relevantes_para_dedup(
                     links_resolvidos
@@ -676,7 +676,7 @@ class Command(BaseCommand):
                         )
                         if duplicada:
                             logger.info(
-                                "⏭️ Oferta já postada nesta janela de 3h "
+                                "⏭️ Oferta já postada nesta janela de 30 min "
                                 "(mesmo link), ignorada. "
                                 f"[id={duplicada.id} "
                                 f"criado_em={duplicada.criado_em} "
@@ -689,7 +689,7 @@ class Command(BaseCommand):
                         # (ex.: 's.shopee.com.br/abc'), que muda a cada geração.
                         # Chaves que não identificam um produto (live,
                         # compartilhar, home) são descartadas: gravá-las
-                        # bloquearia ofertas diferentes na janela de 3h.
+                        # bloquearia ofertas diferentes na janela de 30 min.
                         from bot.services import _link_identifica_produto
                         chaves_calculadas = []
                         for url_dedup in urls_dedup:
@@ -814,7 +814,7 @@ class Command(BaseCommand):
                             )
                             if duplicada_cupom:
                                 logger.info(
-                                    "⏭️ Cupom já postado nesta janela de 3h, "
+                                    "⏭️ Cupom já postado nesta janela de 30 min, "
                                     "ignorado. "
                                     f"[id={duplicada_cupom.id} "
                                     f"criado_em={duplicada_cupom.criado_em} "
@@ -833,7 +833,7 @@ class Command(BaseCommand):
                             )
                             if duplicada:
                                 logger.info(
-                                    "⏭️ Oferta já postada nesta janela de 3h "
+                                    "⏭️ Oferta já postada nesta janela de 30 min "
                                     "(mesmo link), ignorada. "
                                     f"[id={duplicada.id} "
                                     f"criado_em={duplicada.criado_em} "
