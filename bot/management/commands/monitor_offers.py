@@ -687,10 +687,18 @@ class Command(BaseCommand):
                         # Prefere a chave específica do produto (ex.:
                         # 'shopee:123:456') à chave genérica de um link curto
                         # (ex.: 's.shopee.com.br/abc'), que muda a cada geração.
+                        # Chaves que não identificam um produto (live,
+                        # compartilhar, home) são descartadas: gravá-las
+                        # bloquearia ofertas diferentes na janela de 3h.
+                        from bot.services import _link_identifica_produto
                         chaves_calculadas = []
                         for url_dedup in urls_dedup:
                             chave = _chave_link_produto(url_dedup)
-                            if chave and chave not in chaves_calculadas:
+                            if (
+                                chave
+                                and _link_identifica_produto(chave)
+                                and chave not in chaves_calculadas
+                            ):
                                 chaves_calculadas.append(chave)
                         if chaves_calculadas:
                             chave_link_produto = next(

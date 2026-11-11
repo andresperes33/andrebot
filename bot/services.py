@@ -235,27 +235,48 @@ _CAMINHOS_GENERICOS = {
     'todas-as-ofertas', 'black-friday', 'blackfriday',
 }
 
+# Segmentos de caminho que indicam página compartilhada/genérica, mesmo que
+# o link tenha outros segmentos. Ex.:
+# 'live.shopee.com.br/universal-link/share' (link de compartilhamento de
+# live) é usado por várias ofertas e não identifica nenhum produto.
+_SEGMENTOS_GENERICOS = {
+    'universal-link', 'universal_link', 'share', 'compartilhar',
+    'compartilhamento', 'cupom', 'cupons', 'cupoms',
+    'cupom-de-desconto', 'campanha', 'campanhas',
+    'live', 'lives', 'link', 'links', 'redirect', 'redirecionar',
+}
+
+# Hosts de páginas compartilhadas (ex.: 'live.shopee.com.br').
+_HOSTS_GENERICOS_PREFIXO = ('live.', 'live-')
+_HOSTS_GENERICOS = {'live'}
+
 
 def _link_identifica_produto(chave):
     """True se a chave de link identifica um produto (e não uma página geral).
 
     Chaves específicas (com ':', ex.: 'amazon:B0ABC12345') sempre
     identificam. Chaves genéricas (host+caminho) só identificam quando o
-    caminho é de fato de um produto, não a home/busca/lista de ofertas da
-    loja — essas páginas são compartilhadas por várias ofertas.
+    caminho é de fato de um produto, não a home/busca/lista de ofertas,
+    live ou link de compartilhamento da loja — essas páginas são
+    compartilhadas por várias ofertas.
     """
     chave = (chave or '').strip()
     if not chave:
         return False
     if ':' in chave:
         return True
-    _, _, caminho = chave.partition('/')
+    host, _, caminho = chave.partition('/')
+    host = host.strip().casefold()
     caminho = caminho.strip('/').casefold()
+    if host in _HOSTS_GENERICOS or host.startswith(_HOSTS_GENERICOS_PREFIXO):
+        return False
     if caminho in _CAMINHOS_GENERICOS:
         return False
     # Um único segmento curto (ex.: 'br') ainda é página geral.
     segmentos = [s for s in caminho.split('/') if s]
     if not segmentos:
+        return False
+    if any(seg in _SEGMENTOS_GENERICOS for seg in segmentos):
         return False
     if len(segmentos) == 1 and len(segmentos[0]) <= 3:
         return False
@@ -1700,6 +1721,11 @@ def promo_duplicada_na_janela(*urls):
     chave específica. Isso evita falsos positivos de páginas compartilhadas
     (ex.: página de moedas da AliExpress, usada por ofertas diferentes).
 
+    Links que não identificam um produto (live, compartilhamento, home,
+    busca, listas de ofertas) são ignorados por completo: não podem
+    bloquear uma oferta diferente (ex.: o link genérico
+    'live.shopee.com.br/universal-link/share' é usado por várias ofertas).
+
     Cupons são ignorados nesta checagem (o monitor não grava chave de link
     para eles), pois podem se repetir com o mesmo link.
     """
@@ -1716,7 +1742,9 @@ def promo_duplicada_na_janela(*urls):
         if not url:
             continue
         chave = _chave_link_produto(url)
-        if not chave:
+        if not chave or not _link_identifica_produto(chave):
+            # Página compartilhada (live/compartilhar/home/busca): não serve
+            # para identificar um produto e não deve bloquear nada.
             continue
         if ':' in chave:
             chaves_especificas.add(chave)
@@ -2028,6 +2056,14 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None,
         link_produto_chave = _chave_link_produto(
             link_afiliado or _primeiro_link_produto(texto)
         )
+
+    # Não grava chave que não identifica um produto (live, compartilhar,
+    # home, busca, listas de ofertas). Essas páginas são compartilhadas por
+    # ofertas diferentes e, se gravadas, bloqueiam um produto novo na janela
+    # de 3h (ex.: 'live.shopee.com.br/universal-link/share').
+    if link_produto_chave and not link_produto_chave.startswith('cupom:'):
+        if not _link_identifica_produto(link_produto_chave):
+            link_produto_chave = ''
 
     # Salva
     try:
