@@ -395,11 +395,15 @@ class Command(BaseCommand):
                     return False
 
                 # ─── Converte links e processa texto ─────────────────────────
-                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer, normaliza_emoji_inicial, substituir_nomes_canais
+                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer, normaliza_emoji_inicial, substituir_nomes_canais, remover_cabecalho_alerta
 
                 channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
 
                 modified_text = msg_text
+
+                # Remove cabeçalho de canal ('🚨 Alerta de Promo:') — não é
+                # conteúdo da oferta.
+                modified_text = remover_cabecalho_alerta(modified_text)
 
                 # Remove divulgação do grupo/jogo de Impulso sem perder a oferta
                 modified_text = _remover_divulgacao_grupo_impulso(modified_text)

@@ -1144,7 +1144,7 @@ _TERMOS_CABECALHO = [
     'disponivel', 'disponível', 'estoque limitado', 'ultimas unidades',
     'poucas unidades', 'últimas unidades', 'ultima chance', 'última chance',
     'corre que ainda', 'corre que', 'saiu rapidinho', 'está acabando', 'ta acabando',
-    'alerta para', 'alerta pra', 'precinho', 'precinho d+', 'aproveite',
+    'alerta para', 'alerta pra', 'alerta de promo', 'precinho', 'precinho d+', 'aproveite',
     'super precinho', 'imperdivel', 'imperdível', 'olha que', 'olha só',
     'pega essa', 'pega esse', 'pipoca do caos', 'anon esbarrou',
     'voltou', 'voltei', 'de volta', 'de novo', 'aconteceu denovo',
@@ -1173,6 +1173,23 @@ _LOJAS = [
     'cnc', 'saraiva', 'submarino', 'lojas rener', 'renner', 'nike', 'adidas',
     'amaro', 'petlove', 'meli', 'farma', 'daki',
 ]
+
+# Cabeçalho de alguns canais ('🚨 Alerta de Promo:') que precede a oferta.
+# Não é conteúdo do produto: deve sair do título e do texto salvo/postado.
+_RE_CABECALHO_ALERTA = re.compile(
+    r'(?im)^[^\w\n]*alerta\s+de\s+promo(?:ç(?:ão|ao)|cao|mo)?s?\s*:?[ \t]*'
+)
+
+
+def remover_cabecalho_alerta(texto):
+    """Remove o prefixo '🚨 Alerta de Promo:' do início das linhas.
+
+    Se o produto vier na mesma linha, só o cabeçalho sai; se a linha for só o
+    cabeçalho, ela fica vazia (as linhas em branco são colapsadas depois).
+    """
+    if not texto:
+        return texto
+    return _RE_CABECALHO_ALERTA.sub('', texto)
 
 
 # Palavras-termo de instruções/cupom. Testadas como PALAVRA INTEIRA
@@ -1422,7 +1439,7 @@ def _linha_titulo(texto):
       - ou uma linha que pareça nome de produto;
     exceto quando é header/loja/código/instrução.
     """
-    texto = texto or ''
+    texto = remover_cabecalho_alerta(texto or '')
     tem_cupom = 'cupom' in texto.casefold() or 'cupons' in texto.casefold()
     cupom_candidata = None
 
