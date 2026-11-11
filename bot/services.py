@@ -1508,6 +1508,47 @@ def _limpar_cor_inicio(texto):
     return limpo
 
 
+# Rótulos de CATEGORIA que aparecem como primeira linha de algumas postagens
+# (ex.: 'Controle / Gamepad', 'Console', 'Acessórios'). Não são o nome do
+# produto: devem ser ignorados para o título cair na linha real.
+_CATEGORIAS_LABEL = {
+    'console', 'consoles', 'videogame', 'videogames', 'video game',
+    'controle', 'controles', 'gamepad', 'gamepads', 'joystick', 'joysticks',
+    'acessorio', 'acessorios', 'periferico', 'perifericos',
+    'jogo', 'jogos', 'games', 'game',
+    'placa de video', 'placa mae', 'processador', 'processadores',
+    'memoria ram', 'ssd', 'hd', 'monitor', 'monitores',
+    'notebook', 'notebooks', 'celular', 'celulares', 'smartphone',
+    'smartphones', 'tablet', 'tablets', 'tv', 'smart tv', 'televisao',
+    'audio', 'caixa de som', 'headset', 'fone', 'fones', 'teclado',
+    'teclados', 'mouse', 'mouses', 'mousepad', 'cadeira', 'cadeiras',
+    'impressora', 'impressoras', 'fonte', 'fontes', 'gabinete',
+    'gabinetes', 'cooler', 'coolers', 'pasta termica', 'pc gamer',
+    'computador', 'computadores', 'relogio inteligente', 'smartwatch',
+    'projetor', 'projetores', 'roteador', 'roteadores',
+    'ar condicionado', 'eletrodomesticos', 'ferramentas', 'camera',
+    'cameras', 'informatica', 'hardware',
+}
+
+
+def _eh_linha_categoria(linha):
+    """True se a linha é só um rótulo de categoria (ex.: 'Controle / Gamepad',
+    'Console', 'Acessórios'), não o nome de um produto."""
+    baixa = unicodedata.normalize('NFKD', linha or '').encode(
+        'ascii', 'ignore'
+    ).decode('ascii').casefold().strip()
+    if not baixa or len(baixa) > 40:
+        return False
+    partes = [
+        p.strip(' .!?:-')
+        for p in re.split(r'\s*(?:/|\||\+|&|,|;|\be\b)\s*', baixa)
+    ]
+    partes = [p for p in partes if p]
+    if not partes:
+        return False
+    return all(p in _CATEGORIAS_LABEL for p in partes)
+
+
 def _linha_titulo(texto):
     """
     Pega a primeira linha que parece título (de produto ou de cupom),
@@ -1544,6 +1585,8 @@ def _linha_titulo(texto):
             continue  # quantidade de itens (ex.: '2 Peças!') — não é o produto
         if _eh_linha_valor_cupom(baixa):
             continue  # valor de cupom ('R$ 170 em R$ 1.000: CODIGO')
+        if _eh_linha_categoria(limpa):
+            continue  # rótulo de categoria ('Controle / Gamepad'), não produto
         # Data/hora (ex.: '11/09 às 07:58', 'hoje 09:00') não é título de produto.
         # Mas modelos de produto (ex.: 'iPhone 15/16', 'Galaxy S24/25') NÃO são datas.
         _eh_produto_modelo = re.search(

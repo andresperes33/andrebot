@@ -260,11 +260,28 @@ def _plataforma_abre_titulo(texto_norm):
     return _PLATAFORMA_ABRE.match(texto_norm)
 
 
+def _sem_linhas_categoria(texto):
+    """Remove linhas que são só rótulo de categoria ('Controle / Gamepad',
+    'Console'). Elas não descrevem o produto e podem induzir a categoria
+    errada (ex.: 'Controle / Gamepad' antes de um console PS5)."""
+    if not texto or '\n' not in texto:
+        return texto
+    from bot.services import _eh_linha_categoria
+    return '\n'.join(
+        linha for linha in texto.split('\n')
+        if not _eh_linha_categoria(linha)
+    )
+
+
 def detectar_categoria(texto, titulo=None):
     """Classifica um texto de promoção em uma das categorias do site.
     Se 'titulo' (linha do produto) for informado, usa-o com prioridade,
     pois o assunto principal é o que nomeia o produto (ex.: 'Processador
     ... Radeon ...' é processador, não placa de vídeo)."""
+    # Quando há título, ignora linhas de rótulo de categoria no corpo: elas
+    # não são o produto e podem fazer o texto "roubar" a classificação.
+    if titulo:
+        texto = _sem_linhas_categoria(texto)
     haystack = _norm(texto)
     if not haystack:
         return 'outros'
@@ -371,7 +388,8 @@ def detectar_categoria(texto, titulo=None):
     # como controle e 'Suporte para Monitor' segue como monitor.
     _ACESSORIO = (
         r'^(?:cabo|cable|capa|case|protetor(?:a)?|pelicula|suporte|base|stand|'
-        r'volante|manete|dock|carregador|carregadora|kit\s+de\s+limpeza|'
+        r'volante|manete|cambio|shifter|pedaleira|dock|carregador|carregadora|'
+        r'kit\s+de\s+limpeza|'
         r'organizador|bolsa|mochila|maleta|grip|adesivo|skin)\b'
     )
     _CONTEXTO_GAME = (
