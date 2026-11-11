@@ -716,10 +716,24 @@ class Command(BaseCommand):
                 modified_text = modified_text.strip()
 
                 if modified_text:
-                    # Aviso sobre cupons: entra em todas as ofertas, depois
-                    # dos links e antes das dicas/avisos.
-                    if AVISO_CUPOM not in modified_text:
-                        modified_text += f"\n\n{AVISO_CUPOM}"
+                    # Detecta categoria ANTES de adicionar aviso,
+                    # para não colar "cupons" em produtos não-cupom.
+                    from bot.classifier import detectar_categoria
+                    from bot.services import _linha_titulo
+                    eh_cupom = detectar_categoria(
+                        modified_text, titulo=_linha_titulo(modified_text)
+                    ) == 'cupom'
+
+                    if eh_cupom:
+                        # Aviso específico de cupom — só para ofertas de cupom mesmo.
+                        if AVISO_CUPOM not in modified_text:
+                            modified_text += f"\n\n{AVISO_CUPOM}"
+                    else:
+                        # Produto não-cupom: usa aviso genérico, sem a palavra "cupom"
+                        # para não contaminar a classificação futura.
+                        gen_aviso = "⏳ A promoção pode encerrar a qualquer momento."
+                        if AVISO_CUPOM not in modified_text and gen_aviso not in modified_text:
+                            modified_text += f"\n\n{gen_aviso}"
                     if has_ali:
                         modified_text += (
                             "\n\n💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
