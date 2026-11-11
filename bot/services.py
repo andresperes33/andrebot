@@ -1391,6 +1391,38 @@ def _eh_anuncio_desconto(limpa):
     )
 
 
+def _eh_linha_codigo_cupom(linha):
+    """True para linha que é apenas o CÓDIGO de um cupom.
+
+    Ex.: 'Código: 20D3SBL0QU34D0', 'CUPOM: AEMEGA2', 'Código 20D3SBL0QU34D0'.
+    Não é nome de produto: não deve virar título nem fazer a postagem parecer
+    um produto (senão a categoria de cupom se perde e cai em 'outros').
+    'Cupom Shopee' (anúncio) NÃO é código.
+    """
+    if not linha:
+        return False
+    m = re.match(
+        r'^\s*(?:'
+        r'(?P<label>c[oó]digo|code)\s*[:\-–—]?\s*'
+        r'|cupom\s*(?P<sep>[:\-–—])?\s*'
+        r')(?P<codigo>[a-z0-9]{4,30})\s*$',
+        linha.strip(),
+        flags=re.I,
+    )
+    if not m:
+        return False
+    codigo = m.group('codigo')
+    # 'Cupom Shopee' (sem separador e sem dígito) é anúncio, não código.
+    if m.group('label') is None and not m.group('sep') and not re.search(r'\d', codigo):
+        return False
+    # Código de cupom tem dígito (ex.: '20D3SBL0QU34D0', 'AEMEGA2') ou é uma
+    # palavra toda maiúscula longa (ex.: 'OFFHOJE').
+    return bool(
+        re.search(r'\d', codigo)
+        or (codigo.isupper() and len(codigo) >= 6)
+    )
+
+
 def _eh_linha_valor_cupom(linha):
     """True para linha de VALOR de cupom ('R$ 170,00 em R$ 1.000,00: AEMEGA15').
 
@@ -1450,6 +1482,11 @@ def _eh_linha_titulo_produto(linha):
     if ' ' not in linha.strip():
         return False
     linha_c = linha.strip()
+    # Linha que é só o CÓDIGO do cupom ('Código: 20D3SBL0QU34D0') não é
+    # nome de produto — senão a heurística de 'modelo' (letra+dígito) faria
+    # a postagem de cupom parecer produto e a categoria viraria 'outros'.
+    if _eh_linha_codigo_cupom(linha_c):
+        return False
     # Anúncio de cupom (ex.: 'novo cupom kabum', 'cupom ativo shopee') e
     # linhas de instrução de cupom ('resgate o cupom de 20%') NÃO são produto.
     if re.match(
@@ -1585,6 +1622,8 @@ def _linha_titulo(texto):
             continue  # quantidade de itens (ex.: '2 Peças!') — não é o produto
         if _eh_linha_valor_cupom(baixa):
             continue  # valor de cupom ('R$ 170 em R$ 1.000: CODIGO')
+        if _eh_linha_codigo_cupom(limpa):
+            continue  # código do cupom ('Código: 20D3SBL0QU34D0') não é título
         if _eh_linha_categoria(limpa):
             continue  # rótulo de categoria ('Controle / Gamepad'), não produto
         # Data/hora (ex.: '11/09 às 07:58', 'hoje 09:00') não é título de produto.
