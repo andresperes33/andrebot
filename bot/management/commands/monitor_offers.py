@@ -748,17 +748,8 @@ class Command(BaseCommand):
                     logger.warning(f"⚠️ Falha ao detectar categoria cupom: {cup_err}")
 
                 if eh_cupom:
-                    try:
-                        from bot.services import imagem_cupom_loja
-                        img_cupom = await asyncio.to_thread(imagem_cupom_loja, msg_text)
-                        if img_cupom and os.path.exists(img_cupom):
-                            photo_path = img_cupom
-                            imagem_cupom_usada = True
-                            logger.info("🎟️ Usando imagem fixa de cupom da loja.")
-                        else:
-                            logger.info("ℹ️ Cupom sem imagem de loja mapeada; usando fluxo normal.")
-                    except Exception as cup_err2:
-                        logger.warning(f"⚠️ Falha ao obter imagem de cupom: {cup_err2}")
+                    logger.info("🛑 Cupom detectado - captura bloqueada (janela de 30 min ativa).")
+                    return True
 
                 # 1) Tenta a imagem principal da PÁGINA do produto (link da
                 # oferta). Assim a imagem vem limpa, sem marca d'água do canal.
