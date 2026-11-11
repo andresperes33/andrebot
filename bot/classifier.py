@@ -464,7 +464,10 @@ def detectar_categoria(texto, titulo=None):
             )
             if not eh_bundle_console:
                 return 'controle'
-            continue
+            # É um console com controle incluso: não deixa o corpo do texto
+            # (que pode começar por 'PARCELADO!', preço, loja etc.) roubar a
+            # classificação para 'controle' por citar a palavra 'controle'.
+            return 'console'
         if m_controle:
             return 'controle'
 
