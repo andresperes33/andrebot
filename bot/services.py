@@ -1307,9 +1307,14 @@ def _eh_anuncio_cupom(limpa):
         return False
     if len(limpa) > 60:
         return False
-    # Se começa com 'cupom(s)', é um ANÚNCIO de cupom — mesmo que tenha
-    # uma instrução de resgate depois (ex.: 'CUPONS ATIVOS SHOPEE - Resgate...').
-    if re.match(r'^\s*(?:novo|novos|nova|novos)?\s*(?:cupom|cupons|cupoms)\b', baixa):
+    # Se começa com 'cupom(s)' (ou 'novo/próximo/último cupom'), é um ANÚNCIO
+    # de cupom — mesmo que tenha uma instrução de resgate depois
+    # (ex.: 'CUPONS ATIVOS SHOPEE - Resgate...', 'Próximo Cupom 35 OFF ...').
+    if re.match(
+        r'^\s*(?:nov[oa]s?|pr[oó]x[ií]m[oa]s?|ultim[oa]s?)?\s*'
+        r'(?:cupom|cupons|cupoms)\b',
+        baixa,
+    ):
         return True
     for termo in ('use ', 'usem', 'usem o', 'usar', 'usar o', 'usa ', 'usa o',
                   'siga', 'resgate', 'clique', 'pega', 'atraves',
@@ -1380,7 +1385,10 @@ def _eh_linha_titulo_produto(linha):
     linha_c = linha.strip()
     # Anúncio de cupom (ex.: 'novo cupom kabum', 'cupom ativo shopee') e
     # linhas de instrução de cupom ('resgate o cupom de 20%') NÃO são produto.
-    if re.match(r'^(?:novo|novos|nova)\s+cupom\b', linha_c) or re.match(r'^cupom\b', linha_c):
+    if re.match(
+        r'^(?:nov[oa]s?|pr[oó]x[ií]m[oa]s?|ultim[oa]s?)\s+cupom\b',
+        linha_c,
+    ) or re.match(r'^cupom\b', linha_c):
         return False
     # Linha que começa pela instrução de resgate/uso de cupom (ex.: 'resgate o
     # cupom de 20%') é anúncio de cupom. Mas se a linha traz um produto ANTES
@@ -1408,7 +1416,12 @@ def _eh_linha_titulo_produto(linha):
         return False
     # Nome de produto sem termos conhecidos: tem >= 2 palavras e uma delas
     # parece modelo (mistura letra+digito), ex.: 'gk240', 'k688'.
-    palavras = [w for w in linha.split() if re.search(r'\w', w)]
+    # Horários ('21h', '21h30') NÃO identificam modelo — senão instruções como
+    # 'Liberou o das 21h, Resgate agora' pareceriam nome de produto.
+    palavras = [
+        w for w in linha.split()
+        if re.search(r'\w', w) and not re.fullmatch(r'\d{1,2}h\d{0,2}[^\w]*', w)
+    ]
     if len(palavras) >= 2:
         for w in palavras:
             if re.search(r'\d', w) and re.search(r'[a-z]', w) and len(w) >= 3:
