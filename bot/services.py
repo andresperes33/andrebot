@@ -1324,6 +1324,52 @@ def _eh_anuncio_cupom(limpa):
     return True
 
 
+# Lojas e bancos que costumam anunciar desconto/cupom em parceria
+# (ex.: '50% OFF Shopee x Nubank', 'Desconto Nubank no Mercado Livre').
+# Usa limite de palavra para não casar 'inter' com 'internet', 'caixa' com
+# 'caixa de som' (produto) etc.
+_LOJAS_PARCERIA_CUPOM = (
+    'shopee', 'mercado livre', 'mercadolivre', 'amazon', 'aliexpress',
+    'magalu', 'magazine luiza', 'kabum', 'shein', 'temu', 'tiktok shop',
+    'casas bahia', 'americanas', 'carrefour', 'pichau', 'terabyte',
+    'mercado pago',
+)
+_BANCOS_PARCERIA_CUPOM = (
+    'nubank', 'itau', 'bradesco', 'santander', 'inter', 'picpay',
+    'mercado pago', 'c6 bank', 'c6', 'caixa economica', 'caixa',
+    'banco do brasil', 'will bank', 'neon', 'sicredi', 'sicoob',
+    'btg', 'xp', 'porto seguro', 'recargapay', 'pagbank', 'pagseguro',
+)
+_RE_LOJA_PARCERIA_CUPOM = re.compile(
+    r'\b(?:' + '|'.join(re.escape(x) for x in _LOJAS_PARCERIA_CUPOM) + r')\b'
+)
+_RE_BANCO_PARCERIA_CUPOM = re.compile(
+    r'\b(?:' + '|'.join(re.escape(x) for x in _BANCOS_PARCERIA_CUPOM) + r')\b'
+)
+
+
+def _eh_anuncio_desconto(limpa):
+    """True para anúncio de desconto/cupom SEM a palavra 'cupom'.
+
+    Ex.: '50% OFF Shopee x Nubank RENOVADO!', 'Desconto de 30% com Cartão
+    Nubank'. Exige sinal de desconto percentual E contexto de loja ou banco
+    parceiro, para que um '10% OFF' genérico (sem loja/banco) continue em
+    'outros' e não vire cupom por engano.
+    """
+    baixa = limpa.casefold()
+    if len(limpa) > 100:
+        return False
+    tem_desconto = re.search(
+        r'\b\d{1,3}\s*%?\s*(?:off|de\s+desconto)\b', baixa
+    ) or re.search(r'\bdesconto\s+de\s+\d{1,3}\s*%', baixa)
+    if not tem_desconto:
+        return False
+    return bool(
+        _RE_LOJA_PARCERIA_CUPOM.search(baixa)
+        or _RE_BANCO_PARCERIA_CUPOM.search(baixa)
+    )
+
+
 def _eh_linha_valor_cupom(linha):
     """True para linha de VALOR de cupom ('R$ 170,00 em R$ 1.000,00: AEMEGA15').
 
@@ -1461,7 +1507,7 @@ def _linha_titulo(texto):
         # serve de título: o slug da URL pode ter nome de outro produto
         # ('suporte-cockpit-volante-simulador...') e confundir a categoria.
         linha_sem_url = re.sub(r'(?:https?:?//|www\.)\S+', ' ', linha, flags=re.I)
-        limpa = re.sub(r'[^\w\s.,!?/-]', '', linha_sem_url).strip()
+        limpa = re.sub(r'[^\w\s.,!?%/-]', '', linha_sem_url).strip()
         baixa = limpa.casefold()
         if not limpa or len(limpa) <= 5:
             continue
@@ -1502,8 +1548,12 @@ def _linha_titulo(texto):
             continue
         if tem_cupom and _eh_linha_cupom_instrucao(baixa):
             continue
-        if any(loja in baixa for loja in _LOJAS) and len(limpa) < 30:
-            continue
+        if (
+            any(loja in baixa for loja in _LOJAS)
+            and len(limpa) < 30
+            and not _eh_anuncio_desconto(limpa)
+        ):
+            continue  # só o nome da loja (ex.: 'Shopee'), não é título
         return _limpar_cor_inicio(limpa)
 
     if cupom_candidata is not None:
@@ -1519,7 +1569,11 @@ def _linha_titulo(texto):
         baixa_fb = limpa.casefold()
         if len(limpa) <= 6 or not re.search(r'\s', limpa):
             continue
-        if any(loja in baixa_fb for loja in _LOJAS) and len(limpa) < 30:
+        if (
+            any(loja in baixa_fb for loja in _LOJAS)
+            and len(limpa) < 30
+            and not _eh_anuncio_desconto(limpa)
+        ):
             continue
         if any(p in baixa_fb for p in _TERMOS_CABECALHO):
             continue

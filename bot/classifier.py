@@ -991,7 +991,11 @@ def detectar_categoria(texto, titulo=None):
     # Produtos com cupom ('Water Cooler ... cupom X') já retornaram acima ou
     # são pegos por tem_produto_real; anúncios SEM a palavra 'cupom'
     # ('AUMENTOU O LIMITE!!', '10% OFF') continuam em 'outros'.
-    from bot.services import _eh_anuncio_cupom, _eh_linha_titulo_produto
+    from bot.services import (
+        _eh_anuncio_cupom,
+        _eh_anuncio_desconto,
+        _eh_linha_titulo_produto,
+    )
     tem_produto_real = any(
         _eh_linha_titulo_produto(_norm(_limpar_compat(linha)))
         for alvo in (titulo, texto)
@@ -1005,7 +1009,12 @@ def detectar_categoria(texto, titulo=None):
                 continue
             for linha in alvo.split('\n'):
                 linha_norm = _norm(linha)
-                if linha_norm and _eh_anuncio_cupom(linha_norm):
+                if not linha_norm:
+                    continue
+                if (
+                    _eh_anuncio_cupom(linha_norm)
+                    or _eh_anuncio_desconto(linha_norm)
+                ):
                     return 'cupom'
 
     return 'outros'
