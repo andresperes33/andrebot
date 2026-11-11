@@ -271,7 +271,7 @@ def promos_view(request):
     """
     import unicodedata as _uni
 
-    LIMITE = 12
+    LIMITE = 24
     promos = Promo.objects.all()
 
     # Filtro de data — usa horário de Brasília (America/Sao_Paulo)
