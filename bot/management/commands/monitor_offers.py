@@ -652,7 +652,8 @@ class Command(BaseCommand):
                 # inclusive o destino real de encurtadores/redirecionadores.
                 # Vale entre canais: se a oferta já foi postada nesta janela
                 # de 30 min por qualquer canal, a segunda é ignorada. A janela
-                # zera a cada 30 minutos (00h00, 00h30, 01h00...).
+                # é móvel: conta 30 min a partir do horário da oferta
+                # (postada às 11:30, só pode ser repostada a partir das 12:00).
                 chave_link_produto = ''
                 urls_dedup = _links_relevantes_para_dedup(
                     links_resolvidos

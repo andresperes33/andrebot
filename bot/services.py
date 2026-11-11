@@ -1734,15 +1734,16 @@ def promo_ja_postada(texto):
 
 
 def _limite_janela_30min():
-    """Início da janela de 30 minutos atual no fuso do site (America/Sao_Paulo).
+    """Limite da janela móvel de 30 minutos (America/Sao_Paulo).
 
-    As janelas são: 00:00-00:29, 00:30-00:59, 01:00-01:29, ...
-    No final de cada janela, a mesma oferta pode ser repostada.
+    A janela conta a partir do horário de cada oferta: uma oferta postada
+    às 11:30 só pode ser repostada a partir das 12:00. Na prática, bloqueia
+    qualquer promoção do mesmo produto criada nos últimos 30 minutos.
     """
+    from datetime import timedelta
+
     from django.utils import timezone
-    agora = timezone.localtime(timezone.now())
-    minuto_janela = (agora.minute // 30) * 30
-    return agora.replace(minute=minuto_janela, second=0, microsecond=0)
+    return timezone.localtime(timezone.now()) - timedelta(minutes=30)
 
 
 def _limite_do_dia():
@@ -1757,8 +1758,9 @@ def promo_duplicada_na_janela(*urls):
     """Retorna a Promo já postada nesta janela de 30 minutos, ou None.
 
     A comparação é feita pelo link canônico do produto (sem preço nem
-    parâmetros de rastreio). A janela zera a cada 30 minutos: ao final de
-    cada janela, a mesma oferta pode ser repostada.
+    parâmetros de rastreio). A janela é móvel: conta 30 minutos a partir do
+    horário de cada oferta (ex.: postada às 11:30, só pode ser repostada a
+    partir das 12:00).
 
     Chaves genéricas (sem ':') só são consideradas quando não há nenhuma
     chave específica. Isso evita falsos positivos de páginas compartilhadas
