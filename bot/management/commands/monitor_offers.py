@@ -140,6 +140,13 @@ def _expandir_urls_para_dedup(urls):
 _last_ids: dict = {}
 _last_ids_loaded: dict = {}
 _processing_ids: set = set()
+# Lock por canal: mensagens do MESMO canal são processadas em série. Sem isso,
+# 3 ofertas simultâneas disputam conversão de link e o last_id avança por uma
+# enquanto outra falha — a que falhou nunca era reprocessada.
+_channel_locks: dict = {}
+# Tentativas por mensagem: se falhar sempre, libera a fila após N tentativas.
+_falhas_processamento: dict = {}
+_MAX_TENTATIVAS_PROCESSAMENTO = 3
 
 
 def _chave_last_id(nome_canal):
@@ -189,13 +196,50 @@ async def load_last_id(nome_canal: str) -> int:
     _last_ids_loaded[chave] = True
     return _last_ids[chave]
 
-async def save_last_id(nome_canal: str, msg_id: int):
+async def save_last_id(nome_canal: str, msg_id: int, forcar: bool = False):
     chave = _chave_last_id(nome_canal)
+    atual = _last_ids.get(chave, 0)
+    # Nunca retrocede: com mensagens concorrentes, uma mais antiga terminando
+    # depois não pode sobrescrever o last_id de uma mais nova.
+    if not forcar and msg_id <= atual:
+        return
     _last_ids[chave] = msg_id
     try:
         await _db_set_last_id(chave, msg_id)
     except Exception as e:
         logger.error(f"❌ Erro ao persistir last_id={msg_id} ({nome_canal}) no banco: {e}")
+
+
+def _lock_do_canal(nome_canal: str):
+    """Retorna o lock que serializa o processamento de um canal."""
+    lock = _channel_locks.get(nome_canal)
+    if lock is None:
+        lock = asyncio.Lock()
+        _channel_locks[nome_canal] = lock
+    return lock
+
+
+async def _converter_link_com_retry(link, tentativas: int = 2):
+    """Converte o link FORA do event loop (requests é síncrono) e tenta de novo.
+
+    Sem o to_thread, uma conversão lenta bloqueia todo o monitor e pode fazer
+    as outras ofertas serem canceladas/perdidas.
+    """
+    from bot.services import convert_to_affiliate_link
+
+    for tentativa in range(1, tentativas + 1):
+        try:
+            convertido = await asyncio.to_thread(convert_to_affiliate_link, link)
+            if convertido:
+                return convertido
+        except Exception as e:
+            logger.warning(
+                f"⚠️ Falha ao converter link (tentativa {tentativa}/{tentativas}): {e}"
+            )
+        if tentativa < tentativas:
+            await asyncio.sleep(1)
+    logger.warning(f"⚠️ Não foi possível converter o link: {link[:120]}")
+    return None
 
 
 
@@ -270,7 +314,7 @@ class Command(BaseCommand):
                 current_last = await load_last_id(canal_nome)
                 if latest and current_last > latest[0].id:
                     logger.info(f"🔄 last_id ({current_last}) é maior que o último post do canal ({latest[0].id}). Trocou de canal? Resetando para 0.")
-                    await save_last_id(canal_nome, 0)
+                    await save_last_id(canal_nome, 0, forcar=True)
                 current_last = await load_last_id(canal_nome)
                 if current_last == 0:
                     try:
@@ -397,7 +441,7 @@ class Command(BaseCommand):
                     return False
 
                 # ─── Converte links e processa texto ─────────────────────────
-                from bot.services import convert_to_affiliate_link, send_whatsapp_message, strip_promo_footer, normaliza_emoji_inicial, substituir_nomes_canais, remover_cabecalho_alerta
+                from bot.services import send_whatsapp_message, strip_promo_footer, normaliza_emoji_inicial, substituir_nomes_canais, remover_cabecalho_alerta
 
                 channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
 
@@ -485,7 +529,9 @@ class Command(BaseCommand):
                                 pass
                         if extracted_url:
                             links_resolvidos.append(extracted_url)
-                            new_awin = convert_awin_link(extracted_url)
+                            new_awin = await asyncio.to_thread(
+                                convert_awin_link, extracted_url
+                            )
                             if new_awin:
                                 modified_text = modified_text.replace(link, new_awin)
                                 converted_any = True
@@ -499,7 +545,8 @@ class Command(BaseCommand):
                         # converte para afiliado.
                         try:
                             import re as _re_pcd
-                            resp = requests.get(
+                            resp = await asyncio.to_thread(
+                                requests.get,
                                 link,
                                 allow_redirects=True,
                                 timeout=8,
@@ -516,7 +563,7 @@ class Command(BaseCommand):
                                 real_url = m_refresh.group(1).strip()
                             if real_url:
                                 links_resolvidos.append(real_url)
-                                converted = convert_to_affiliate_link(real_url)
+                                converted = await _converter_link_com_retry(real_url)
                                 if converted:
                                     modified_text = modified_text.replace(link, converted)
                                     converted_any = True
@@ -535,7 +582,8 @@ class Command(BaseCommand):
                         # Seguimos o redirect e convertemos para o NOSSO link
                         # de afiliado da loja encontrada.
                         try:
-                            resp_seu = requests.get(
+                            resp_seu = await asyncio.to_thread(
+                                requests.get,
                                 link,
                                 allow_redirects=True,
                                 timeout=12,
@@ -552,7 +600,7 @@ class Command(BaseCommand):
                                 continue
                             if real_url and real_url != link:
                                 links_resolvidos.append(real_url)
-                                converted = convert_to_affiliate_link(real_url)
+                                converted = await _converter_link_com_retry(real_url)
                                 if converted:
                                     if 'aliexpress' in real_url:
                                         has_ali = True
@@ -570,7 +618,7 @@ class Command(BaseCommand):
                         # Canal configurado para capturar SÓ AliExpress: remove
                         # qualquer outro link de loja e mantém apenas os da Ali.
                         if is_ali:
-                            converted = convert_to_affiliate_link(link)
+                            converted = await _converter_link_com_retry(link)
                             if converted:
                                 has_ali = True
                                 modified_text = modified_text.replace(link, converted)
@@ -582,7 +630,7 @@ class Command(BaseCommand):
                         continue
 
                     if any([is_amazon, is_shopee, is_ml, is_ali, is_kabum, is_magalu]):
-                        converted = convert_to_affiliate_link(link)
+                        converted = await _converter_link_com_retry(link)
                         if converted:
                             if is_ali:
                                 # O canal fonte já fornece links separados para App e PC com labels prontas.
@@ -1044,27 +1092,62 @@ class Command(BaseCommand):
 
                 return True
 
-            # ─── LISTENER (Tempo Real) — um por canal ────────────────────────
-            async def registrar_listener(canal):
-                target_id = canal['target_id']
-                canal_nome = canal['nome']
+            # ─── Processamento serializado por canal ────────────────────────
+            async def processar_mensagem_com_trava(msg, canal):
+                """Processa uma mensagem com lock por canal e retry controlado.
 
-                @client.on(events.NewMessage(chats=target_id))
-                async def handler(event):
-                    msg = event.message
-                    chave = (canal_nome, msg.id)
+                - Serializa mensagens do MESMO canal: evita que 3 ofertas
+                  simultâneas disputem a conversão de link e o last_id.
+                - Se process_message falhar, tenta de novo NA HORA, ainda
+                  dentro do lock. O retry precisa ser aqui: se a mensagem
+                  falhasse e uma seguinte tivesse sucesso, o last_id passaria
+                  à frente e a falha nunca mais seria reprocessada.
+                - Depois de N tentativas, loga o erro completo (com id e
+                  texto) e avança o last_id para não travar a fila.
+                """
+                canal_nome = canal['nome']
+                chave = (canal_nome, msg.id)
+                async with _lock_do_canal(canal_nome):
                     last_id = await load_last_id(canal_nome)
                     if msg.id <= last_id or chave in _processing_ids:
                         return
-
                     _processing_ids.add(chave)
                     try:
-                        await process_message(msg, canal)
-                        # Avança o last_id SEMPRE (mesmo ignorada) para não
-                        # reprocessar mensagens antigas após restart/redeploy.
-                        await save_last_id(canal_nome, msg.id)
+                        for tentativa in range(1, _MAX_TENTATIVAS_PROCESSAMENTO + 1):
+                            try:
+                                await process_message(msg, canal)
+                                _falhas_processamento.pop(chave, None)
+                                break
+                            except Exception:
+                                logger.exception(
+                                    f"❌ Falha ao processar mensagem {msg.id} "
+                                    f"({canal_nome}), tentativa {tentativa}/"
+                                    f"{_MAX_TENTATIVAS_PROCESSAMENTO}. "
+                                    f"texto={(getattr(msg, 'text', '') or '')[:200]!r}"
+                                )
+                                if tentativa >= _MAX_TENTATIVAS_PROCESSAMENTO:
+                                    _falhas_processamento[chave] = tentativa
+                                    logger.error(
+                                        f"⚠️ Desistindo da mensagem {msg.id} "
+                                        f"({canal_nome}) após {tentativa} falhas; "
+                                        "avançando last_id para liberar a fila."
+                                    )
+                                    break
+                                await asyncio.sleep(1)
                     finally:
                         _processing_ids.discard(chave)
+                    # Avança após sucesso (inclusive quando a oferta foi
+                    # ignorada por deduplicação, que também é sucesso) ou
+                    # após esgotar as tentativas (para a fila não travar).
+                    await save_last_id(canal_nome, msg.id)
+
+            # ─── LISTENER (Tempo Real) — um por canal ────────────────────────
+            async def registrar_listener(canal):
+                target_id = canal['target_id']
+
+                @client.on(events.NewMessage(chats=target_id))
+                async def handler(event):
+                    await processar_mensagem_com_trava(event.message, canal)
 
             for canal in canais:
                 await registrar_listener(canal)
@@ -1077,20 +1160,12 @@ class Command(BaseCommand):
                             target_id = canal['target_id']
                             canal_nome = canal['nome']
                             last_id = await load_last_id(canal_nome)
-                            messages = await client.get_messages(target_id, limit=10, min_id=last_id)
+                            messages = await client.get_messages(
+                                target_id, limit=10, min_id=last_id
+                            )
                             if messages:
                                 for msg in reversed(list(messages)):
-                                    chave = (canal_nome, msg.id)
-                                    if msg.id > last_id and chave not in _processing_ids:
-                                        _processing_ids.add(chave)
-                                        try:
-                                            await process_message(msg, canal)
-                                        finally:
-                                            _processing_ids.discard(chave)
-                                            # Avança o last_id mesmo se ignorada/duplicada
-                                            if msg.id > last_id:
-                                                await save_last_id(canal_nome, msg.id)
-                                                last_id = msg.id
+                                    await processar_mensagem_com_trava(msg, canal)
                         await client.get_me()
                         logger.info("💓 Check-up automático realizado")
                     except Exception as e:
