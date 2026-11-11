@@ -320,10 +320,11 @@ class Command(BaseCommand):
                 logger.info(f"🔥 OFERTA CAPTURADA: {msg_text[:60]}...")
 
                 # ─── Trava anti-repetição ────────────────────────────────────
-                # Ofertas comuns: mesma oferta (link/título + preço) já
-                # capturada hoje é ignorada.
                 # Cupons: deduplicados pelo CÓDIGO/TÍTULO na janela de 3h
                 # (cupons diferentes da mesma loja podem usar o mesmo link).
+                # Ofertas comuns: a trava diária ("já capturada hoje") foi
+                # DESATIVADA a pedido do usuário. Vale apenas a janela de 3h
+                # por link, aplicada mais abaixo em promo_duplicada_na_janela.
                 eh_cupom_msg = False
                 chave_cupom = ''
                 try:
@@ -358,23 +359,24 @@ class Command(BaseCommand):
                         )
                     except Exception as cupom_dedup_err:
                         logger.error(f"❌ Erro na trava de cupom: {cupom_dedup_err}")
-                else:
-                    try:
-                        from bot.services import promo_repetida_recente
-                        repetida = await asyncio.to_thread(promo_repetida_recente, msg_text)
-                        if repetida:
-                            logger.info(
-                                "⏭️ Oferta já capturada hoje, ignorada. "
-                                f"[id={repetida.id} "
-                                f"criado_em={repetida.criado_em} "
-                                f"titulo={repetida.titulo!r} "
-                                f"preco={repetida.preco!r} "
-                                f"produto_chave={repetida.produto_chave!r} "
-                                f"url_chave={repetida.url_chave!r}]"
-                            )
-                            return True
-                    except Exception as repetida_err:
-                        logger.error(f"❌ Erro na trava anti-repetição: {repetida_err}")
+                # Trava diária por oferta repetida (promo_repetida_recente)
+                # DESATIVADA: só a janela de 3h deve bloquear reposts.
+                # try:
+                #     from bot.services import promo_repetida_recente
+                #     repetida = await asyncio.to_thread(promo_repetida_recente, msg_text)
+                #     if repetida:
+                #         logger.info(
+                #             "⏭️ Oferta já capturada hoje, ignorada. "
+                #             f"[id={repetida.id} "
+                #             f"criado_em={repetida.criado_em} "
+                #             f"titulo={repetida.titulo!r} "
+                #             f"preco={repetida.preco!r} "
+                #             f"produto_chave={repetida.produto_chave!r} "
+                #             f"url_chave={repetida.url_chave!r}]"
+                #         )
+                #         return True
+                # except Exception as repetida_err:
+                #     logger.error(f"❌ Erro na trava anti-repetição: {repetida_err}")
 
                 # ─── Deduplicação: já foi postada antes? ─────────────────────
                 # DESATIVADO a pedido do usuário: nenhuma oferta é ignorada
@@ -597,11 +599,12 @@ class Command(BaseCommand):
                     logger.info("🚫 Mensagem ignorada (nenhum link de loja detectado).")
                     return False
 
-                # ─── Trava de oferta repetida por LINK (mesmo dia) ───────────
+                # ─── Trava de oferta repetida por LINK (janela de 3h) ─────────
                 # Compara o link canônico do produto (sem preço/rastreio),
                 # inclusive o destino real de encurtadores/redirecionadores.
-                # Vale entre canais: se a oferta já foi postada hoje por
-                # qualquer canal, a segunda é ignorada. À meia-noite libera.
+                # Vale entre canais: se a oferta já foi postada nesta janela
+                # de 3h por qualquer canal, a segunda é ignorada. A janela
+                # zera a cada 3 horas (00h, 03h, 06h...).
                 chave_link_produto = ''
                 urls_dedup = _links_relevantes_para_dedup(
                     links_resolvidos
