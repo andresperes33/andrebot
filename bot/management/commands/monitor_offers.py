@@ -16,22 +16,12 @@ from asgiref.sync import sync_to_async
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Aviso anexado a toda promoção enviada ao Telegram (canal fonte) — segue
-# junto para todos os outros canais (WhatsApp, site, alertas).
+# Variante antiga do aviso (sem espaço após o emoji). Mantida só para
+# remover de textos legados antes do envio ao Telegram/WhatsApp.
 _AVISO_PROMOCAO = "⏳A promoção pode encerrar a qualquer momento."
 
-# Aviso que permanece no TG/Zap (o de rodapé de canais sai)
-_AVISO_AUTOMATICO = (
-    "⚠️ Aviso: as ofertas são geradas automaticamente e podem conter erros. "
-    "Confirme preço e disponibilidade na loja antes de comprar."
-)
-
-# Dica de persuasão sobre comprar pelo app da loja (vai acima do aviso no TG)
-_AVISO_APP_LOJA = (
-    "📲 Comprando pelo app da loja o valor final pode sair MAIS BARATO! "
-    "Muitas lojas liberam cupons, moedas e descontos exclusivos só no "
-    "aplicativo. Vale conferir antes de finalizar a compra."
-)
+# Aviso genérico para produtos que não são cupom. Também fica só no site.
+_AVISO_GENERICO = "⏳ A promoção pode encerrar a qualquer momento."
 
 
 # Categorias que NÃO vão para o Instagram/Facebook (feed/stories)
@@ -39,8 +29,13 @@ _CATS_BLOQUEADAS_REDES = {'cupom', 'filtro_linha', 'outros', 'cabo', 'pasta_term
 
 
 def _texto_sem_rodape(texto):
-    """Remove o aviso de promoção — ele fica só no site, não no TG/Zap."""
-    return (texto or '').replace(f"\n\n{_AVISO_PROMOCAO}", '').strip()
+    """Remove os avisos de rodapé — eles ficam só no site (página do produto),
+    não vão para o Telegram/WhatsApp."""
+    t = texto or ''
+    for aviso in (_AVISO_PROMOCAO, _AVISO_GENERICO, AVISO_CUPOM):
+        t = t.replace(f"\n\n{aviso}", '')
+        t = t.replace(aviso, '')
+    return t.strip()
 
 
 def _remover_divulgacao_grupo_impulso(texto):
@@ -731,7 +726,7 @@ class Command(BaseCommand):
                     else:
                         # Produto não-cupom: usa aviso genérico, sem a palavra "cupom"
                         # para não contaminar a classificação futura.
-                        gen_aviso = "⏳ A promoção pode encerrar a qualquer momento."
+                        gen_aviso = _AVISO_GENERICO
                         if AVISO_CUPOM not in modified_text and gen_aviso not in modified_text:
                             modified_text += f"\n\n{gen_aviso}"
                     if has_ali:
@@ -740,7 +735,6 @@ class Command(BaseCommand):
                             "Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
                             "Se o produto não aparecer, clique em 'DO BRASIL'."
                         )
-                    modified_text += f"\n\n{_AVISO_PROMOCAO}"
 
 
                 # ─── Baixa foto ──────────────────────────────────────────────
@@ -910,12 +904,8 @@ class Command(BaseCommand):
                 # ─── Envia para o Telegram ───────────────────────────────────
                 try:
                     from html import escape as _html_escape
-                    # Sem rodapé de canais e sem aviso de promoção; mantém o ⚠️ Aviso.
-                    # Se não for AliExpress, insere a dica de comprar pelo app.
+                    # Sem avisos de rodapé: eles ficam só no site (página do produto).
                     corpo_tg = _texto_sem_rodape(modified_text)
-                    if not has_ali:
-                        corpo_tg += f"\n\n{_AVISO_APP_LOJA}"
-                    corpo_tg += f"\n\n{_AVISO_AUTOMATICO}"
                     corpo_tg = _html_escape(corpo_tg)
                     texto_telegram = corpo_tg
                     if photo_path and os.path.exists(photo_path):
@@ -935,9 +925,6 @@ class Command(BaseCommand):
                 # ─── Envia para o WhatsApp ───────────────────────────────────
                 try:
                     texto_whatsapp = _texto_sem_rodape(modified_text)
-                    if not has_ali:
-                        texto_whatsapp += f"\n\n{_AVISO_APP_LOJA}"
-                    texto_whatsapp += f"\n\n{_AVISO_AUTOMATICO}"
                     enviado_wa = send_whatsapp_message(texto_whatsapp, photo_path)
                     if enviado_wa:
                         logger.info("✅ Enviado para WhatsApp")
@@ -983,6 +970,10 @@ class Command(BaseCommand):
                     base_site = (getattr(settings, 'SITE_URL', '') or '').rstrip('/')
                     if base_site:
                         pagina_url = f"{base_site}/promos/{promo_id}/"
+
+                # Redes sociais: texto sem os avisos de rodapé — eles ficam
+                # apenas na página do produto no site.
+                texto_redes = _texto_sem_rodape(modified_text)
                 async with publicacao_lock:
                     try:
                         from bot.instagram_stories import post_instagram_story
@@ -995,7 +986,7 @@ class Command(BaseCommand):
                             if not permitido:
                                 logger.info(f"⏸️ Story adiado ({motivo}). Promo segue salva no banco e no Telegram.")
                             else:
-                                publicou = await asyncio.to_thread(post_instagram_story, modified_text, photo_path, pagina_url)
+                                publicou = await asyncio.to_thread(post_instagram_story, texto_redes, photo_path, pagina_url)
                                 if publicou:
                                     await asyncio.to_thread(registrar_publicacao)
                                     logger.info("📸 Story publicado no Instagram (dentro da janela/cooldown).")
@@ -1016,7 +1007,7 @@ class Command(BaseCommand):
                             if not permitido_feed:
                                 logger.info(f"⏸️ Instagram feed adiado ({motivo_feed}). Promo segue salva no banco e no Telegram.")
                             else:
-                                publicou_feed = await asyncio.to_thread(post_instagram_feed, modified_text, photo_path, pagina_url)
+                                publicou_feed = await asyncio.to_thread(post_instagram_feed, texto_redes, photo_path, pagina_url)
                                 if publicou_feed:
                                     await asyncio.to_thread(registrar_feed, chave='ultima_publicacao_ig_feed')
                                     logger.info("🖼️ Oferta publicada no feed do Instagram.")
@@ -1037,7 +1028,7 @@ class Command(BaseCommand):
                             if not permitido_fb:
                                 logger.info(f"⏸️ Facebook adiado ({motivo_fb}). Promo segue salva no banco e no Telegram.")
                             else:
-                                publicou_fb = await asyncio.to_thread(post_facebook, modified_text, photo_path, pagina_url)
+                                publicou_fb = await asyncio.to_thread(post_facebook, texto_redes, photo_path, pagina_url)
                                 if publicou_fb:
                                     await asyncio.to_thread(registrar_publicacao, chave='ultima_publicacao_fb')
                                     logger.info("📣 Oferta publicada no Facebook.")
@@ -1060,7 +1051,7 @@ class Command(BaseCommand):
                             if not permitido_fbs:
                                 logger.info(f"⏸️ Facebook story adiado ({motivo_fbs}).")
                             else:
-                                publicou_fbs = await asyncio.to_thread(post_facebook_story, modified_text, photo_path, pagina_url)
+                                publicou_fbs = await asyncio.to_thread(post_facebook_story, texto_redes, photo_path, pagina_url)
                                 if publicou_fbs:
                                     await asyncio.to_thread(registrar_publicacao, chave='ultima_publicacao_fb_story')
                                     logger.info("📱 Story publicado no Facebook.")
