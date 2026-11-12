@@ -962,7 +962,8 @@ class Command(BaseCommand):
                 except Exception as site_err:
                     logger.error(f"❌ Erro no André Alerta: {site_err}")
 
-                # ─── Publicações (IG Story + IG Feed + Facebook) ───────────
+                # ─── Publicações (IG Story + Facebook) ──────────────────────
+                # Instagram: somente STORY (o feed não é mais publicado).
                 # Dentro do lock: checar permissão → publicar → registrar são
                 # atômicos. Assim, quando duas ofertas chegam juntas, a segunda
                 # espera a primeira terminar (e registrar o cooldown) antes de
@@ -996,27 +997,6 @@ class Command(BaseCommand):
                                     logger.info("📸 Story publicado no Instagram (dentro da janela/cooldown).")
                     except Exception as ig_err:
                         logger.error(f"❌ Erro Instagram: {ig_err}")
-
-                    # ─── Publica no FEED do Instagram ───────────────────────
-                    try:
-                        from bot.instagram_stories import post_instagram_feed
-                        from bot.story_gate import pode_publicar_story, registrar_publicacao as registrar_feed
-
-                        if categoria_oferta in _CATS_BLOQUEADAS_REDES:
-                            logger.info(f"⏸️ Feed não publicado: categoria '{categoria_oferta}'.")
-                        else:
-                            permitido_feed, motivo_feed = await asyncio.to_thread(
-                                pode_publicar_story, chave='ultima_publicacao_ig_feed'
-                            )
-                            if not permitido_feed:
-                                logger.info(f"⏸️ Instagram feed adiado ({motivo_feed}). Promo segue salva no banco e no Telegram.")
-                            else:
-                                publicou_feed = await asyncio.to_thread(post_instagram_feed, texto_redes, photo_path, pagina_url)
-                                if publicou_feed:
-                                    await asyncio.to_thread(registrar_feed, chave='ultima_publicacao_ig_feed')
-                                    logger.info("🖼️ Oferta publicada no feed do Instagram.")
-                    except Exception as igf_err:
-                        logger.error(f"❌ Erro Instagram feed: {igf_err}")
 
                     # ─── Publica na Página do Facebook ─────────────────────
                     try:
