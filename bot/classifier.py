@@ -82,7 +82,7 @@ _REGEX_CATEGORIA = [
     ]),
     ('console', [
         # 'switch' só é console (Nintendo Switch) — não é switch mecânico de teclado.
-        r'\bswitch\b(?=\s*(?:nintendo|oled|lite|2\b|\d|joy|v2))|(?<=\bnintendo\s)switch',
+        r'\bswitch\b(?=\s*(?:nintendo|oled|lite|\d|joy|v2))|(?<=\bnintendo\s)switch',
         r'\bplaystation\b(?![^.\n]*(?:para|compat[ií]vel|compativel|computador|pc\b|fone|headset|controle|acess[oó]rio))',
         r'\bnintendo\b(?!\s*(?:switch\s+(?:lite|oled)))(?![^.,\n]*(?:para\b|fone|controle|acess[oó]rio))',
         r'\bxbox\b(?![^.,\n]*(?:para\b|fone|controle|headset|acess[oó]rio|series\s*[sx]\s*compat))',
@@ -246,7 +246,7 @@ _PLATAFORMA_ABRE = re.compile(
     r'(?:console\s+|novo\s+|sony\s+|microsoft\s+)*'
     r'(?:'
     r'(?:playstation|ps[0-9]|xbox|nintendo|steam\s*deck|ok\s*1|anbernic)\b'
-    r'|\bswitch\b(?=\s*(?:nintendo|oled|lite|2\b|\d|joy|v2))'
+    r'|\bswitch\b(?=\s*(?:nintendo|oled|lite|\d|joy|v2))'
     r')'
 )
 
@@ -910,7 +910,7 @@ def detectar_categoria(texto, titulo=None):
         eh_console = re.search(
             r'(?:\bnintendo\s*switch\b'
             r'|\bnintendo\b(?!\s*(?:para|compat[ií]vel|fone|controle|acess[oó]rio))'
-            r'|\bswitch\b(?=\s*(?:nintendo|oled|lite|2\b|\d|joy|v2))'
+            r'|\bswitch\b(?=\s*(?:nintendo|oled|lite|\d|joy|v2))'
             r'|\bplaystation\b(?!\s*(?:para|compat[ií]vel|fone|headset|controle|acess[oó]rio|computador|pc\b))'
             r'|\bxbox\b(?!\s*(?:para|fone|controle|headset|acess[oó]rio|series\s*[sx]\s*compat))'
             r'|\bsteam\s*deck\b|\bok\s*1\b|\banbernic\b|\bhandheld\b|\bconsole\b'
@@ -963,6 +963,21 @@ def detectar_categoria(texto, titulo=None):
             continue
         if re.search(r'\b(?:teclado|keyboard)\b', alvo_norm):
             return 'teclado'
+
+    # Coleções de jogos específicas (ex.: "Master Collection", "Edition", "Compilation")
+    # Essas são coleções de jogos para um sistema, mas o foco é o jogo, não o console.
+    # Verifica no título informado, pois ele contém o nome do produto principal.
+    if titulo:
+        titulo_norm = _norm(_limpar_compat(titulo))
+        colecoes_jogo = [
+            r'master\s*collection',
+            r'edition\s*\d*',
+            r'compilation',
+            r'classic\s*collection',
+        ]
+        for padrao in colecoes_jogo:
+            if re.search(padrao, titulo_norm, re.IGNORECASE):
+                return 'jogo'
 
     # Bundle de CONSOLE tem prioridade sobre jogos: 'PlayStation 5 + GTA VI'
     # é um console com jogos inclusos (bundle/pacote), não um jogo avulso.
