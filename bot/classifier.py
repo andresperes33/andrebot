@@ -76,8 +76,9 @@ _REGEX_CATEGORIA = [
         r'\bred\s*dead\b', r'\bdragon\s*ball\b', r'\bfifa\b', r'\bea\s*sports\b',
         r'\bcall\s*of\s*duty\b', r'\belden\s*ring\b', r'\bcyberpunk\b',
         # Jogo claro de produto: 'Jogo X' no início da linha OU 'jogo' como
-        # rótulo do item (ex.: 'Jogo PS5 GTA'). Evita pegar 'Hifi para Jogos'.
-        r'\bjogo\s+(?:de|do|da|d[aeo]?\s+)?[a-z0-9]',
+        # rótulo do item (ex.: 'Jogo PS5 GTA'). Evita pegar 'Hifi para Jogos'
+        # e frases de marketing como 'jogo de impulso'/'jogo de pontos'.
+        r'\bjogo[ \t]+(?!de[ \t]+impulso\b|de[ \t]+pontos\b)(?:de|do|da|d[aeo]?[ \t]+)?[a-z0-9]',
         r'\bcopy\s*de\s*(?:cart\b|catridge)',
     ]),
     ('console', [
@@ -278,10 +279,11 @@ def detectar_categoria(texto, titulo=None):
     Se 'titulo' (linha do produto) for informado, usa-o com prioridade,
     pois o assunto principal é o que nomeia o produto (ex.: 'Processador
     ... Radeon ...' é processador, não placa de vídeo)."""
-    # Quando há título, ignora linhas de rótulo de categoria no corpo: elas
-    # não são o produto e podem fazer o texto "roubar" a classificação.
-    if titulo:
-        texto = _sem_linhas_categoria(texto)
+    # Ignora linhas que são só rótulo de categoria ('Jogo', 'Console',
+    # 'Controle / Gamepad'): elas não descrevem o produto e podem fazer o
+    # texto "roubar" a classificação (ex.: 'Jogo' antes de uma memória RAM).
+    # Vale mesmo sem título: o corpo pode começar com esse rótulo.
+    texto = _sem_linhas_categoria(texto)
     haystack = _norm(texto)
     if not haystack:
         return 'outros'
@@ -820,7 +822,10 @@ def detectar_categoria(texto, titulo=None):
             alvo_norm,
         ):
             continue  # é bundle/pacote de console, não um jogo avulso
-        if re.search(r'\bjogo\s+(?:de|do|da|d[aeo]?\s+)?[a-z0-9]', alvo_norm):
+        if re.search(
+            r'\bjogo[ \t]+(?!de[ \t]+impulso\b|de[ \t]+pontos\b)(?:de|do|da|d[aeo]?[ \t]+)?[a-z0-9]',
+            alvo_norm,
+        ):
             return 'jogo'
         if re.search(
             r'\b(?:gta\b|grand\s*theft\s*auto\b|forza\b|god\s*of\s*war\b|zelda\b|'
