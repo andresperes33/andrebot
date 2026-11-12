@@ -3200,17 +3200,22 @@ def strip_promo_footer(text):
 
 
 _RE_EMOJI_ALL = re.compile(
-    r'[\U0001F000-\U0001FAFF]'
-    r'|[\u2600-\u27BF]'
-    r'|[\u2190-\u21FF]'
-    r'|[\u2B00-\u2BFF]'
-    r'|\ufe0f|\u200d|\u00a9|\u00ae|\u2122|\u00a0',
+    r'[\U0001F000-\U0001FAFF]'      # emojis e pictogramas
+    r'|[\u2600-\u27BF]'             # símbolos diversos
+    r'|[\u2190-\u21FF]'             # setas
+    r'|[\u2B00-\u2BFF]'             # símbolos/moeda
+    r'|[\u2934-\u2935\u3030\u303D\u3297\u3299]'
+    r'|\ufe0e|\ufe0f|\u20e3|\u200d'  # seletores de variação / keycap / ZWJ
+    r'|\u00a9|\u00ae|\u2122|\u00a0',  # ©, ®, ™, espaço inseparável
 )
 
 def normaliza_emoji_inicial(texto):
-    """Troca o PRIMEIRO emoji da mensagem capturada por um emoji de alerta
-    escolhido aleatoriamente. Os demais emojis e o restante do texto são
-    preservados. Também limpa espaços/quebras de linha excedentes.
+    """Coloca um emoji de alerta sorteado no início da oferta e REMOVE todos
+    os emojis que vieram do texto capturado.
+
+    Resultado: a mensagem publicada tem apenas a emoção aleatória no começo
+    e nenhum emoji da oferta original. Também limpa espaços/quebras de linha
+    excedentes.
 
     Lista de emojis de alerta:
         🚨 ⚠️ 🔔 📢 📣 ‼️ ❗ ❕ 🔥 ⚡ 👀 🛎️ 🚩 🆘 ⛔ 🛑 🔴 🟠 💥 📍
@@ -3229,6 +3234,9 @@ def normaliza_emoji_inicial(texto):
     if not t:
         return texto
 
+    # Remove TODOS os emojis/símbolos vindos da oferta capturada.
+    t = _RE_EMOJI_ALL.sub(' ', t)
+
     # Limpa espaços excedentes em cada linha
     linhas = []
     for linha in t.split('\n'):
@@ -3236,5 +3244,237 @@ def normaliza_emoji_inicial(texto):
     t = '\n'.join(linhas)
     t = re.sub(r'\n{3,}', '\n\n', t).strip()
 
-    # Encontra e substitui o PRIMEIRO emoji da mensagem
-    # A regex captura qualquer emoji (bloco de caracteres Unicode gráficos)
+    # Emoji aleatório do canal no início da mensagem
+    novo_emoji = random.choice(_EMOJIS_ALERTA)
+    if not t:
+        return novo_emoji
+    return novo_emoji + ' ' + t
+
+
+
+async def process_offer_to_group(bot_app, text, photo=None):
+    """
+    Processa uma oferta (texto + foto opcional), converte links e posta no grupo.
+    bot_app: Instância do bot do Telegram (Bot ou Application)
+    """
+    if not text:
+        return False
+
+    # Filtro: Ignora links da Terabyte
+    if 'terabyte' in text.lower() or 'terabyteshop' in text.lower():
+        print("ℹ️ Oferta da Terabyte ignorada.")
+        return False
+
+    # Detecta se é o Application ou o Bot direto para saber qual objeto usar
+    bot = getattr(bot_app, 'bot', bot_app)
+
+    links = extract_links(text)
+    if not links:
+        return False
+
+    modified_text = text
+    original_link = None
+    converted_any = False
+
+    # 1. Substituições de Links e Nomes (Canais de terceiros)
+    personal_link = getattr(settings, 'PERSONAL_CHANNEL_LINK', '')
+    channel_name = getattr(settings, 'PERSONAL_CHANNEL_NAME', 'Seu Canal')
+    
+    # Limpa nomes de outros canais, sem alterar cupons
+    modified_text = substituir_nomes_canais(modified_text, channel_name)
+
+    # Substitui links do Linktree pelo link personalizado
+    modified_text = re.sub(r'https?://linktr\.ee/\S+', 'https://links.andreindica.com.br/', modified_text)
+    modified_text = strip_promo_footer(modified_text)
+    # Emoji aleatório do canal no início; remove emojis vindos da captura
+    modified_text = normaliza_emoji_inicial(modified_text)
+
+    has_aliexpress = False
+    for link in links:
+        is_shopee = 'shopee.com.br' in link or 's.shopee' in link
+        is_aliexpress = 'aliexpress.com' in link or 's.click.aliexpress' in link
+        is_ml = ('mercadolivre.com' in link or 'mlstatic.com' in link
+                 or 'mercadolivre.com.br' in link or 'ofertei.net' in link)
+        is_amazon = 'amazon.com.br' in link or 'amzn.to' in link or 'link.amazon' in link
+        is_kabum = 'kabum.com.br' in link or 'tidd.ly' in link
+        is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link
+        is_telegram = 't.me/' in link
+        is_tecnan = 'tecnan.com.br' in link
+
+        if is_telegram or is_tecnan:
+            if personal_link and personal_link not in link:
+                modified_text = modified_text.replace(link, personal_link)
+                converted_any = True
+            continue
+
+        is_awin = 'awin1.com' in link or 'tidd.ly' in link
+
+        if is_awin:
+            # Extrai a URL real do produto do parâmetro 'ued' e gera novo link com nosso ID
+            extracted_url = None
+            if 'ued=' in link:
+                try:
+                    ued_value = link.split('ued=')[1].split('&')[0]
+                    extracted_url = urllib.parse.unquote(ued_value)
+                except:
+                    pass
+            if not extracted_url and 'tidd.ly' in link:
+                try:
+                    resp = requests.get(link, allow_redirects=True, timeout=8, headers={"User-Agent": "Mozilla/5.0"})
+                    if 'kabum.com.br' in resp.url:
+                        extracted_url = resp.url
+                except:
+                    pass
+            if extracted_url:
+                new_awin = convert_awin_link(extracted_url)
+                if new_awin:
+                    modified_text = modified_text.replace(link, new_awin)
+                    original_link = extracted_url
+                    converted_any = True
+                    continue
+            # Fallback: considera como convertido para não bloquear
+            converted_any = True
+            original_link = link
+            continue
+
+        if not any([is_shopee, is_aliexpress, is_ml, is_amazon, is_kabum, is_magalu]):
+            # Canal PC DO FAFA: links vêm como redirecionamento em pcdofafa.com.br.
+            # A página faz redirect via <meta http-equiv="refresh"> com delay 0;
+            # extrai esse destino e converte para afiliado.
+            if 'pcdofafa.com.br' in link:
+                try:
+                    resp = requests.get(
+                        link,
+                        allow_redirects=True,
+                        timeout=8,
+                        headers={"User-Agent": "Mozilla/5.0"},
+                    )
+                    html = resp.text
+                    real_url = ''
+                    m = re.search(
+                        r'http-equiv=["\']refresh["\']\s+content=["\']\d+;\s*url=([^"\']+)',
+                        html,
+                        re.IGNORECASE,
+                    )
+                    if m:
+                        real_url = m.group(1).strip()
+                    if not real_url:
+                        # Fallback: procura qualquer link de loja conhecida no HTML
+                        m2 = re.search(
+                            r'https?://(?:a\.|s\.click\.|pt\.)?aliexpress\.com/[^\s"<>]+'
+                            r'|https?://[^\s"<>]*shopee\.com[^\s"<>]+'
+                            r'|https?://[^\s"<>]*mercadolivre\.com[^\s"<>]+'
+                            r'|https?://[^\s"<>]*amazon\.com\.br[^\s"<>]+'
+                            r'|https?://[^\s"<>]*kabum\.com\.br[^\s"<>]+'
+                            r'|https?://[^\s"<>]*magalu[^\s"<>]+',
+                            html,
+                            re.IGNORECASE,
+                        )
+                        if m2:
+                            real_url = m2.group(0)
+                    if real_url:
+                        print(f"PC DO FAFA redirect: {link} -> {real_url}")
+                        converted = convert_to_affiliate_link(real_url)
+                        if converted:
+                            modified_text = modified_text.replace(link, converted)
+                            converted_any = True
+                            original_link = link
+                            continue
+                except Exception as fafa_err:
+                    print(f"PC DO FAFA expand erro: {fafa_err}")
+            continue
+
+        print(f"Convertendo link: {link}")
+        converted = convert_to_affiliate_link(link)
+        if converted:
+            original_link = link
+            if is_aliexpress:
+                has_aliexpress = True
+                link_app = converted
+                link_pc = convert_aliexpress_link(link, base_on_clean_url=True)
+                # Na primeira ocorrência, substituímos pelo par de links. Nas próximas, apenas por um link simples.
+                if "Link para PC:" not in modified_text:
+                    replacement = f"🥇 Link com moedas (App):\n🔗 {link_app}\n\n🖥 Link para PC:\n🔗 {link_pc}"
+                else:
+                    replacement = link_app
+            else:
+                replacement = converted
+            
+            modified_text = modified_text.replace(link, replacement)
+            converted_any = True
+
+    if not converted_any:
+        return False
+
+    # Aviso sobre cupons: entra em todas as ofertas, depois dos links e
+    # antes das dicas/avisos.
+    if AVISO_CUPOM not in modified_text:
+        modified_text += f"\n\n{AVISO_CUPOM}"
+
+    # Adiciona as instruções do AliExpress apenas uma vez no final se houver links dele
+    if has_aliexpress:
+        modified_text += (
+            f"\n\n💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
+            f"Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
+            f"Se o produto não aparecer, clique em 'DO BRASIL'."
+        )
+
+    group_id = settings.TELEGRAM_GROUP_ID
+    if not group_id:
+        print("Erro: TELEGRAM_GROUP_ID não configurado.")
+        return False
+
+    try:
+        final_image_to_send = None
+        promo_image = None  # Imagem final (path local ou URL) para salvar no site
+
+        if photo:
+            # Se 'photo' for um caminho de arquivo (baixado pelo monitor_offers.py)
+            # O bot do Telegram envia o arquivo local
+            await bot.send_photo(
+                chat_id=group_id,
+                photo=photo,
+                caption=modified_text[:1024]
+            )
+            final_image_to_send = photo  # Guarda o caminho do arquivo para o WhatsApp
+
+            # Se for um file_id do Telegram (não é path e não é URL), baixa para o disco
+            if isinstance(photo, str) and not photo.startswith('http') and not os.path.exists(photo):
+                try:
+                    tg_file = await bot.get_file(photo)
+                    temp_dir = os.path.join(os.getcwd(), 'tmp_photos')
+                    os.makedirs(temp_dir, exist_ok=True)
+                    promo_image = await tg_file.download_to_drive(custom_path=os.path.join(temp_dir, f"promo_{int(time.time())}.jpg"))
+                except Exception as dl_err:
+                    print(f"Erro ao baixar foto para o site: {dl_err}")
+                    promo_image = None
+            else:
+                promo_image = final_image_to_send
+        else:
+            # Tenta buscar info do produto se não tiver foto direto do Telegram
+            _, image_url, _ = get_product_info(original_link)
+            final_image_to_send = image_url
+            promo_image = image_url
+            if image_url:
+                await bot.send_photo(
+                    chat_id=group_id,
+                    photo=image_url,
+                    caption=modified_text[:1024]
+                )
+            else:
+                await bot.send_message(
+                    chat_id=group_id,
+                    text=modified_text,
+                    disable_web_page_preview=False
+                )
+        
+        # Envia também para o WhatsApp (Passando o arquivo local ou a URL)
+        send_whatsapp_message(modified_text, final_image_to_send)
+
+        # Salva a promoção no banco para a página web
+        save_promo_to_db(modified_text, promo_image)
+        
+        return True
+    except Exception as e:
+        print(f"Erro ao processar oferta automática: {e}")
+        return False
