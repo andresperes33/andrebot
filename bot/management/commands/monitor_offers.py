@@ -23,6 +23,14 @@ _AVISO_PROMOCAO = "⏳A promoção pode encerrar a qualquer momento."
 # Aviso genérico para produtos que não são cupom. Também fica só no site.
 _AVISO_GENERICO = "⏳ A promoção pode encerrar a qualquer momento."
 
+# Dica de AliExpress — fica só no site (página do produto), não vai para
+# Telegram/WhatsApp/redes.
+_DICA_ALIEXPRESS = (
+    "💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
+    "Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
+    "Se o produto não aparecer, clique em 'DO BRASIL'."
+)
+
 
 # Categorias que NÃO vão para o Instagram/Facebook (feed/stories)
 _CATS_BLOQUEADAS_REDES = {'cupom', 'filtro_linha', 'outros', 'cabo', 'pasta_termica', 'caixa_som'}
@@ -32,7 +40,7 @@ def _texto_sem_rodape(texto):
     """Remove os avisos de rodapé — eles ficam só no site (página do produto),
     não vão para o Telegram/WhatsApp."""
     t = texto or ''
-    for aviso in (_AVISO_PROMOCAO, _AVISO_GENERICO, AVISO_CUPOM):
+    for aviso in (_AVISO_PROMOCAO, _AVISO_GENERICO, AVISO_CUPOM, _DICA_ALIEXPRESS):
         t = t.replace(f"\n\n{aviso}", '')
         t = t.replace(aviso, '')
     return t.strip()
@@ -730,11 +738,7 @@ class Command(BaseCommand):
                         if AVISO_CUPOM not in modified_text and gen_aviso not in modified_text:
                             modified_text += f"\n\n{gen_aviso}"
                     if has_ali:
-                        modified_text += (
-                            "\n\n💡 Dica: Comprando pelo aplicativo o desconto pode ser maior por causa das moedas.\n"
-                            "Após clicar no link acima, você será direcionado para a página de moedas. Clique no primeiro anúncio.\n"
-                            "Se o produto não aparecer, clique em 'DO BRASIL'."
-                        )
+                        modified_text += f"\n\n{_DICA_ALIEXPRESS}"
 
 
                 # ─── Baixa foto ──────────────────────────────────────────────
