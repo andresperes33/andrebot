@@ -194,6 +194,10 @@ TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH')
 TELEGRAM_STRING_SESSION = os.getenv('TELEGRAM_STRING_SESSION')
 SOURCE_CHANNEL_USERNAME = os.getenv('SOURCE_CHANNEL_USERNAME', 'Iskandar Souza - Promoções')
 
+# Canal TECNAN OFERTAS (links camuflados via eioferta.com.br). Monitorado por
+# padrão; deixe a variável vazia no .env para desativar.
+TECNAN_SOURCE_CHANNEL = os.getenv('TECNAN_SOURCE_CHANNEL', 'TECNAN OFERTAS')
+
 # Usa a imagem principal da PÁGINA do produto (link da oferta) em vez da foto
 # capturada do canal (evita marca d'água de outros canais). Fallback: foto capturada.
 IMAGEM_DA_PAGINA_PRODUTO = os.getenv('IMAGEM_DA_PAGINA_PRODUTO', 'True') == 'True'

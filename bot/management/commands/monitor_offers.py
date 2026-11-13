@@ -53,6 +53,8 @@ def _remover_divulgacao_grupo_impulso(texto):
         'seuhardware.com/s/kkdmpdl',
         'chat.whatsapp.com',
         'whatsapp.com/channel',
+        # TECNAN OFERTAS: divulgação dos grupos/site do canal.
+        'tecnan.com.br',
     )
     linhas = []
     for linha in (texto or '').splitlines():
@@ -269,7 +271,8 @@ class Command(BaseCommand):
 
             # ─── Canais monitorados ─────────────────────────────────────────
             # Canal principal (SOURCE_CHANNEL_USERNAME) + canais extras
-            # (EXTRA_SOURCE_CHANNELS). Cada canal pode ter um filtro:
+            # (EXTRA_SOURCE_CHANNELS) + TECNAN OFERTAS (TECNAN_SOURCE_CHANNEL).
+            # Cada canal pode ter um filtro:
             #   filtro=None        → captura todas as ofertas
             #   filtro='aliexpress'→ captura SÓ ofertas com link AliExpress
             canais = []
@@ -280,6 +283,26 @@ class Command(BaseCommand):
                 nome_extra = (extra.get('nome') or '').strip()
                 if nome_extra:
                     canais.append({'nome': nome_extra, 'filtro': extra.get('filtro') or None})
+
+            # Canal TECNAN OFERTAS: monitorado por padrão (pode ser desativado
+            # deixando TECNAN_SOURCE_CHANNEL vazio no .env).
+            canal_tecnan = (
+                getattr(settings, 'TECNAN_SOURCE_CHANNEL', 'TECNAN OFERTAS') or ''
+            ).strip()
+            if canal_tecnan:
+                canais.append({'nome': canal_tecnan, 'filtro': None})
+
+            # Remove canais duplicados (mesmo nome normalizado), caso o canal
+            # também esteja listado em EXTRA_SOURCE_CHANNELS.
+            _vistos_canais = set()
+            canais_unicos = []
+            for canal_item in canais:
+                chave_canal = _normalizar_nome_canal(canal_item['nome'])
+                if chave_canal in _vistos_canais:
+                    continue
+                _vistos_canais.add(chave_canal)
+                canais_unicos.append(canal_item)
+            canais = canais_unicos
 
             # Resolve o ID de cada canal e faz o cold start individual
             for canal in canais:
@@ -472,6 +495,64 @@ class Command(BaseCommand):
                 # Remove linhas vazias excessivas
                 modified_text = re.sub(r'\n\s*\n', '\n\n', modified_text)
 
+                # 2.1 Resolve links camuflados do canal TECNAN OFERTAS
+                # (eioferta.com.br): o link redireciona para a loja real
+                # (AliExpress, Amazon, Shopee, Kabum/Awin...). Trocamos pelo
+                # destino ANTES da conversão, para reaproveitar as mesmas
+                # regras das ofertas dos outros canais. Se não resolver, a
+                # linha é removida (não publicamos link de outro canal).
+                links_resolvidos = []
+                for link_camuflado in re.findall(r'(https?://\S+)', modified_text):
+                    if 'eioferta.com.br' not in link_camuflado:
+                        continue
+                    real_url = ''
+                    try:
+                        resp_eio = await asyncio.to_thread(
+                            requests.get,
+                            link_camuflado,
+                            allow_redirects=True,
+                            timeout=12,
+                            headers={"User-Agent": "Mozilla/5.0"},
+                        )
+                        real_url = (resp_eio.url or '').strip()
+                        # Alguns links podem camuflar via HTML (meta refresh /
+                        # location.href) em vez de redirect HTTP.
+                        if real_url == link_camuflado:
+                            html_eio = resp_eio.text or ''
+                            m_refresh_eio = re.search(
+                                r'http-equiv=["\']refresh["\']\s+content='
+                                r'["\']\d+;\s*url=([^"\']+)',
+                                html_eio,
+                                re.IGNORECASE,
+                            )
+                            if m_refresh_eio:
+                                real_url = m_refresh_eio.group(1).strip()
+                            else:
+                                m_js_eio = re.search(
+                                    r'location\.(?:href|replace)\s*=\s*'
+                                    r'["\']([^"\']+)["\']',
+                                    html_eio,
+                                    re.IGNORECASE,
+                                )
+                                if m_js_eio:
+                                    real_url = m_js_eio.group(1).strip()
+                    except Exception as eio_err:
+                        logger.warning(f"⚠️ eioferta expand erro: {eio_err}")
+                    if (
+                        not real_url
+                        or real_url == link_camuflado
+                        or _eh_link_grupo(real_url)
+                    ):
+                        modified_text = '\n'.join(
+                            ln for ln in modified_text.splitlines()
+                            if link_camuflado not in ln
+                        )
+                        modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
+                        logger.info("🧹 Link eioferta não resolvido removido da oferta")
+                        continue
+                    links_resolvidos.append(real_url)
+                    modified_text = modified_text.replace(link_camuflado, real_url)
+
                 # 3. Converte links de produtos
                 links = re.findall(r'(https?://\S+)', modified_text)
                 converted_any = False
@@ -479,7 +560,7 @@ class Command(BaseCommand):
                 # URLs reais obtidas ao expandir redirecionadores (seuhardware,
                 # pcdofafa, Awin...). Ajudam a identificar o mesmo produto
                 # entre canais que usam links/rastreios diferentes.
-                links_resolvidos = []
+                # (links_resolvidos já começa com os destinos dos eioferta.)
 
                 # Deduplicação: remove links repetidos mantendo a ordem
                 seen_links = []

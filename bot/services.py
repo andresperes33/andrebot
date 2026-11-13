@@ -386,6 +386,8 @@ _DOMINIOS_CURTOS = (
     's.shopee.com.br', 'shp.ee', 's.click.aliexpress.com',
     'a.aliexpress.com', 'amzn.to', 'link.amazon', 'meli.la',
     'mgl.io', 'bit.ly', 'tidd.ly', 'aoferta.net', 'ofertei.net',
+    # Canal TECNAN OFERTAS: link camuflado que redireciona para a loja.
+    'eioferta.com.br',
 )
 
 
@@ -3195,6 +3197,25 @@ def strip_promo_footer(text):
         '', cleaned_text,
     )
     cleaned_text = re.sub(r'(?im)^\s*_{5,}\s*$', '', cleaned_text)
+    # TECNAN OFERTAS: instruções/avisos que não fazem parte da oferta.
+    cleaned_text = re.sub(
+        r'(?im)^[^\n]*vai\s+abrir\s+a\s+p[aá]gina\s+de\s+moedas[^\n]*$',
+        '', cleaned_text,
+    )
+    cleaned_text = re.sub(
+        r'(?im)^[^\n]*pre[cç]o\s+e\s+estoque\s+sujeitos?\s+a\s+'
+        r'altera[cç][aã]o[^\n]*$',
+        '', cleaned_text,
+    )
+    cleaned_text = re.sub(
+        r'(?im)^[^\n]*grupos?\s+de\s+ofertas?[^\n]*(?:cupons?|bot)[^\n]*$',
+        '', cleaned_text,
+    )
+    cleaned_text = re.sub(r'(?im)^\s*(?:📢\s*)?an[uú]ncio\s*$', '', cleaned_text)
+    cleaned_text = re.sub(r'(?im)^\s*[➖—–\-=_•·]{3,}\s*$', '', cleaned_text)
+    cleaned_text = re.sub(
+        r'(?im)^[^\n]*pre[cç]o\s+em\s+baixa!?[^\n]*$', '', cleaned_text,
+    )
     cleaned_text = re.sub(r'\n{3,}', '\n\n', cleaned_text)
     return cleaned_text.strip()
 
