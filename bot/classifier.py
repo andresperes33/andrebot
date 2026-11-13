@@ -870,6 +870,16 @@ def detectar_categoria(texto, titulo=None):
         if not alvo_norm:
             continue
         if re.search(r'\b(?:caixas?\s*de\s*som|caixas?\s*som|caixinha\s*(?:de\s*som|bluetooth|tws|bt\b|portatil|speaker)|soundbar|alto[ -]?falantes?|altofalantes?|speaker)\b', alvo_norm):
+            # TV + soundbar é um COMBO de TV: a soundbar é item incluso, não
+            # o produto principal ('Samsung Smart TV 65 MiniLED 4K M75H
+            # Soundbar Samsung HW-B400F Combo'). Só continua caixa_som quando
+            # o produto em si é a soundbar/caixa ('Soundbar ... para Smart TV').
+            if _eh_tv_forte(alvo_norm) and not re.match(
+                r'^\s*(?:soundbar|caixas?\s*(?:de\s*)?som|caixinha|'
+                r'alto[ -]?falantes?|altofalantes?|speaker)\b',
+                alvo_norm,
+            ):
+                continue
             return 'caixa_som'
 
     # Microfone tem prioridade sobre 'headset'/'fone de ouvido' citados como
