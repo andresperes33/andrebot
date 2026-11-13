@@ -1577,6 +1577,8 @@ _CATEGORIAS_LABEL = {
     'projetor', 'projetores', 'roteador', 'roteadores',
     'ar condicionado', 'eletrodomesticos', 'ferramentas', 'camera',
     'cameras', 'informatica', 'hardware',
+    # Seções de lista de cupons/ofertas (ex.: 'Auto & Moto', 'Auto Moto').
+    'auto', 'moto', 'auto moto',
 }
 
 
@@ -1592,6 +1594,7 @@ def _eh_linha_categoria(linha):
     # sem isso 'Placa-mãe' não era reconhecida como rótulo e contaminava a
     # categoria (ex.: CPU cooler virava 'placa_mae').
     baixa = re.sub(r'[-–—]+', ' ', baixa)
+    baixa = re.sub(r'\s+', ' ', baixa)
     partes = [
         p.strip(' .!?:-')
         for p in re.split(r'\s*(?:/|\||\+|&|,|;|\be\b)\s*', baixa)
