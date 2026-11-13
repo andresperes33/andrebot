@@ -350,7 +350,7 @@ def _codigos_cupom(texto):
 def _chave_cupom(texto):
     """Chave estável de um cupom: códigos ou título/loja normalizados.
 
-    Usada na janela de deduplicação de 30 minutos dos cupons. Diferente do link,
+    Usada na janela de deduplicação de 1 hora dos cupons. Diferente do link,
     permite que cupons diferentes da mesma loja sejam postados mesmo que
     compartilhem a mesma página/URL.
     """
@@ -1791,17 +1791,17 @@ def promo_ja_postada(texto):
         return False
 
 
-def _limite_janela_30min():
-    """Limite da janela móvel de 30 minutos (America/Sao_Paulo).
+def _limite_janela_1h():
+    """Limite da janela móvel de 1 hora (America/Sao_Paulo).
 
     A janela conta a partir do horário de cada oferta: uma oferta postada
-    às 11:30 só pode ser repostada a partir das 12:00. Na prática, bloqueia
-    qualquer promoção do mesmo produto criada nos últimos 30 minutos.
+    às 11:30 só pode ser repostada a partir das 12:30. Na prática, bloqueia
+    qualquer promoção do mesmo produto criada na última hora.
     """
     from datetime import timedelta
 
     from django.utils import timezone
-    return timezone.localtime(timezone.now()) - timedelta(minutes=30)
+    return timezone.localtime(timezone.now()) - timedelta(minutes=60)
 
 
 def _limite_do_dia():
@@ -1813,12 +1813,12 @@ def _limite_do_dia():
 
 
 def promo_duplicada_na_janela(*urls):
-    """Retorna a Promo já postada nesta janela de 30 minutos, ou None.
+    """Retorna a Promo já postada nesta janela de 1 hora, ou None.
 
     A comparação é feita pelo link canônico do produto (sem preço nem
-    parâmetros de rastreio). A janela é móvel: conta 30 minutos a partir do
+    parâmetros de rastreio). A janela é móvel: conta 1 hora a partir do
     horário de cada oferta (ex.: postada às 11:30, só pode ser repostada a
-    partir das 12:00).
+    partir das 12:30).
 
     Chaves genéricas (sem ':') só são consideradas quando não há nenhuma
     chave específica. Isso evita falsos positivos de páginas compartilhadas
@@ -1836,7 +1836,7 @@ def promo_duplicada_na_janela(*urls):
     close_old_connections()
     from bot.models import Promo
 
-    limite = _limite_janela_30min()
+    limite = _limite_janela_1h()
 
     chaves_especificas = set()
     chaves_genericas = set()
@@ -1897,7 +1897,7 @@ def promo_link_ja_postada_hoje(*urls):
 
 
 def promo_chave_duplicada_na_janela(chave):
-    """Retorna a Promo com essa chave já postada na janela de 30 min, ou None.
+    """Retorna a Promo com essa chave já postada na janela de 1 hora, ou None.
 
     Usada pelos CUPONS, que são deduplicados pelo código/título (chave
     ``cupom:...``) em vez do link, já que vários cupons da mesma loja podem
@@ -1911,7 +1911,7 @@ def promo_chave_duplicada_na_janela(chave):
     close_old_connections()
     from bot.models import Promo
 
-    limite = _limite_janela_30min()
+    limite = _limite_janela_1h()
     try:
         return Promo.objects.filter(
             link_produto_chave=chave, criado_em__gte=limite
@@ -2148,7 +2148,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None,
     # qualquer loja/link, mesmo que o preço mude ou a postagem seja repetida).
     produto_chave = _chave_produto(titulo)
 
-    # Chave usada na trava de deduplicação de 30 minutos:
+    # Chave usada na trava de deduplicação de 1 hora:
     # - Cupons: código/título do cupom (vários cupons da mesma loja podem
     #   compartilhar a mesma página, então o link não serve).
     # - Demais ofertas: link canônico do produto (sem preço/rastreio).
@@ -2163,7 +2163,7 @@ def save_promo_to_db(texto, photo_path=None, fonte='zFinnY', url_chave=None,
     # Não grava chave que não identifica um produto (live, compartilhar,
     # home, busca, listas de ofertas). Essas páginas são compartilhadas por
     # ofertas diferentes e, se gravadas, bloqueiam um produto novo na janela
-    # de 30 min (ex.: 'live.shopee.com.br/universal-link/share').
+    # de 1 hora (ex.: 'live.shopee.com.br/universal-link/share').
     if link_produto_chave and not link_produto_chave.startswith('cupom:'):
         if not _link_identifica_produto(link_produto_chave):
             link_produto_chave = ''
