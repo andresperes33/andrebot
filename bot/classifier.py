@@ -903,17 +903,38 @@ def detectar_categoria(texto, titulo=None):
         # Jogo vendido pelo NOME + plataforma ao final, sem a palavra 'jogo'
         # no título (ex.: 'Resident Evil Requiem - Ps5', 'Mortal Kombat 1 PS5',
         # 'Resident Evil 4 (PS5)', 'Ghost of Yotei Complete Edition
-        # PlayStation 5 PS5 Físico'). Console NÃO entra: 'Console PlayStation 5'
-        # tem 'console' antes da plataforma, 'Sony PlayStation 5' tem só uma
+        # PlayStation 5 PS5 Físico', 'Armored Core Vi Fires Of Rubicon físico
+        # Ps5 europa'). Console NÃO entra: 'Console PlayStation 5' tem
+        # 'console' antes da plataforma, 'Sony PlayStation 5' tem só uma
         # palavra antes, e acessórios (controle/headset/SSD/capa) já foram
         # tratados acima ou são excluídos pelo nome.
-        linha_titulo = _norm(_limpar_compat((alvo or '').split('\n')[0]))
+        #
+        # A primeira linha de algumas postagens é só o rótulo da categoria
+        # ('Console', 'Jogos'), então ela é ignorada ao montar o título.
+        linha_titulo = ''
+        for linha_alvo in (alvo or '').split('\n'):
+            if not linha_alvo.strip():
+                continue
+            try:
+                from bot.services import _eh_linha_categoria
+                if _eh_linha_categoria(linha_alvo):
+                    continue
+            except Exception:
+                pass
+            linha_titulo = _norm(_limpar_compat(linha_alvo))
+            break
+        _QUALIF_JOGO = (
+            r'(?:f[ií]sico|m[ií]dia\s*f[ií]sica|novo|lacrado|usado|digital)'
+        )
         m_jogo = re.search(
             r'^(?P<nome>.+?)\s*(?:[-–—|]|\()?\s*'
+            r'(?:(?:' + _QUALIF_JOGO + r')\s*\)?\s*)*'
             r'(?:(?:ps\s*[1-5]|playstation\s*[1-5]|xbox(?:\s*series\s*[sx])?|'
             r'nintendo\s*switch|switch)\s*)+'
             r'\)?\s*(?:[-–—|]\s*)?'
-            r'(?:f[ií]sico|m[ií]dia\s*f[ií]sica|novo|lacrado|usado|digital)?\s*$',
+            r'(?:(?:' + _QUALIF_JOGO + r')\s*)*'
+            r'(?:\s*\[?\s*\b(?:europa|asia|eua|usa|us|br|brasil|regi[aã]o|'
+            r'region|importado)\b\s*\]?\s*)*$',
             linha_titulo,
         )
         if m_jogo:
