@@ -170,7 +170,12 @@ _REGEX_CATEGORIA = [
         # 'painel' de monitor (painel IPS/VA/TN), mas NÃO 'painel solar' de
         # câmera de segurança (ex.: 'Câmera Baseus ... painel solar 2K').
         r'\bpainel\b(?!\s*solar)', r'\bpainel\s*(?:ips|va|tn|led|amoled|curvo|ultrawide)\b',
-        r'\b(144|165|240|280|360)hz\b', r'\b1440p\b',
+        # Taxa de atualização típica de monitor, com ou sem espaço
+        # (ex.: 'Samsung Odyssey G5 2.7 Qhd 180 Hz, 0,03 ms, G-sync Freesync').
+        r'\b(?:100|120|144|165|180|200|240|280|300|360|390|500)\s*hz\b',
+        # Resolução e tecnologia de sincronia de monitor.
+        r'\bqhd\b', r'\bwqhd\b', r'\b1440p\b',
+        r'\bg-?sync\b', r'\bfreesync\b',
     ]),
     ('headset', [
         r'\bheadset\b', r'\bheadphone\b', r'\bfone\b', r'\bfones\b',
