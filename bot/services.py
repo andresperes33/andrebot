@@ -1799,14 +1799,26 @@ def promo_ja_postada(texto):
 def _limite_janela_1h():
     """Limite da janela móvel de 1 hora (America/Sao_Paulo).
 
-    A janela conta a partir do horário de cada oferta: uma oferta postada
-    às 11:30 só pode ser repostada a partir das 12:30. Na prática, bloqueia
-    qualquer promoção do mesmo produto criada na última hora.
+    Usada pelos CUPONS: uma oferta postada às 11:30 só pode ser repostada a
+    partir das 12:30.
     """
     from datetime import timedelta
 
     from django.utils import timezone
     return timezone.localtime(timezone.now()) - timedelta(minutes=60)
+
+
+def _limite_janela_3h():
+    """Limite da janela móvel de 3 horas (America/Sao_Paulo).
+
+    Usada pela trava de ofertas por LINK: uma oferta postada às 11:30 só pode
+    ser repostada a partir das 14:30. Na prática, bloqueia qualquer promoção
+    do mesmo produto criada nas últimas 3 horas.
+    """
+    from datetime import timedelta
+
+    from django.utils import timezone
+    return timezone.localtime(timezone.now()) - timedelta(hours=3)
 
 
 def _limite_do_dia():
@@ -1818,12 +1830,12 @@ def _limite_do_dia():
 
 
 def promo_duplicada_na_janela(*urls):
-    """Retorna a Promo já postada nesta janela de 1 hora, ou None.
+    """Retorna a Promo já postada nesta janela de 3 horas, ou None.
 
     A comparação é feita pelo link canônico do produto (sem preço nem
-    parâmetros de rastreio). A janela é móvel: conta 1 hora a partir do
+    parâmetros de rastreio). A janela é móvel: conta 3 horas a partir do
     horário de cada oferta (ex.: postada às 11:30, só pode ser repostada a
-    partir das 12:30).
+    partir das 14:30).
 
     Chaves genéricas (sem ':') só são consideradas quando não há nenhuma
     chave específica. Isso evita falsos positivos de páginas compartilhadas
@@ -1841,7 +1853,7 @@ def promo_duplicada_na_janela(*urls):
     close_old_connections()
     from bot.models import Promo
 
-    limite = _limite_janela_1h()
+    limite = _limite_janela_3h()
 
     chaves_especificas = set()
     chaves_genericas = set()

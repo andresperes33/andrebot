@@ -433,7 +433,7 @@ class Command(BaseCommand):
                 # Cupons: deduplicados pelo CÓDIGO/TÍTULO na janela de 1 hora
                 # (cupons diferentes da mesma loja podem usar o mesmo link).
                 # Ofertas comuns: a trava diária ("já capturada hoje") foi
-                # DESATIVADA a pedido do usuário. Vale apenas a janela de 1 hora
+                # DESATIVADA a pedido do usuário. Vale apenas a janela de 3 horas
                 # por link, aplicada mais abaixo em promo_duplicada_na_janela.
                 eh_cupom_msg = False
                 chave_cupom = ''
@@ -470,7 +470,7 @@ class Command(BaseCommand):
                     except Exception as cupom_dedup_err:
                         logger.error(f"❌ Erro na trava de cupom: {cupom_dedup_err}")
                 # Trava diária por oferta repetida (promo_repetida_recente)
-                # DESATIVADA: só a janela de 1 hora deve bloquear reposts.
+                # DESATIVADA: só a janela de 3 horas deve bloquear reposts.
                 # try:
                 #     from bot.services import promo_repetida_recente
                 #     repetida = await asyncio.to_thread(promo_repetida_recente, msg_text)
@@ -774,13 +774,13 @@ class Command(BaseCommand):
                     logger.info("🚫 Mensagem ignorada (nenhum link de loja detectado).")
                     return False
 
-                # ─── Trava de oferta repetida por LINK (janela de 1 hora) ─────────
+                # ─── Trava de oferta repetida por LINK (janela de 3 horas) ────────
                 # Compara o link canônico do produto (sem preço/rastreio),
                 # inclusive o destino real de encurtadores/redirecionadores.
                 # Vale entre canais: se a oferta já foi postada nesta janela
-                # de 1 hora por qualquer canal, a segunda é ignorada. A janela
-                # é móvel: conta 1 hora a partir do horário da oferta
-                # (postada às 11:30, só pode ser repostada a partir das 12:30).
+                # de 3 horas por qualquer canal, a segunda é ignorada. A janela
+                # é móvel: conta 3 horas a partir do horário da oferta
+                # (postada às 11:30, só pode ser repostada a partir das 14:30).
                 chave_link_produto = ''
                 urls_dedup = _links_relevantes_para_dedup(
                     links_resolvidos
@@ -804,7 +804,7 @@ class Command(BaseCommand):
                         )
                         if duplicada:
                             logger.info(
-                                "⏭️ Oferta já postada nesta janela de 1 hora "
+                                "⏭️ Oferta já postada nesta janela de 3 horas "
                                 "(mesmo link), ignorada. "
                                 f"[id={duplicada.id} "
                                 f"criado_em={duplicada.criado_em} "
@@ -817,7 +817,7 @@ class Command(BaseCommand):
                         # (ex.: 's.shopee.com.br/abc'), que muda a cada geração.
                         # Chaves que não identificam um produto (live,
                         # compartilhar, home) são descartadas: gravá-las
-                        # bloquearia ofertas diferentes na janela de 1 hora.
+                        # bloquearia ofertas diferentes na janela de 3 horas.
                         from bot.services import _link_identifica_produto
                         chaves_calculadas = []
                         for url_dedup in urls_dedup:
@@ -961,7 +961,7 @@ class Command(BaseCommand):
                             )
                             if duplicada:
                                 logger.info(
-                                    "⏭️ Oferta já postada nesta janela de 1 hora "
+                                    "⏭️ Oferta já postada nesta janela de 3 horas "
                                     "(mesmo link), ignorada. "
                                     f"[id={duplicada.id} "
                                     f"criado_em={duplicada.criado_em} "
