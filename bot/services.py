@@ -1489,6 +1489,16 @@ def _eh_linha_titulo_produto(linha):
     # a postagem de cupom parecer produto e a categoria viraria 'outros'.
     if _eh_linha_codigo_cupom(linha_c):
         return False
+    # Linha de VALIDADE/APLICAÇÃO do cupom ('válido em notebooks selecionados',
+    # 'exclusivo para assinantes', 'aplicável em todo o site') NÃO é nome de
+    # produto. Sem isso, o termo 'notebooks' fazia o cupom cair em 'outros'.
+    if re.match(
+        r'^(?:v[aá]lid[oa]s?|exclusiv[oa]s?|aplic[aá]ve(?:l|is)|somente|apenas)'
+        r'\s+(?:em|para|na|no|nas|nos|aos?|as?)\b',
+        linha_c,
+        re.IGNORECASE,
+    ):
+        return False
     # Anúncio de cupom (ex.: 'novo cupom kabum', 'cupom ativo shopee') e
     # linhas de instrução de cupom ('resgate o cupom de 20%') NÃO são produto.
     if re.match(
