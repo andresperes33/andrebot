@@ -314,6 +314,28 @@ def _eh_cartas_colecionaveis(norm):
     return bool(_RE_CARTAS_COLECIONAVEIS.search(norm or ''))
 
 
+# Marcadores fortes de TV (nome do produto), diferentes de 'oled'/'qled',
+# que também aparecem em monitores. Usado para não classificar como monitor
+# um produto que é claramente uma TV (ex.: 'Smart Tv Samsung 32 ... Monitor
+# Bivolt').
+_RE_TV_FORTE = re.compile(
+    r'\b(?:smart\s*tv|televis\w*|'
+    r'tv\s*\d{2}|'
+    r'tv\b.{0,40}?\b\d{2}\s*(?:pol|polegadas|polegada)|'
+    r'tv\b(?!\s*box).{0,40}?\b\d{2}\b)'
+)
+
+
+def _eh_tv_forte(norm):
+    """True quando o texto nomeia uma TV (não apenas um painel OLED/QLED)."""
+    norm = norm or ''
+    # Suporte/braço/base de TV ou monitor é um ACESSÓRIO (categoria monitor),
+    # não uma TV — mesmo citando 'TV 32 polegadas'.
+    if re.match(r'^\s*(?:suporte|braco|base|rack|mesa)\b', norm):
+        return False
+    return bool(_RE_TV_FORTE.search(norm))
+
+
 def _eh_titulo_anuncio_cupom(titulo, texto=''):
     """True se a PRIMEIRA linha é anúncio de desconto/cupom, não um produto.
 
@@ -641,6 +663,11 @@ def detectar_categoria(texto, titulo=None):
         if not alvo_norm:
             continue
         if re.search(r'\bmonitor\b', alvo_norm):
+            # 'Smart Tv Samsung 32 ... Monitor Bivolt' é uma TV: aqui
+            # 'monitor' é só um uso/recurso secundário. Monitores de verdade
+            # não são nomeados como 'smart tv'/'tv 32'.
+            if _eh_tv_forte(alvo_norm):
+                continue
             return 'monitor'
 
     # Smartwatch/relógio inteligente tem prioridade sobre notebook — 'Amazfit
@@ -1065,9 +1092,10 @@ def detectar_categoria(texto, titulo=None):
         if not alvo_norm:
             continue
         eh_monitor = re.search(r'\bmonitor\b', alvo_norm)
-        if eh_monitor and re.search(r'\b(?:monitor|144hz|165hz|180hz|240hz|280hz|360hz|0\.[0-9]*ms|dp\b|displayport|freesync|gsync)\b', alvo_norm):
+        eh_tv = _eh_tv_forte(alvo_norm)
+        if eh_monitor and not eh_tv and re.search(r'\b(?:monitor|144hz|165hz|180hz|240hz|280hz|360hz|0\.[0-9]*ms|dp\b|displayport|freesync|gsync)\b', alvo_norm):
             continue  # é monitor; 'oled'/'qled' é o painel, não uma TV
-        if re.search(r'\b(?:smart\s*tv|televis|tv\s*\d{2}|tv\b.{0,40}?\b\d{2}\s*(?:pol|polegadas|polegada)|tv\b(?!\s*box).{0,40}?\b\d{2}\b|qled|oled|miniled|neo\s*qled)\b', alvo_norm):
+        if eh_tv or re.search(r'\b(?:qled|oled|miniled|neo\s*qled)\b', alvo_norm):
             return 'tv'
 
     # Monitor tem prioridade — 'Monitor Odyssey OLED G5' é um monitor mesmo
