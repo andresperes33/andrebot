@@ -166,7 +166,14 @@ _REGEX_CATEGORIA = [
         r'\barmazenamento\b', r'\bsata\b', r'\bdisco\s*s[oó]lido\b',
     ]),
     ('monitor', [
-        r'\bmonitor\b', r'\bdisplay\b', r'\bultrawide\b', r'\bcurvo\b',
+        r'\bmonitor\b', r'\bultrawide\b', r'\bcurvo\b',
+        # 'display' sozinho é ambíguo: 'Reinado Delta Box Display 36 Booster'
+        # (cartas colecionáveis) não é monitor. Só conta quando há contexto
+        # de tela (polegadas, painel, resolução, taxa de atualização...).
+        r'\bdisplay\b(?=[^.\n]{0,40}\b(?:ips|va|tn|led|lcd|oled|amoled|'
+        r'full\s*hd|fhd|qhd|uhd|4k|hdmi|displayport|dp|hz|polegadas?|pol|'
+        r'curvo|ultrawide)\b)',
+        r'\bdisplay\b\s*(?:de\s*)?\d{1,2}(?:[.,]\d+)?\s*(?:"|pol\b|polegadas?\b)',
         # 'painel' de monitor (painel IPS/VA/TN), mas NÃO 'painel solar' de
         # câmera de segurança (ex.: 'Câmera Baseus ... painel solar 2K').
         r'\bpainel\b(?!\s*solar)', r'\bpainel\s*(?:ips|va|tn|led|amoled|curvo|ultrawide)\b',
@@ -291,6 +298,22 @@ _RE_MODELO_PRODUTO = re.compile(
 )
 
 
+# Cartas colecionáveis: 'display' + 'booster' (ex.: 'Reinado Delta Box
+# Display 36 Booster') não é monitor de vídeo, e 'booster box'/'box de
+# boosters' também não são cupom — são pacotes/boxes de cartas.
+_RE_CARTAS_COLECIONAVEIS = re.compile(
+    r'\bdisplay\b[^.\n]{0,80}\bboosters?\b'
+    r'|\bboosters?\b[^.\n]{0,80}\bdisplay\b'
+    r'|\bbooster\s*box\b'
+    r'|\bbox\s*(?:de\s*)?boosters?\b'
+)
+
+
+def _eh_cartas_colecionaveis(norm):
+    """True para pacotes/boxes de cartas colecionáveis (Pokémon, MTG etc.)."""
+    return bool(_RE_CARTAS_COLECIONAVEIS.search(norm or ''))
+
+
 def _eh_titulo_anuncio_cupom(titulo, texto=''):
     """True se a PRIMEIRA linha é anúncio de desconto/cupom, não um produto.
 
@@ -365,6 +388,16 @@ def detectar_categoria(texto, titulo=None):
     # de cupom e/ou a palavra 'cupom', e não nomeia um modelo específico.
     if _eh_titulo_anuncio_cupom(titulo, texto):
         return 'cupom'
+
+    # Cartas colecionáveis ('Reinado Delta Box Display 36 Booster',
+    # 'Booster Box Pokemon'): 'display' e 'booster' aqui são do pacote de
+    # cartas — não é monitor e não é cupom, mesmo que o texto cite um cupom.
+    for alvo in (titulo, texto,):
+        if not alvo:
+            continue
+        alvo_norm = _norm(_limpar_compat(alvo))
+        if alvo_norm and _eh_cartas_colecionaveis(alvo_norm):
+            return 'outros'
 
     # Sem produto identificado, a postagem NÃO vira cupom automaticamente:
     # cai para 'outros' (a menção a 'cupom' no texto não caracteriza a
