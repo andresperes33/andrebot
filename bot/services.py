@@ -191,11 +191,16 @@ def _chave_link_produto(url):
             return f'mercadolivre:{prefixo}{m.group(1)}'
 
     # Shopee: /product/<shop_id>/<item_id> ou ...-i.<shop_id>.<item_id>
+    # ou link de afiliado /<usuario>/<shop_id>/<item_id>
+    # (ex.: shopee.com.br/opaanlp/1427325462/58217802416).
     if 'shopee' in host:
         m = re.search(r'/product/(\d+)/(\d+)', caminho)
         if m:
             return f'shopee:{m.group(1)}:{m.group(2)}'
         m = re.search(r'-i\.(\d+)\.(\d+)', caminho)
+        if m:
+            return f'shopee:{m.group(1)}:{m.group(2)}'
+        m = re.search(r'^/[^/]+/(\d{6,})/(\d{6,})/?$', caminho)
         if m:
             return f'shopee:{m.group(1)}:{m.group(2)}'
 
