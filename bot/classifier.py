@@ -991,7 +991,7 @@ def detectar_categoria(texto, titulo=None):
         _QUALIF_JOGO = (
             r'(?:f[ií]sico|m[ií]dia\s*f[ií]sica|novo|lacrado|usado|digital)'
         )
-        m_jogo = re.search(
+        _RE_JOGO_NOME_PLATAFORMA = (
             r'^(?P<nome>.+?)\s*(?:[-–—|]|\()?\s*'
             r'(?:(?:' + _QUALIF_JOGO + r')\s*\)?\s*)*'
             r'(?:(?:ps\s*[1-5]|playstation\s*[1-5]|xbox(?:\s*series\s*[sx])?|'
@@ -999,10 +999,25 @@ def detectar_categoria(texto, titulo=None):
             r'\)?\s*(?:[-–—|]\s*)?'
             r'(?:(?:' + _QUALIF_JOGO + r')\s*)*'
             r'(?:\s*\[?\s*\b(?:europa|asia|eua|usa|us|br|brasil|regi[aã]o|'
-            r'region|importado)\b\s*\]?\s*)*$',
-            linha_titulo,
+            r'region|importado)\b\s*\]?\s*)*'
+            # Preço no fim da linha ('... - PlayStation 4 - R$ 67,00').
+            r'(?:\s*[-–—|]?\s*(?:r\$\s*)?[\d.,]+)?\s*$'
         )
-        if m_jogo:
+
+        # A primeira linha pode ser só um CABEÇALHO de desconto
+        # ('45% OFF Games Prime Exclusive'); nesse caso o produto real
+        # (nome do jogo + plataforma) aparece nas linhas seguintes.
+        linhas_candidatas = [linha_titulo]
+        if re.match(r'^\s*\d{1,3}\s*%|\boff\b', linha_titulo):
+            for linha_alvo in (alvo or '').split('\n'):
+                candidata = _norm(_limpar_compat(linha_alvo))
+                if candidata and candidata not in linhas_candidatas:
+                    linhas_candidatas.append(candidata)
+
+        for candidata in linhas_candidatas:
+            m_jogo = re.search(_RE_JOGO_NOME_PLATAFORMA, candidata)
+            if not m_jogo:
+                continue
             nome_jogo = m_jogo.group('nome')
             if len(re.findall(r'[a-z0-9]+', nome_jogo)) >= 2 and not re.search(
                 r'\b(?:console|videogame|sony|microsoft|kit|'
