@@ -760,6 +760,14 @@ def detectar_categoria(texto, titulo=None):
             continue
         if re.search(r'\b(?:placa[ -]?mae|motherboard|mainboard|chipset|quad\s*channel)\b', alvo_norm):
             return 'placa_mae'
+        # 'CPU cooler ... ótimo para X99': o chipset citado é só compatibilidade
+        # do cooler, não uma placa-mãe.
+        if re.search(
+            r'\b(?:cpu\s*cooler|air\s*cooler|water\s*cooler|watercooler|'
+            r'dissipador|ventoinha|cooler)\b',
+            alvo_norm,
+        ):
+            continue
         if re.search(r'\b(?:x99|x79|x58|c612|s2011|matx|atx|micro\s*atx)\b', alvo_norm):
             return 'placa_mae'
         if re.search(r'\b(?:a520|a620|b450|b550|b650|b660|b760|x570|x670|z690|z790|h610|h770)\b', alvo_norm):
@@ -894,21 +902,25 @@ def detectar_categoria(texto, titulo=None):
 
         # Jogo vendido pelo NOME + plataforma ao final, sem a palavra 'jogo'
         # no título (ex.: 'Resident Evil Requiem - Ps5', 'Mortal Kombat 1 PS5',
-        # 'Resident Evil 4 (PS5)'). Console NÃO entra: 'Console PlayStation 5'
+        # 'Resident Evil 4 (PS5)', 'Ghost of Yotei Complete Edition
+        # PlayStation 5 PS5 Físico'). Console NÃO entra: 'Console PlayStation 5'
         # tem 'console' antes da plataforma, 'Sony PlayStation 5' tem só uma
         # palavra antes, e acessórios (controle/headset/SSD/capa) já foram
         # tratados acima ou são excluídos pelo nome.
         linha_titulo = _norm(_limpar_compat((alvo or '').split('\n')[0]))
         m_jogo = re.search(
             r'^(?P<nome>.+?)\s*(?:[-–—|]|\()?\s*'
-            r'(?:ps\s*[1-5]|playstation\s*[1-5]|xbox(?:\s*series\s*[sx])?|'
-            r'nintendo\s*switch|switch)\s*\)?\s*$',
+            r'(?:(?:ps\s*[1-5]|playstation\s*[1-5]|xbox(?:\s*series\s*[sx])?|'
+            r'nintendo\s*switch|switch)\s*)+'
+            r'\)?\s*(?:[-–—|]\s*)?'
+            r'(?:f[ií]sico|m[ií]dia\s*f[ií]sica|novo|lacrado|usado|digital)?\s*$',
             linha_titulo,
         )
         if m_jogo:
             nome_jogo = m_jogo.group('nome')
             if len(re.findall(r'[a-z0-9]+', nome_jogo)) >= 2 and not re.search(
                 r'\b(?:console|videogame|sony|microsoft|kit|'
+                r'playstation|ps\s?[1-5]|xbox|nintendo|switch|'
                 r'capa|case|suporte|base|stand|pelicula|protetor|'
                 r'controle|controlador|controller|gamepad|joystick|joypad|'
                 r'joy-?con|dualsense|dualshock|volante|manete|dock|'

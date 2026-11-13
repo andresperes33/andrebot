@@ -1588,6 +1588,10 @@ def _eh_linha_categoria(linha):
     ).decode('ascii').casefold().strip()
     if not baixa or len(baixa) > 40:
         return False
+    # Rótulo com hífen ('Placa-mãe', 'placa-mãe') equivale à forma com espaço;
+    # sem isso 'Placa-mãe' não era reconhecida como rótulo e contaminava a
+    # categoria (ex.: CPU cooler virava 'placa_mae').
+    baixa = re.sub(r'[-–—]+', ' ', baixa)
     partes = [
         p.strip(' .!?:-')
         for p in re.split(r'\s*(?:/|\||\+|&|,|;|\be\b)\s*', baixa)
