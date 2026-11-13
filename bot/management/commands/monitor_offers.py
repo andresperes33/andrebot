@@ -61,8 +61,10 @@ def _remover_divulgacao_grupo_impulso(texto):
         baixa = linha.casefold()
         if any(marcador in baixa for marcador in remover_linha):
             continue
-        if 'joguinho de impulso' in baixa:
+        if re.search(r'\b(?:joguinho|jogo)\s+(?:de|do)\s+impulso\b', baixa):
             # Mantém o texto, mas remove qualquer link relacionado a ele.
+            # (A frase em si é descartada depois por
+            # _remover_frases_impulso_moedas.)
             linha = re.sub(r'https?://\S+', '', linha).rstrip()
         linhas.append(linha)
     return '\n'.join(linhas)
@@ -70,20 +72,26 @@ def _remover_divulgacao_grupo_impulso(texto):
 
 # Instruções de "impulso de moedas" (comuns em ofertas AliExpress): pedem
 # para o usuário trocar moedas por créditos. Não são conteúdo da oferta.
+# Também cobre a divulgação do "joguinho/jogo de impulso" do canal, ex.:
+# '- Quanto mais desconto tiver com o joguinho de impulso maior o desconto ficará'.
 _RE_FRASE_IMPULSO_MOEDAS = re.compile(
     r'\b(?:(?:use|utilize|aproveite)\s+)?o?\s*impulso\s+de\s+moedas?\b'
     r'|\bimpulsion\w*\b[^.\n]{0,50}\bmoedas?\b'
     r'|\bmoedas?\s+por\s+cr[eé]ditos?\b'
-    r'|\b(?:troque|trocando|trocar)\b[^.\n]{0,30}\bmoedas?\b',
+    r'|\b(?:troque|trocando|trocar)\b[^.\n]{0,30}\bmoedas?\b'
+    r'|\b(?:joguinho|jogo)\s+(?:de|do)\s+impulso\b',
     re.IGNORECASE,
 )
 
 
 def _remover_frases_impulso_moedas(texto):
-    """Remove instruções de 'impulso de moedas' da oferta.
+    """Remove instruções de 'impulso de moedas' e divulgação do 'joguinho de
+    impulso' da oferta.
 
-    Ex.: 'Use o impulso de moedas, trocando moedas por créditos'. Se a linha
-    também tiver um link (raro), preserva o link e remove só a frase.
+    Ex.: 'Use o impulso de moedas, trocando moedas por créditos' e
+    '- Quanto mais desconto tiver com o joguinho de impulso maior o desconto
+    ficará'. Se a linha também tiver um link (raro), preserva o link e remove
+    só a frase.
     """
     linhas = []
     for linha in (texto or '').splitlines():
