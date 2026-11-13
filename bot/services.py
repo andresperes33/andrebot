@@ -2632,7 +2632,7 @@ def convert_to_affiliate_link(url, final_url=None):
         return convert_mercado_livre_link(url)
     elif 'kabum.com.br' in url or 'tidd.ly' in url:
         return convert_awin_link(url, merchant_id='17729') # Kabum MID padrao
-    elif 'magazineluiza.com.br' in url or 'magalu.com' in url or 'mgl.io' in url or 'divulgador.magalu.com' in url:
+    elif 'magazineluiza.com.br' in url or 'magalu.com' in url or 'mgl.io' in url or 'divulgador.magalu.com' in url or 'magazinevoce.com.br' in url:
         return convert_magalu_link(url)
     return None
 
@@ -2832,7 +2832,14 @@ def convert_magalu_link(url):
     Usa o formato direto de PID que evita erros de slug/404.
     """
     magalu_id = getattr(settings, 'MAGALU_ID', 'magazinein_1546179')
-    
+
+    # 0. Páginas de verificação/redirecionamento da Magalu carregam a URL real
+    # do produto no parâmetro `url` (ex.: magazinevoce.com.br/az-request-verify
+    # ?url=https%3A%2F%2F...). Sem isso o link de afiliado saía quebrado.
+    alvo_embutido = _extrair_url_destino(url)
+    if alvo_embutido and alvo_embutido != url:
+        url = alvo_embutido
+
     # 1. Expandir links curtos (Magalu mobile/divulgador costuma ser teimoso)
     if any(domain in url for domain in ['mgl.io', 'divulgador.magalu.com', 'magalu.com', 'bit.ly']):
         try:
@@ -2842,9 +2849,16 @@ def convert_magalu_link(url):
         except:
             pass
 
-    # 2. Se ja for magazinevoce, apenas troca o ID
-    if 'magazinevoce.com.br' in url:
-        return re.sub(r'magazinevoce\.com\.br/[^/]+', f'magazinevoce.com.br/{magalu_id}', url)
+    # 2. Se já for magazinevoce SEM /p/<id>, apenas troca o ID da loja
+    # (preserva a query string, se houver).
+    if 'magazinevoce.com.br' in url and not re.search(
+        r'/(?:p|produto)/[a-zA-Z0-9]+', url
+    ):
+        return re.sub(
+            r'magazinevoce\.com\.br/[^/?]+',
+            f'magazinevoce.com.br/{magalu_id}',
+            url,
+        )
 
     # 3. Extrair o Código do Produto (PID) - O metodo mais seguro
     # Padrao: /p/ID/ ou /produto/ID/

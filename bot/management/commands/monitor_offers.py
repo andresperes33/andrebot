@@ -592,7 +592,7 @@ class Command(BaseCommand):
                     is_ml = 'mercadolivre' in link or 'meli.la' in link or 'mlstatic' in link or is_ofertei
                     is_ali = 'aliexpress.com' in link or 's.click.ali' in link
                     is_kabum = 'kabum.com.br' in link
-                    is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link
+                    is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link or 'magazinevoce.com.br' in link
                     is_pcdofafa = 'pcdofafa.com.br' in link
                     is_seuhardware = 'seuhardware.com' in link
 
