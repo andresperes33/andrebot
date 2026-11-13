@@ -274,6 +274,57 @@ def _sem_linhas_categoria(texto):
     )
 
 
+# Modelo específico de produto (ex.: 'RTX 5060', 'DDR4', '1TB', 'NVMe').
+# Se a linha de desconto cita um modelo, ela descreve um PRODUTO, não um
+# cupom ('50% OFF em Placa de Vídeo RTX 5060' continua 'placa_video').
+_RE_MODELO_PRODUTO = re.compile(
+    r'\b(?:rtx|gtx|rx|arc)\s?\d{3,4}\b'
+    r'|\bddr[345]\b'
+    r'|\b(?:i[3579]|ryzen\s?[3579]|core\s?ultra)\s?[-\s]?\d{3,5}\b'
+    r'|\b\d{2,4}\s*(?:gb|tb|mhz|hz|w|pol|polegadas)\b'
+    r'|\b(?:nvme|sata|ssd|hdd)\b'
+)
+
+
+def _eh_titulo_anuncio_cupom(titulo, texto=''):
+    """True se a PRIMEIRA linha é anúncio de desconto/cupom, não um produto.
+
+    Ex.: '10% EM PLACAS DE VÍDEO ZAFADINHO10' — começa pelo percentual de
+    desconto (não nomeia um produto), cita um código de cupom (token colado
+    com letra+dígito) e/ou a palavra 'cupom' aparece no título/corpo. Sem
+    isso, o termo 'placas de vídeo' fazia a oferta cair em 'outros' (ou na
+    categoria do componente citado) e ela acabava entrando nas ofertas.
+
+    Uma linha que cita um MODELO específico
+    ('50% OFF em Placa de Vídeo RTX 5060') continua sendo produto.
+    """
+    base = titulo or texto or ''
+    primeira = ''
+    for linha in base.split('\n'):
+        norm_linha = _norm(_limpar_compat(linha))
+        if norm_linha:
+            primeira = norm_linha
+            break
+    if not primeira:
+        return False
+    if not re.match(r'^\d{1,3}\s*%', primeira):
+        return False
+    # Modelo específico → é produto, não cupom.
+    if _RE_MODELO_PRODUTO.search(primeira):
+        return False
+    texto_norm = _norm(_limpar_compat(texto or ''))
+    if re.search(r'\bcupons?\b', primeira) or re.search(r'\bcupons?\b', texto_norm):
+        return True
+    # Código de cupom colado no fim da linha (ex.: '... ZAFADINHO10').
+    palavras = primeira.split()
+    ultimo = palavras[-1] if palavras else ''
+    return bool(
+        re.fullmatch(r'[a-z0-9]{6,}', ultimo)
+        and re.search(r'[a-z]', ultimo)
+        and re.search(r'\d', ultimo)
+    )
+
+
 def detectar_categoria(texto, titulo=None):
     """Classifica um texto de promoção em uma das categorias do site.
     Se 'titulo' (linha do produto) for informado, usa-o com prioridade,
@@ -302,6 +353,12 @@ def detectar_categoria(texto, titulo=None):
         r'(?:cupom|cupons|cupoms)\b',
         _norm(_limpar_compat(titulo)),
     ):
+        return 'cupom'
+
+    # Título que é ANÚNCIO DE DESCONTO/CUPOM, não produto (ex.: '10% EM
+    # PLACAS DE VÍDEO ZAFADINHO10'): começa pelo percentual, cita um código
+    # de cupom e/ou a palavra 'cupom', e não nomeia um modelo específico.
+    if _eh_titulo_anuncio_cupom(titulo, texto):
         return 'cupom'
 
     # Sem produto identificado, a postagem NÃO vira cupom automaticamente:
