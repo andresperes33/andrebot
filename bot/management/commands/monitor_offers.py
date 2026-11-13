@@ -68,6 +68,38 @@ def _remover_divulgacao_grupo_impulso(texto):
     return '\n'.join(linhas)
 
 
+# Instruções de "impulso de moedas" (comuns em ofertas AliExpress): pedem
+# para o usuário trocar moedas por créditos. Não são conteúdo da oferta.
+_RE_FRASE_IMPULSO_MOEDAS = re.compile(
+    r'\b(?:(?:use|utilize|aproveite)\s+)?o?\s*impulso\s+de\s+moedas?\b'
+    r'|\bimpulsion\w*\b[^.\n]{0,50}\bmoedas?\b'
+    r'|\bmoedas?\s+por\s+cr[eé]ditos?\b'
+    r'|\b(?:troque|trocando|trocar)\b[^.\n]{0,30}\bmoedas?\b',
+    re.IGNORECASE,
+)
+
+
+def _remover_frases_impulso_moedas(texto):
+    """Remove instruções de 'impulso de moedas' da oferta.
+
+    Ex.: 'Use o impulso de moedas, trocando moedas por créditos'. Se a linha
+    também tiver um link (raro), preserva o link e remove só a frase.
+    """
+    linhas = []
+    for linha in (texto or '').splitlines():
+        if not _RE_FRASE_IMPULSO_MOEDAS.search(linha):
+            linhas.append(linha)
+            continue
+        if re.search(r'https?://\S+', linha):
+            nova = _RE_FRASE_IMPULSO_MOEDAS.sub('', linha)
+            nova = re.sub(r'\s{2,}', ' ', nova).strip(' -–—:;,|')
+            if nova:
+                linhas.append(nova)
+            continue
+        # Linha é só a instrução: descarta.
+    return '\n'.join(linhas)
+
+
 def _eh_link_grupo(url):
     """Detecta links que levam para grupos/canais de WhatsApp ou Telegram."""
     u = (url or '').casefold()
@@ -479,6 +511,9 @@ class Command(BaseCommand):
 
                 # Remove divulgação do grupo/jogo de Impulso sem perder a oferta
                 modified_text = _remover_divulgacao_grupo_impulso(modified_text)
+
+                # Remove instruções de "impulso de moedas" (ofertas AliExpress)
+                modified_text = _remover_frases_impulso_moedas(modified_text)
 
                 # 1. Substitui nomes de canais, sem alterar cupons
                 modified_text = substituir_nomes_canais(modified_text, channel_name)
