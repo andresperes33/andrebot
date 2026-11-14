@@ -380,6 +380,17 @@ def detectar_categoria(texto, titulo=None):
     Se 'titulo' (linha do produto) for informado, usa-o com prioridade,
     pois o assunto principal é o que nomeia o produto (ex.: 'Processador
     ... Radeon ...' é processador, não placa de vídeo)."""
+    # 'titulo' pode vir de uma linha de categoria ('Outros', 'Jogo') quando o
+    # card foi criado por versões antigas. Nesse caso, ignora o título e deixa
+    # a classificação usar o texto do produto.
+    if titulo:
+        try:
+            from bot.services import _eh_linha_categoria
+            if _eh_linha_categoria(titulo):
+                titulo = None
+        except Exception:
+            pass
+
     # Ignora linhas que são só rótulo de categoria ('Jogo', 'Console',
     # 'Controle / Gamepad'): elas não descrevem o produto e podem fazer o
     # texto "roubar" a classificação (ex.: 'Jogo' antes de uma memória RAM).

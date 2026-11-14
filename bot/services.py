@@ -1584,6 +1584,8 @@ _CATEGORIAS_LABEL = {
     'cameras', 'informatica', 'hardware',
     # Seções de lista de cupons/ofertas (ex.: 'Auto & Moto', 'Auto Moto').
     'auto', 'moto', 'auto moto',
+    # Rótulo da categoria de fallback (ex.: card antigo com 'Outros' no topo).
+    'outros',
 }
 
 

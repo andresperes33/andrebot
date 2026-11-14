@@ -8,6 +8,7 @@ O classificador já foi corrigido; esta migration reaplica a classificação nas
 ofertas antigas de 'outros'.
 """
 import re
+import unicodedata
 from django.db import migrations
 
 
@@ -16,6 +17,12 @@ _RE_EDICAO_JOGO = re.compile(
     r'gold|premium|especial|limitada|definitiva)\b'
     r'|\bgame\s+of\s+the\s+year\b|\bgoty\b'
 )
+
+
+def _sem_acento(texto):
+    return unicodedata.normalize('NFKD', texto or '').encode(
+        'ascii', 'ignore'
+    ).decode('ascii').casefold()
 
 
 def reclassificar_jogo(apps, schema_editor):
@@ -27,7 +34,7 @@ def reclassificar_jogo(apps, schema_editor):
 
     for promo in Promo.objects.filter(categoria='outros').iterator():
         texto = promo.texto_original or promo.titulo or ''
-        baixa = texto.casefold()
+        baixa = _sem_acento(texto)
         if not _RE_EDICAO_JOGO.search(baixa):
             continue
         titulo = _linha_titulo(texto) or promo.titulo
