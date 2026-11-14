@@ -375,6 +375,26 @@ def _eh_titulo_anuncio_cupom(titulo, texto=''):
     )
 
 
+def _eh_anuncio_cupom_codigos(texto, titulo=''):
+    """True se a postagem ANUNCIA cupons e cita os códigos, sem produto.
+
+    Caso: '‼️ Aliexpress renovou alguns cupons, confira no APP' + 'Tente
+    resgatar os AEMEGA1 ... e VAMOS01 ...'. A linha de instrução de resgate
+    não é nome de produto; a oferta é o próprio cupom.
+
+    Exige a menção a 'cupom/cupons' E ao menos um código, para não converter
+    em cupom um produto que apenas cite 'use o cupom X'.
+    """
+    base = _norm(_limpar_compat(f'{texto or ""}\n{titulo or ""}'))
+    if not base or not re.search(r'\b(?:cupom|cupons|cupoms)\b', base):
+        return False
+    try:
+        from bot.services import _codigos_cupom
+    except Exception:
+        return False
+    return bool(_codigos_cupom(texto or '') or _codigos_cupom(titulo or ''))
+
+
 def detectar_categoria(texto, titulo=None):
     """Classifica um texto de promoção em uma das categorias do site.
     Se 'titulo' (linha do produto) for informado, usa-o com prioridade,
@@ -1247,6 +1267,10 @@ def detectar_categoria(texto, titulo=None):
         if _norm(_limpar_compat(linha))
     )
     if not tem_produto_real:
+        # Anúncio de cupom que cita os CÓDIGOS (ex.: 'Aliexpress renovou
+        # alguns cupons ... AEMEGA1 ... VAMOS01'). Vale mesmo que a linha de
+        # instrução ('Tente resgatar os ...') não comece por 'cupom'.
+        anuncio_com_codigos = _eh_anuncio_cupom_codigos(texto, titulo or '')
         for alvo in (titulo, texto):
             if not alvo:
                 continue
@@ -1255,7 +1279,8 @@ def detectar_categoria(texto, titulo=None):
                 if not linha_norm:
                     continue
                 if (
-                    _eh_anuncio_cupom(linha_norm)
+                    anuncio_com_codigos
+                    or _eh_anuncio_cupom(linha_norm)
                     or _eh_anuncio_desconto(linha_norm)
                 ):
                     return 'cupom'

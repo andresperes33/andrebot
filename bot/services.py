@@ -1517,6 +1517,17 @@ def _eh_linha_titulo_produto(linha):
     if re.match(r'^(?:resgate|use|usar|aplicar|aproveite|clique|siga)\b', linha_c) and \
        re.search(r'\bcupom\b', linha_c):
         return False
+    # Linha de INSTRUÇÃO de resgate/renovação de cupons (ex.: 'tente resgatar
+    # os aemega1 para cima e vamos01 ...'): os tokens com letra+dígito são
+    # CÓDIGOS de cupom, não modelo de produto. Precisa vir ANTES da checagem
+    # de termos de produto, pois 'renovaram' contém 'ram' (termo de produto
+    # por substring) e faria a linha parecer um produto real.
+    linha_low = linha_c.casefold()
+    if re.search(r'\b(?:resgat\w*|renov\w*|ativ\w*|liber\w*)\b', linha_low) and any(
+        re.search(r'\d', token) and re.search(r'[a-z]', token)
+        for token in re.findall(r'\b[a-z0-9]{4,}\b', linha_low)
+    ):
+        return False
     tem_termo = any(t in linha for t in _TERMOS_PRODUTO)
     tem_cupom = re.search(r'\bcupoms?\b', linha)
     # Linha com 'cupom' e sem termo de produto → anúncio de cupom, não produto.
