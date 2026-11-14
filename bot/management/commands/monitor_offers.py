@@ -70,6 +70,37 @@ def _remover_divulgacao_grupo_impulso(texto):
     return '\n'.join(linhas)
 
 
+# Divulgação de OUTRO bot de alertas, comum no canal PEPERAIO HARDWARE
+# OFERTAS: '🔔 BOT DE ALERTAS: https://t.me/alertadaspromobot'. Não é
+# conteúdo da oferta e não deve ser capturado.
+_RE_BOT_ALERTAS = re.compile(
+    r'(?:https?://)?(?:t\.me/|telegram\.me/)?@?alertadaspromobot\b'
+    r'|\bbot\s+de\s+alertas\b\s*:?\s*\S*',
+    re.IGNORECASE,
+)
+
+
+def _remover_divulgacao_bot_alertas(texto):
+    """Remove a linha/trecho de divulgação do bot de alertas.
+
+    Remove só o trecho (e o link), preservando o resto da linha caso a
+    divulgação venha junto com o conteúdo da oferta. Linha que fica só com
+    emoji/espaços é descartada.
+    """
+    linhas = []
+    for linha in (texto or '').splitlines():
+        if not _RE_BOT_ALERTAS.search(linha):
+            linhas.append(linha)
+            continue
+        resto = _RE_BOT_ALERTAS.sub('', linha).strip()
+        # Remove emoji/símbolos que sobram no fim (ex.: '🔔' da linha).
+        resto = re.sub(r'[^\w\s]+$', '', resto).strip()
+        if not re.search(r'\w', resto):
+            continue
+        linhas.append(resto)
+    return '\n'.join(linhas)
+
+
 # Instruções de "impulso de moedas" (comuns em ofertas AliExpress): pedem
 # para o usuário trocar moedas por créditos. Não são conteúdo da oferta.
 # Também cobre a divulgação do "joguinho/jogo de impulso" do canal, ex.:
@@ -332,6 +363,14 @@ class Command(BaseCommand):
             if canal_tecnan:
                 canais.append({'nome': canal_tecnan, 'filtro': None})
 
+            # Canal PEPERAIO HARDWARE OFERTAS: monitorado por padrão (pode ser
+            # desativado deixando PEPERAIO_SOURCE_CHANNEL vazio no .env).
+            canal_peperaio = (
+                getattr(settings, 'PEPERAIO_SOURCE_CHANNEL', 'PEPERAIO HARDWARE OFERTAS') or ''
+            ).strip()
+            if canal_peperaio:
+                canais.append({'nome': canal_peperaio, 'filtro': None})
+
             # Remove canais duplicados (mesmo nome normalizado), caso o canal
             # também esteja listado em EXTRA_SOURCE_CHANNELS.
             _vistos_canais = set()
@@ -519,6 +558,10 @@ class Command(BaseCommand):
 
                 # Remove divulgação do grupo/jogo de Impulso sem perder a oferta
                 modified_text = _remover_divulgacao_grupo_impulso(modified_text)
+
+                # Remove divulgação de outro bot de alertas (ex.: PEPERAIO:
+                # '🔔 BOT DE ALERTAS: https://t.me/alertadaspromobot').
+                modified_text = _remover_divulgacao_bot_alertas(modified_text)
 
                 # Remove instruções de "impulso de moedas" (ofertas AliExpress)
                 modified_text = _remover_frases_impulso_moedas(modified_text)

@@ -26,7 +26,8 @@ Este projeto é um bot do Telegram construído com Django que converte links env
    SOURCE_CHANNEL_USERNAME=Iskandar Souza - Promoções
    EXTRA_SOURCE_CHANNELS_JSON=[{"nome": "Promoções Gamer"}, {"nome": "TECNAN OFERTAS"}]
    # Também aceita nomes simples separados por vírgula: EXTRA_SOURCE_CHANNELS_JSON=Promoções Gamer
-   # TECNAN OFERTAS já vem ativado por padrão (desative com TECNAN_SOURCE_CHANNEL=)
+   # TECNAN OFERTAS e PEPERAIO HARDWARE OFERTAS já vêm ativados por padrão
+   # (desative com TECNAN_SOURCE_CHANNEL= / PEPERAIO_SOURCE_CHANNEL=)
    SHOPEE_AFFILIATE_ID=seu_id_de_rastreamento_aqui
    ```
 
