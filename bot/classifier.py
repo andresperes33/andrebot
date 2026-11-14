@@ -1155,11 +1155,21 @@ def detectar_categoria(texto, titulo=None):
     # Verifica no título informado, pois ele contém o nome do produto principal.
     if titulo:
         titulo_norm = _norm(_limpar_compat(titulo))
+    else:
+        from bot.services import _linha_titulo
+        titulo_norm = _norm(_limpar_compat(_linha_titulo(texto) or ''))
+    if titulo_norm:
         colecoes_jogo = [
             r'master\s*collection',
             r'edition\s*\d*',
             r'compilation',
             r'classic\s*collection',
+            # Edições de jogo em português (ex.: 'LEGO Horizon Adventures
+            # Edição Standard'). 'edition' acima só pega o termo em inglês.
+            r'edicao\s+(?:standard|padrao|deluxe|ultimate|completa|completo|'
+            r'gold|premium|especial|limitada|definitiva)\b',
+            r'\bgame\s+of\s+the\s+year\b',
+            r'\bgoty\b',
         ]
         for padrao in colecoes_jogo:
             if re.search(padrao, titulo_norm, re.IGNORECASE):
