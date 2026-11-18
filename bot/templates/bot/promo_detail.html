@@ -92,7 +92,7 @@
         </div>
         {% endif %}
 
-        {% if historico %}
+        {% if historico_precos_ativo and historico %}
         <div class="card">
             <div class="detail-label"><i class="fas fa-chart-line" style="color:var(--primary);"></i> Histórico de preços</div>
             {% if preco_minimo_str %}
@@ -195,7 +195,9 @@
 {% endblock %}
 
 {% block scripts %}
+{% if historico_precos_ativo %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endif %}
 <script>
     function copiarCupom(el, cupom) {
         navigator.clipboard.writeText(cupom).then(() => {
@@ -212,6 +214,7 @@
         });
     }
 
+    {% if historico_precos_ativo %}
     (function initPriceChart() {
         var el = document.getElementById('priceChart');
         var dataEl = document.getElementById('priceChartData');
@@ -340,5 +343,6 @@
             });
         }
     })();
+    {% endif %}
 </script>
 {% endblock %}

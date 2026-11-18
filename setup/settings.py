@@ -208,6 +208,12 @@ PEPERAIO_SOURCE_CHANNEL = os.getenv(
 # capturada do canal (evita marca d'água de outros canais). Fallback: foto capturada.
 IMAGEM_DA_PAGINA_PRODUTO = os.getenv('IMAGEM_DA_PAGINA_PRODUTO', 'True') == 'True'
 
+# Histórico/alerta de preços na página do produto. DESATIVADO por padrão:
+# o Amazon Associates não permite funcionalidades de acompanhamento/alerta de
+# preços nem cache de preços por mais de 24h. Para reativar, defina
+# HISTORICO_PRECOS_ATIVO=True no .env.
+HISTORICO_PRECOS_ATIVO = os.getenv('HISTORICO_PRECOS_ATIVO', 'False') == 'True'
+
 # Canais extras monitorados além do principal. Cada item:
 #   {'nome': '<nome ou @username>', 'filtro': '<tipo>', 'remover_marca': bool}
 #   'filtro' opcional: 'aliexpress' = captura SÓ ofertas com link AliExpress.

@@ -58,7 +58,7 @@ _CATEGORIA_DESCRICOES = {
 _CATEGORIA_DICAS = {
     'ssd': 'Antes de comprar um SSD, confirme se o seu computador usa o padrão NVMe ou SATA (cheque o manual ou o modelo da placa-mãe). Para a maioria dos usuários, um NVMe de 500 GB a 1 TB já transforma o dia a dia: o sistema liga em segundos e os programas abrem na hora. Fique de olho na velocidade declarada, na reputação do vendedor e se o frete está incluso.',
     'placa_video': 'Ao escolher uma placa de vídeo, compare o desempenho pelo tipo de jogo que você joga e pela resolução do seu monitor (1080p, 1440p ou 4K). Verifique também se a sua fonte tem potência e cabos suficientes e se o gabinete comporta o tamanho da placa. Preços bons costumam sumir rápido, então confira se o cupom ainda está ativo antes de fechar.',
-    'placa_mae': 'A placa-mãe define qual processador e memória você poderá usar, então confirme o soquete e o chipset antes de comprar. Cheque também se ela tem os slots M.2 que você precisa para o SSD e a quantidade de entradas USB que você usa. Compare o preço com o histórico antes de decidir.',
+    'placa_mae': 'A placa-mãe define qual processador e memória você poderá usar, então confirme o soquete e o chipset antes de comprar. Cheque também se ela tem os slots M.2 que você precisa para o SSD e a quantidade de entradas USB que você usa. Compare o preço com o de outras lojas antes de decidir.',
     'processador': 'Para jogos, priorize processadores com bom desempenho por núcleo; para trabalho com vídeo e renderização, leve em conta o número de núcleos e threads. Confirme se o modelo é compatível com a sua placa-mãe e se a BIOS está atualizada (algumas exigem atualização para CPUs novas). Verifique também se o produto vem com cooler incluso — muitos modelos OEM não acompanham.',
     'memoria_ram': 'Verifique a geração da memória (DDR4 ou DDR5), a frequência máxima suportada pela sua placa-mãe e quantos slots você tem livres. Para jogar, 16 GB é o ponto ideal hoje; para trabalho pesado, 32 GB faz diferença. Compre sempre em pares do mesmo modelo para aproveitar o dual channel.',
     'kit': 'Um kit (placa + CPU + RAM) é a forma mais econômica de montar um PC novo, mas confirme se os componentes são compatíveis entre si e se o conjunto usa DDR4 ou DDR5. Veja se a placa-mãe tem slot M.2, bom VRM e USB suficiente. Antes de fechar, pesquise o preço individual de cada peça para saber se o kit realmente vale a pena.',
@@ -85,11 +85,11 @@ _CATEGORIA_DICAS = {
     'cabo': 'Verifique a especificação certa para seu uso: USB-C com Power Delivery para carregar rápido, HDMI 2.1 para 4K/120Hz e cabo de rede com categoria adequada. Confira o comprimento que você precisa e se o cabo suporta a potência do seu carregador. Cabos de qualidade evitam quedas de conexão.',
     'microfone': 'Para streaming e podcast, um condensador USB com boa captação é prático; para ambientes com ruído, um dinâmico isola melhor. Verifique o padrão de captação (cardióide evita captar o ambiente). Confira a compatibilidade com o PC/celular e se vem com suporte ou braço articulado.',
     'roteador': 'Escolha o padrão Wi-Fi 6 ou 6E para redes modernas e priorize o número de antenas e a velocidade real (ax3000, ax5400 etc.). Verifique se cobre a metragem da sua casa e se tem porta Gigabit. Modelos mesh são melhores para casas grandes. Atualize o firmware assim que receber.',
-    'console': 'Verifique se o console é novo ou usado e o estado de conservação (arranhões, portas, controle). Confira a garantia e a procedência do vendedor. Compare o preço com o histórico e confira se o pacote inclui controles e cabos originais.',
-    'jogo': 'Confira a plataforma (PlayStation, Xbox, Nintendo Switch ou PC), a região da mídia/código e se o código digital é resgatável no Brasil. Preços de jogos em promoção costumam seguir ciclos de datas especiais, então compare com o histórico antes de comprar.',
+    'console': 'Verifique se o console é novo ou usado e o estado de conservação (arranhões, portas, controle). Confira a garantia e a procedência do vendedor. Compare o preço com o de outras lojas e confira se o pacote inclui controles e cabos originais.',
+    'jogo': 'Confira a plataforma (PlayStation, Xbox, Nintendo Switch ou PC), a região da mídia/código e se o código digital é resgatável no Brasil. Preços de jogos em promoção costumam seguir ciclos de datas especiais, então compare o valor com o de outras lojas antes de comprar.',
     'cupom': 'Cupons de desconto valem quando combinados com a promoção do produto. Verifique a validade e as condições do cupom (valor mínimo, categorias) antes de aplicar. Alguns cupons são para o aplicativo da loja, então confira onde ele é válido. Teste também as moedas/cashback do app para desconto extra.',
     'ar_condicionado': 'Escolha a capacidade (BTUs) pelo tamanho do ambiente e da exposição ao sol: 9.000 BTUs para ambientes pequenos até 15m², 12.000 até 20m² e assim por diante. Modelos inverter economizam energia e são mais silenciosos. Verifique a voltagem da tomada (110V ou 220V) e a instalação.',
-    'outros': 'Em ofertas variadas, confira sempre a procedência do vendedor, a reputação nas avaliações e o custo do frete. Compare o preço com o histórico do produto quando possível e desconfie de valores muito abaixo da média. Verifique também garantia e política de devolução.',
+    'outros': 'Em ofertas variadas, confira sempre a procedência do vendedor, a reputação nas avaliações e o custo do frete. Compare o preço com o de outras lojas quando possível e desconfie de valores muito abaixo da média. Verifique também garantia e política de devolução.',
 }
 
 
@@ -115,6 +115,12 @@ def promo_detail_view(request, pk, slug=None):
         from django.urls import reverse
         return HttpResponsePermanentRedirect(reverse('promo_detail', args=[promo.pk, promo.slug]))
     recentes = Promo.objects.exclude(pk=pk)[:3]
+
+    # Histórico/alerta de preços: funcionalidade DESATIVADA por padrão para
+    # atender aos Requisitos de Participação do Amazon Associates (não é
+    # permitido acompanhamento/alerta de preços). Para reativar, defina
+    # HISTORICO_PRECOS_ATIVO=True no .env.
+    historico_precos_ativo = getattr(settings, 'HISTORICO_PRECOS_ATIVO', False)
 
     # Histórico de preços: mesmas promoções do mesmo produto (mesmo link),
     # com preço preenchido. Deduplicado por preço — cada valor aparece UMA
@@ -152,7 +158,7 @@ def promo_detail_view(request, pk, slug=None):
         except (ValueError, TypeError):
             return None
 
-    if promo.produto_chave:
+    if historico_precos_ativo and promo.produto_chave:
         from django.utils.text import slugify as _slugify
 
         def _slug_de(item):
@@ -248,6 +254,7 @@ def promo_detail_view(request, pk, slug=None):
         'promo': promo,
         'recentes': recentes,
         'historico': historico,
+        'historico_precos_ativo': historico_precos_ativo,
         'chart_data': chart_data,
         'preco_minimo': preco_minimo,
         'preco_minimo_str': preco_minimo_str,

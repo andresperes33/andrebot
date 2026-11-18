@@ -45,6 +45,19 @@ python manage.py run_bot
 2. Envie um link (ex: um produto da Shopee) diretamente para o chat privado do bot.
 3. O bot converterá o link e postará no grupo configurado.
 
+## Histórico de preços (desativado por padrão)
+
+O histórico/alerta de preços na página individual do produto fica **desativado**
+por padrão, pois o Amazon Associates não permite funcionalidades de
+acompanhamento/alerta de preços. Para reativar:
+
+```env
+HISTORICO_PRECOS_ATIVO=True
+```
+
+Sem essa variável (ou com `False`), o bloco de histórico, o gráfico e o CDN do
+Chart.js não são carregados na página do produto.
+
 ## Estrutura do Projeto
 
 - `bot/services.py`: Contém a lógica de conversão de links.
