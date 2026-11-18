@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from bot.services import site_base_url
 
 
@@ -7,4 +9,8 @@ def site_url(request):
     para uso nas meta tags (OG/Twitter) e links absolutos.
     Sempre em HTTPS.
     """
-    return {'SITE_URL': site_base_url(request)}
+    return {
+        'SITE_URL': site_base_url(request),
+        # Usado nos avisos de preço expirado ('publicado há mais de X horas').
+        'PRECO_MAX_IDADE_HORAS': getattr(settings, 'PRECO_MAX_IDADE_HORAS', 24),
+    }

@@ -33,7 +33,7 @@
             <h3 class="card-title">{{ promo.titulo }}</h3>
             {% endif %}
             {% if promo.preco_expirado %}
-            <div class="card-price-note"><i class="fas fa-store"></i> Ver preço atual na loja</div>
+            <div class="card-price-note"><i class="fas fa-clock"></i> Publicado há mais de {{ PRECO_MAX_IDADE_HORAS }}h · Ver preço atual na loja</div>
             {% endif %}
         </div>
     </a>

@@ -81,7 +81,7 @@
         <div class="card">
             <span class="detail-label">Postagem original</span>
             {% if promo.preco_expirado %}
-            <div class="detail-price-note"><i class="fas fa-store"></i> Ver preço atual na loja — o valor pode ter mudado desde a publicação.</div>
+            <div class="detail-price-note"><i class="fas fa-clock"></i> Esta oferta foi publicada há mais de {{ PRECO_MAX_IDADE_HORAS }} hora{{ PRECO_MAX_IDADE_HORAS|pluralize:"s" }}. O preço pode ter mudado — confira o valor atual na loja antes de comprar.</div>
             <div class="detail-text">{{ promo.texto_original|ocultar_precos|urlize_botao|destacar_valores|linebreaksbr }}</div>
             {% else %}
             <div class="detail-text">{{ promo.texto_original|preco_completo|urlize_botao|destacar_valores|linebreaksbr }}</div>
@@ -184,7 +184,7 @@
                 </div>
                 <div class="card-body">
                     <h3 class="card-title">{{ promo.titulo|truncatechars:50 }}</h3>
-                    {% if promo.preco and promo.preco_recente %}<div class="card-price"><small>por</small> {{ promo.preco|preco_completo }}</div>{% elif promo.preco_expirado %}<div class="card-price-note"><i class="fas fa-store"></i> Ver preço atual na loja</div>{% endif %}
+                    {% if promo.preco and promo.preco_recente %}<div class="card-price"><small>por</small> {{ promo.preco|preco_completo }}</div>{% elif promo.preco_expirado %}<div class="card-price-note"><i class="fas fa-clock"></i> Publicado há mais de {{ PRECO_MAX_IDADE_HORAS }}h · Ver preço atual na loja</div>{% endif %}
                     <div class="card-footer">
                         <span class="card-date">{{ promo.criado_em|date:"d/m" }}</span>
                     </div>
