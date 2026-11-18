@@ -1376,6 +1376,27 @@ _RE_BANCO_PARCERIA_CUPOM = re.compile(
 )
 
 
+_RE_ALERTA_OFERTAS = re.compile(
+    r'^[^\w\n]{0,6}\s*(?:alerta|aviso|comunicado)\b'
+    r'[^\n]{0,40}\b(?:ofertas?|promo[cç][oõ]es?)\b',
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _eh_anuncio_alerta_ofertas(limpa):
+    """True para aviso/anúncio de ofertas sem produto.
+
+    Ex.: 'ALERTA de Novas Ofertas Black Friday Amazon!', 'AVISO DE PROMOÇÕES
+    BLACK FRIDAY'. Não nomeia produto nem cita código: é um aviso de
+    cupons/ofertas, então pertence à categoria 'cupom' (antes caía em
+    'outros'). O chamador só usa esta regra quando não há produto real.
+    """
+    baixa = (limpa or '').casefold()
+    if not baixa or len(baixa) > 120:
+        return False
+    return bool(_RE_ALERTA_OFERTAS.search(baixa))
+
+
 def _eh_anuncio_desconto(limpa):
     """True para anúncio de desconto/cupom SEM a palavra 'cupom'.
 
