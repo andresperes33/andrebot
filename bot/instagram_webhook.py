@@ -230,7 +230,7 @@ def _imagem_da_promo(pagina_url):
         if not promo or not promo.imagem_url:
             return '', '', ''
         titulo_card = (promo.titulo or '').strip()
-        if promo.preco:
+        if promo.preco_recente:
             titulo_card = f"{titulo_card} — {promo.preco}".strip()
         titulo_card = titulo_card[:80] or 'Aproveite a promoção!'
         img = promo.imagem_url

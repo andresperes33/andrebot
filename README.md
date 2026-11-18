@@ -58,6 +58,23 @@ HISTORICO_PRECOS_ATIVO=True
 Sem essa variável (ou com `False`), o bloco de histórico, o gráfico e o CDN do
 Chart.js não são carregados na página do produto.
 
+## Validade do preço (24 horas)
+
+Preços capturados há mais de **24 horas** não são mais exibidos no site
+(exigência do Amazon Associates). Nesses casos:
+
+- os valores em `R$` do texto da oferta viram `R$ •••`;
+- no lugar do preço aparece **“Ver preço atual na loja”**;
+- meta tags (description/Open Graph/Twitter) não incluem o preço antigo.
+
+O limite é configurável:
+
+```env
+PRECO_MAX_IDADE_HORAS=24
+```
+
+Use `0` para desativar a regra (voltar a exibir preços de qualquer data).
+
 ## Estrutura do Projeto
 
 - `bot/services.py`: Contém a lógica de conversão de links.

@@ -214,6 +214,14 @@ IMAGEM_DA_PAGINA_PRODUTO = os.getenv('IMAGEM_DA_PAGINA_PRODUTO', 'True') == 'Tru
 # HISTORICO_PRECOS_ATIVO=True no .env.
 HISTORICO_PRECOS_ATIVO = os.getenv('HISTORICO_PRECOS_ATIVO', 'False') == 'True'
 
+# Tempo máximo (em horas) que um preço capturado pode ser exibido no site.
+# O Amazon Associates permite no máximo 24h; depois disso a oferta continua
+# publicada, mas sem o preço ('Ver preço atual na loja'). Use 0 para desativar.
+try:
+    PRECO_MAX_IDADE_HORAS = int(os.getenv('PRECO_MAX_IDADE_HORAS', '24'))
+except ValueError:
+    PRECO_MAX_IDADE_HORAS = 24
+
 # Canais extras monitorados além do principal. Cada item:
 #   {'nome': '<nome ou @username>', 'filtro': '<tipo>', 'remover_marca': bool}
 #   'filtro' opcional: 'aliexpress' = captura SÓ ofertas com link AliExpress.

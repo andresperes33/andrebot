@@ -159,6 +159,23 @@ def evento_html(value):
 _PRECO_LIMPO_RE = re.compile(r'(R\$\s*)(\d[\d.]*(?:,\d{1,2})?)', re.IGNORECASE)
 
 
+# Qualquer valor em reais no texto (ex.: 'R$ 1.999,00', 'R$1999').
+_PRECO_QUALQUER_RE = re.compile(r'R\$\s?\d[\d.,]*', re.IGNORECASE)
+
+
+@register.filter
+def ocultar_precos(value):
+    """Mascara valores em R$ de ofertas com preço capturado há mais de 24h.
+
+    O Amazon Associates não permite exibir conteúdo de preço por mais de
+    24h. O restante do texto da oferta é preservado; cada valor vira
+    'R$ •••' e a página mostra o aviso 'Ver preço atual na loja'.
+    """
+    if not value:
+        return value or ''
+    return _PRECO_QUALQUER_RE.sub('R$ •••', str(value))
+
+
 @register.filter
 def preco_completo(value):
     """Garante que um preço tenha sempre 2 casas decimais (ex.: R$ 344 -> R$ 344,00)."""

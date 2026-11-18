@@ -3,7 +3,7 @@
 {% load urlize_blank %}
 
 {% block title %}{{ promo.titulo }} | André Indica{% endblock %}
-{% block description %}{{ promo.titulo }} — {{ promo.preco }}. Promoção de {{ promo.get_categoria_display }} sempre atualizada.{% endblock %}
+{% block description %}{{ promo.titulo }}{% if promo.preco_recente %} — {{ promo.preco }}{% endif %}. Promoção de {{ promo.get_categoria_display }} sempre atualizada.{% endblock %}
 
 {% block nav_promos %}active{% endblock %}
 
@@ -12,13 +12,13 @@
 <meta property="og:type" content="article">
 <meta property="og:url" content="{{ SITE_URL }}{% url 'promo_detail' promo.pk promo.slug %}">
 <meta property="og:title" content="{{ promo.titulo }}">
-<meta property="og:description" content="{{ promo.preco }} — Promoção de {{ promo.get_categoria_display }} sempre atualizada.">
+<meta property="og:description" content="{{ promo.titulo }}{% if promo.preco_recente %} — {{ promo.preco }}{% endif %} — Promoção de {{ promo.get_categoria_display }} sempre atualizada.">
 {% if promo.imagem_url %}<meta property="og:image" content="{{ promo.imagem_url }}">{% endif %}
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="{{ SITE_URL }}{% url 'promo_detail' promo.pk promo.slug %}">
 <meta property="twitter:title" content="{{ promo.titulo }}">
-<meta property="twitter:description" content="{{ promo.preco }} — Promoção de {{ promo.get_categoria_display }}.">
+<meta property="twitter:description" content="{{ promo.titulo }}{% if promo.preco_recente %} — {{ promo.preco }}{% endif %} — Promoção de {{ promo.get_categoria_display }}.">
 {% if promo.imagem_url %}<meta property="twitter:image" content="{{ SITE_URL }}{{ promo.imagem_url }}">{% endif %}
 <script type="application/ld+json">
 {
@@ -80,7 +80,12 @@
 
         <div class="card">
             <span class="detail-label">Postagem original</span>
+            {% if promo.preco_expirado %}
+            <div class="detail-price-note"><i class="fas fa-store"></i> Ver preço atual na loja — o valor pode ter mudado desde a publicação.</div>
+            <div class="detail-text">{{ promo.texto_original|ocultar_precos|urlize_botao|destacar_valores|linebreaksbr }}</div>
+            {% else %}
             <div class="detail-text">{{ promo.texto_original|preco_completo|urlize_botao|destacar_valores|linebreaksbr }}</div>
+            {% endif %}
             {{ avisos_oferta|safe }}
             {{ rodape_canais|safe }}
         </div>
@@ -179,7 +184,7 @@
                 </div>
                 <div class="card-body">
                     <h3 class="card-title">{{ promo.titulo|truncatechars:50 }}</h3>
-                    {% if promo.preco %}<div class="card-price"><small>por</small> {{ promo.preco|preco_completo }}</div>{% endif %}
+                    {% if promo.preco and promo.preco_recente %}<div class="card-price"><small>por</small> {{ promo.preco|preco_completo }}</div>{% elif promo.preco_expirado %}<div class="card-price-note"><i class="fas fa-store"></i> Ver preço atual na loja</div>{% endif %}
                     <div class="card-footer">
                         <span class="card-date">{{ promo.criado_em|date:"d/m" }}</span>
                     </div>

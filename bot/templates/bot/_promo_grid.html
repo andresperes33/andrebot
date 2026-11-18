@@ -28,9 +28,12 @@
         </div>
         <div class="card-body">
             {% if promo.texto_original|card_text %}
-            <div class="card-desc">{{ promo.texto_original|card_text|truncatechars:500|preco_completo|destacar_valores }}</div>
+            <div class="card-desc">{% if promo.preco_expirado %}{{ promo.texto_original|card_text|ocultar_precos|truncatechars:500|destacar_valores }}{% else %}{{ promo.texto_original|card_text|truncatechars:500|preco_completo|destacar_valores }}{% endif %}</div>
             {% else %}
             <h3 class="card-title">{{ promo.titulo }}</h3>
+            {% endif %}
+            {% if promo.preco_expirado %}
+            <div class="card-price-note"><i class="fas fa-store"></i> Ver preço atual na loja</div>
             {% endif %}
         </div>
     </a>

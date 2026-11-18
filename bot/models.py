@@ -1,4 +1,8 @@
+from datetime import timedelta
+
+from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class UserAlert(models.Model):
@@ -146,6 +150,34 @@ class Promo(models.Model):
         from django.utils.text import slugify
         base = slugify(self.titulo)
         return base[:120] or 'produto'
+
+    @property
+    def preco_recente(self):
+        """True se o preço capturado ainda pode ser exibido no site.
+
+        O Amazon Associates permite exibir conteúdo de preço por no máximo
+        24 horas. Passado esse prazo, a oferta continua publicada, mas o
+        preço não é mostrado (exibimos 'Ver preço atual na loja').
+
+        O limite é configurável em PRECO_MAX_IDADE_HORAS (0 desativa a regra).
+        """
+        if not self.preco:
+            return False
+        horas = getattr(settings, 'PRECO_MAX_IDADE_HORAS', 24)
+        try:
+            horas = int(horas)
+        except (TypeError, ValueError):
+            horas = 24
+        if horas <= 0:
+            return True
+        if not self.criado_em:
+            return False
+        return self.criado_em >= timezone.now() - timedelta(hours=horas)
+
+    @property
+    def preco_expirado(self):
+        """True se existe preço capturado, mas já passou da validade (24h)."""
+        return bool(self.preco) and not self.preco_recente
 
 
 class Evento(models.Model):
