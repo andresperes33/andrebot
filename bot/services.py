@@ -1470,14 +1470,21 @@ def _eh_linha_codigo_cupom(linha):
 
 
 def _eh_linha_valor_cupom(linha):
-    """True para linha de VALOR de cupom ('R$ 170,00 em R$ 1.000,00: AEMEGA15').
+    """True para linha de VALOR/CONDIÇÃO de cupom.
+
+    Ex.: 'R$ 170,00 em R$ 1.000,00: AEMEGA15',
+         'R$ 100,00 em compras acima de R$ 999,00: 100BLACKOFF',
+         'R$ 150 OFF a partir de R$ 999,00: 3SQUENT4150'.
 
     Não é nome de produto: o token final é o CÓDIGO do cupom. Aceita com ou
     sem '$' porque o título é limpo (símbolos removidos) antes desta checagem.
     """
     return bool(re.search(
-        r'\br\$?\s*[\d.,]+(?:\s+(?:off|de|desconto))?\s*\bem\b\s*r\$?\s*[\d.,]+',
+        r'\br\$?\s*[\d.,]+(?:\s+(?:off|de|desconto))?'
+        r'\s+(?:em|acima|a partir|para)\b'
+        r'[^\d]{0,50}r\$?\s*[\d.,]+',
         linha or '',
+        flags=re.IGNORECASE,
     ))
 
 
