@@ -1397,6 +1397,24 @@ def _eh_anuncio_alerta_ofertas(limpa):
     return bool(_RE_ALERTA_OFERTAS.search(baixa))
 
 
+def _eh_anuncio_app_missoes(limpa):
+    """True para anúncio de missões/créditos do app sem produto.
+
+    Ex.: '(APP) Faça Missões no Aliexpress e troque por créditos de compra!!'.
+    É uma promoção de app/cupom (não um produto), então vai para 'cupom'.
+    Exige menção a uma loja parceira para não classificar texto genérico.
+    O chamador só usa esta regra quando não há produto real.
+    """
+    baixa = unicodedata.normalize('NFKD', limpa or '').encode(
+        'ascii', 'ignore'
+    ).decode('ascii').casefold()
+    if not baixa or len(baixa) > 140:
+        return False
+    if not re.search(r'\bmissoes\b|\bcreditos?\s+de\s+compras?\b', baixa):
+        return False
+    return bool(_RE_LOJA_PARCERIA_CUPOM.search(baixa))
+
+
 def _eh_anuncio_desconto(limpa):
     """True para anúncio de desconto/cupom SEM a palavra 'cupom'.
 

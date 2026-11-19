@@ -1258,6 +1258,7 @@ def detectar_categoria(texto, titulo=None):
         _eh_anuncio_cupom,
         _eh_anuncio_desconto,
         _eh_anuncio_alerta_ofertas,
+        _eh_anuncio_app_missoes,
         _eh_linha_titulo_produto,
     )
     tem_produto_real = any(
@@ -1284,6 +1285,7 @@ def detectar_categoria(texto, titulo=None):
                     or _eh_anuncio_cupom(linha_norm)
                     or _eh_anuncio_desconto(linha_norm)
                     or _eh_anuncio_alerta_ofertas(linha_norm)
+                    or _eh_anuncio_app_missoes(linha_norm)
                 ):
                     return 'cupom'
 
