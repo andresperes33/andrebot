@@ -1309,6 +1309,7 @@ _LOJA_POR_DOMINIO = [
     ('mercado', 'Mercado Livre'),
     ('magazineluiza', 'Magazine Luíza'),
     ('magalu', 'Magazine Luíza'),
+    ('magazinevoce', 'Magazine Luíza'),
     ('mgl.io', 'Magazine Luíza'),
     ('kabum', 'KaBuM'),
     ('tidd.ly', 'KaBuM'),
@@ -1327,11 +1328,30 @@ _LOJA_POR_DOMINIO = [
 
 def detectar_loja(link):
     """Detecta a loja a partir do domínio do link de afiliado/produto.
-    Ex.: 'https://s.shopee.com.br/xyz' → 'Shopee'."""
+
+    Quando recebe um texto inteiro, prioriza as URLs: a marca citada no nome
+    do produto (ex.: 'Kindle Paperwhite ... Amazon 7"') NÃO pode definir a
+    loja — ela é só o fabricante. Um Kindle vendido pela Magalu deve ser
+    'Magazine Luíza', não 'Amazon'.
+    """
     if not link:
         return ''
     baixo = sem_acento(link).lower()
-    for chave, nome in _LOJA_POR_DOMINIO:
-        if chave in baixo:
-            return nome
+
+    # 1) Domínio das URLs presentes no texto (fonte confiável).
+    for url in re.findall(r'https?://\S+', baixo):
+        for chave, nome in _LOJA_POR_DOMINIO:
+            if chave in url:
+                return nome
+
+    # 2) Rótulo explícito de loja em linha curta ('Loja: Magalu', 'Amazon').
+    #    Linhas longas (nome do produto) são ignoradas de propósito.
+    for linha in baixo.split('\n'):
+        rotulo = linha.strip(' \t-*•✅🛒👉<>[]()')
+        if not rotulo or len(rotulo) > 30:
+            continue
+        rotulo = re.sub(r'^(?:loja|site)\s*[:\-]\s*', '', rotulo)
+        for chave, nome in _LOJA_POR_DOMINIO:
+            if chave in rotulo:
+                return nome
     return ''

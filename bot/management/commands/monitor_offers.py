@@ -11,6 +11,7 @@ from bot.models import Promo
 from bot.services import AVISO_CUPOM
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
+from telethon.tl.types import MessageEntityTextUrl
 from asgiref.sync import sync_to_async
 
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +35,52 @@ _DICA_ALIEXPRESS = (
 
 # Categorias que NÃO vão para o Instagram/Facebook (feed/stories)
 _CATS_BLOQUEADAS_REDES = {'cupom', 'filtro_linha', 'outros', 'cabo', 'pasta_termica', 'caixa_som'}
+
+
+def _indice_utf16(texto, offset):
+    """Converte offset UTF-16 do Telethon para índice de string do Python.
+
+    Emojis fora do BMP ocupam 2 unidades UTF-16, então os offsets das
+    entidades não batem com os índices do Python.
+    """
+    unidades = 0
+    for i, caractere in enumerate(texto):
+        if unidades >= offset:
+            return i
+        unidades += 2 if ord(caractere) > 0xFFFF else 1
+    return len(texto)
+
+
+def _texto_com_links_de_botao(message, texto):
+    """Revela URLs escondidas em botões do Telegram ('Ver oferta').
+
+    O Telegram guarda a URL de um botão numa entidade MessageEntityTextUrl;
+    o texto plano (message.message) contém apenas o rótulo. Sem isso, o link
+    da loja não é visto pelo conversor e a loja acaba sendo inferida pela
+    marca dentro do nome do produto (ex.: Kindle ... Amazon → Amazon).
+    """
+    entidades = getattr(message, 'entities', None) or []
+    if not entidades or not texto:
+        return texto
+
+    # Inserir de trás para frente para não deslocar os offsets seguintes.
+    botões = sorted(
+        (e for e in entidades if isinstance(e, MessageEntityTextUrl)),
+        key=lambda e: e.offset,
+        reverse=True,
+    )
+    for entidade in botões:
+        url = (getattr(entidade, 'url', '') or '').strip()
+        if not re.match(r'https?://', url, re.I):
+            continue
+        inicio = _indice_utf16(texto, entidade.offset)
+        fim = _indice_utf16(texto, entidade.offset + entidade.length)
+        if inicio >= len(texto):
+            continue
+        if url in texto:
+            continue  # já está no texto plano, não duplica
+        texto = texto[:fim] + f' ({url})' + texto[fim:]
+    return texto
 
 
 def _texto_sem_rodape(texto):
@@ -457,7 +504,7 @@ class Command(BaseCommand):
 
             async def process_message(message, canal=None):
                 """Converte links e envia para Telegram + WhatsApp"""
-                msg_text = message.message or ""
+                msg_text = _texto_com_links_de_botao(message, message.message or "")
                 canal = canal or {'nome': canal_principal, 'filtro': None}
                 canal_filtro = canal.get('filtro')
 
