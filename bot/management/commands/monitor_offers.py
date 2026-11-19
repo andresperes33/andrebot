@@ -295,6 +295,15 @@ def _lock_do_canal(nome_canal: str):
     return lock
 
 
+def _deve_ignorar_oferta(converted_any, falha_conversao):
+    """Qualquer link de loja não convertido invalida a oferta inteira.
+
+    Publicar com o link original do canal deixaria exposto o afiliado de
+    terceiros (ou uma vitrine genérica do ML) no lugar do nosso link.
+    """
+    return bool(falha_conversao or not converted_any)
+
+
 async def _converter_link_com_retry(link, tentativas: int = 2):
     """Converte o link FORA do event loop (requests é síncrono) e tenta de novo.
 
@@ -642,6 +651,7 @@ class Command(BaseCommand):
                 # 3. Converte links de produtos
                 links = re.findall(r'(https?://\S+)', modified_text)
                 converted_any = False
+                falha_conversao = False
                 has_ali = False
                 # URLs reais obtidas ao expandir redirecionadores (seuhardware,
                 # pcdofafa, Awin...). Ajudam a identificar o mesmo produto
@@ -706,7 +716,9 @@ class Command(BaseCommand):
                                 modified_text = modified_text.replace(link, new_awin)
                                 converted_any = True
                                 continue
-                        converted_any = True
+                        # Link Awin sem conversão não pode ser publicado:
+                        # deixá-lo expõe o afiliado de outro canal.
+                        falha_conversao = True
                         continue
 
                     if is_pcdofafa:
@@ -742,7 +754,8 @@ class Command(BaseCommand):
                                     continue
                         except Exception as pcd_err:
                             logger.warning(f"⚠️ pcdofafa expand erro: {pcd_err}")
-                        # Se falhou, não conta como convertido (vai sair no 'nenhum link')
+                        # Não publica link de redirecionador sem conversão.
+                        falha_conversao = True
                         continue
 
                     if is_seuhardware:
@@ -781,7 +794,8 @@ class Command(BaseCommand):
                                 logger.warning(f"⚠️ seuhardware sem conversão: {real_url[:120]}")
                         except Exception as seu_err:
                             logger.warning(f"⚠️ seuhardware expand erro: {seu_err}")
-                        # Se falhou, não conta como convertido (vai sair no 'nenhum link')
+                        # Não publica link de redirecionador sem conversão.
+                        falha_conversao = True
                         continue
 
                     if canal_filtro == 'aliexpress':
@@ -794,6 +808,9 @@ class Command(BaseCommand):
                                 modified_text = modified_text.replace(link, converted)
                                 modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
                                 converted_any = True
+                            else:
+                                falha_conversao = True
+                                logger.warning(f"⚠️ AliExpress sem conversão: {link[:120]}")
                         elif is_amazon or is_shopee or is_ml or is_kabum or is_magalu or is_awin or is_pcdofafa or is_seuhardware:
                             modified_text = modified_text.replace(link, '')
                             modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
@@ -811,10 +828,16 @@ class Command(BaseCommand):
                             # Remove linhas vazias extras
                             modified_text = re.sub(r'\n{3,}', '\n\n', modified_text)
                             converted_any = True
+                        else:
+                            falha_conversao = True
+                            logger.warning(f"⚠️ Link de loja sem conversão: {link[:120]}")
 
                 # Se não encontrar links de lojas (Amazon, AliExpress, etc.), ignoramos a mensagem.
-                if not converted_any:
-                    logger.info("🚫 Mensagem ignorada (nenhum link de loja detectado).")
+                # Se QUALQUER link de loja não converteu, ignoramos a oferta
+                # inteira: publicá-la deixaria o link original do outro canal
+                # (afiliado alheio) no texto da promoção.
+                if _deve_ignorar_oferta(converted_any, falha_conversao):
+                    logger.info("🚫 Mensagem ignorada (link de loja não convertido).")
                     return False
 
                 # ─── Trava de oferta repetida por LINK (janela de 3 horas) ────────
