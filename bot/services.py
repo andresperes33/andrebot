@@ -2713,8 +2713,11 @@ def convert_mercado_livre_link(url):
     """
     Converte link do Mercado Livre para afiliado.
     - Se já tem slug completo: monta o link direto sem requisição.
-    - meli.la / /social/: extrai o produto principal combinando card-featured,
-      bloco JSON via og:image, produto.mercadolivre.../_JM e fallback seguro mutando URL social.
+    - meli.la / /social/: extrai o produto principal via card-featured, slug
+      p/MLB|up/MLBU, produto.mercadolivre.../_JM, pdp_filters ou og:image.
+      NUNCA devolve a página /social/ como "produto" (ela é uma vitrine
+      genérica). Se o ML responder 500/timeout, tenta de novo e, sem produto
+      identificado, retorna None.
     - Suporte a encurtamento meli.la oficial via cookie se configurado.
     """
     tag = getattr(settings, 'MERCADO_LIVRE_TAG', 'pean3412407')
@@ -2743,7 +2746,25 @@ def convert_mercado_livre_link(url):
 
         # 2) Se é meli.la OU /social/ → busca página e extrai o produto principal
         if 'meli.la' in url or '/social/' in url:
-            r = requests.get(url, allow_redirects=True, timeout=12, headers=hdrs)
+            # O Mercado Livre responde 500 intermitentemente na página /social/.
+            # Sem HTML válido não há como saber qual produto o link representa.
+            r = None
+            for tentativa in range(3):
+                try:
+                    candidato = requests.get(
+                        url, allow_redirects=True, timeout=12, headers=hdrs
+                    )
+                    if candidato.status_code == 200 and len(candidato.text) > 20000:
+                        r = candidato
+                        break
+                    print(f"ML: HTTP {candidato.status_code} na tentativa {tentativa + 1}")
+                except Exception as exc:
+                    print(f"ML: erro na tentativa {tentativa + 1}: {exc}")
+                if tentativa < 2:
+                    time.sleep(0.5 * (tentativa + 1))
+            if r is None:
+                print("ML: pagina social indisponivel apos 3 tentativas")
+                return None
             final_url = r.url
             page_html = r.text
 
@@ -2812,19 +2833,10 @@ def convert_mercado_livre_link(url):
                     print(f"ML Afiliado (social feed slug): {affiliate_url[:130]}...")
                     return affiliate_url
 
-                # 2d) Fallback infalível do afiliado_ofertas: muta parâmetros matt na própria URL social
-                try:
-                    import urllib.parse as _urlparse
-                    parsed = _urlparse.urlparse(r.url)
-                    qs = dict(_urlparse.parse_qsl(parsed.query, keep_blank_values=True))
-                    qs['matt_word'] = tag
-                    qs['matt_tool'] = str(matt_tool)
-                    new_qs = _urlparse.urlencode(qs)
-                    affiliate_url = _urlparse.urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_qs, parsed.fragment))
-                    print(f"ML Afiliado (social fallback seguro): {affiliate_url[:130]}...")
-                    return affiliate_url
-                except Exception:
-                    pass
+                # Sem produto identificado, NÃO devolve a URL /social/: ela
+                # é uma vitrine genérica e não credita a oferta correta.
+                print("ML: produto nao identificado na pagina social")
+                return None
 
             # Se o redirect foi para uma URL de produto direta
             if 'mercadolivre.com.br' in final_url and '/social/' not in final_url:
