@@ -2952,11 +2952,20 @@ def convert_magalu_link(url):
         )
 
     # 3. Extrair o Código do Produto (PID) - O metodo mais seguro
-    # Padrao: /p/ID/ ou /produto/ID/
+    # Padroes: /p/ID/, /produto/ID/ e, em links divulgados via aoferta.net,
+    # /magalu/divulgador/oferta/ID/ci/... (o ID vem depois de 'oferta').
+    pid = None
     pid_match = re.search(r'/(?:p|produto)/([a-zA-Z0-9]+)', url)
-    
-    if pid_match:
+    if pid_match and pid_match.group(1).lower() not in (
+        'produto', 'magalu', 'oferta', 'p'
+    ):
         pid = pid_match.group(1)
+    if not pid:
+        pid_oferta = re.search(r'/oferta/(\d{6,})(?:/|$)', url)
+        if pid_oferta:
+            pid = pid_oferta.group(1)
+
+    if pid:
         # O formato /LOJA/p/ID/ e o que menos da erro 404
         return f"https://www.magazinevoce.com.br/{magalu_id}/p/{pid}/"
 

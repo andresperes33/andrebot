@@ -83,6 +83,25 @@ def _texto_com_links_de_botao(message, texto):
     return texto
 
 
+def _eh_link_magalu(link):
+    """Reconhece links da Magalu, inclusive encurtados aoferta.net com sufixo."""
+    baixo = (link or '').lower()
+    return (
+        'magazineluiza.com.br' in baixo or 'magalu.com' in baixo
+        or 'mgl.io' in baixo or 'magazinevoce.com.br' in baixo
+        or ('aoferta.net' in baixo and 'magalu' in baixo)
+    )
+
+
+def _eh_link_amazon(link):
+    """aoferta.net é genérico; só é Amazon quando o sufixo não diz outra loja."""
+    baixo = (link or '').lower()
+    return (
+        'amazon.com.br' in baixo or 'amzn.to' in baixo or 'link.amazon' in baixo
+        or ('aoferta.net' in baixo and 'magalu' not in baixo)
+    )
+
+
 def _texto_sem_rodape(texto):
     """Remove os avisos de rodapé — eles ficam só no site (página do produto),
     não vão para o Telegram/WhatsApp."""
@@ -729,13 +748,13 @@ class Command(BaseCommand):
                     is_telegram = 't.me/' in link
                     is_tecnan = 'tecnan.com.br' in link
                     is_awin = 'awin1.com' in link or 'tidd.ly' in link
-                    is_amazon = 'amazon.com.br' in link or 'amzn.to' in link or 'link.amazon' in link or 'aoferta.net' in link
+                    is_amazon = _eh_link_amazon(link)
                     is_shopee = 'shopee.com.br' in link or 's.shopee' in link
                     is_ofertei = 'ofertei.net' in link
                     is_ml = 'mercadolivre' in link or 'meli.la' in link or 'mlstatic' in link or is_ofertei
                     is_ali = 'aliexpress.com' in link or 's.click.ali' in link
                     is_kabum = 'kabum.com.br' in link
-                    is_magalu = 'magazineluiza.com.br' in link or 'magalu.com' in link or 'mgl.io' in link or 'magazinevoce.com.br' in link
+                    is_magalu = _eh_link_magalu(link)
                     is_pcdofafa = 'pcdofafa.com.br' in link
                     is_seuhardware = 'seuhardware.com' in link
 
