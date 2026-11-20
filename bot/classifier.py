@@ -989,7 +989,13 @@ def detectar_categoria(texto, titulo=None):
             r'\b(?:playstation|ps[0-9]|xbox|nintendo|switch|console|handheld)\b.{0,50}?'
             r'(?:com\s+\d+\s*jogos?|jogos?\s*inclus\w*|bundle|pacote|'
             r'\+\s*(?:gta|grand\s*theft|forza|god\s*of\s*war|zelda|mario|red\s*dead|'
-            r'fifa|call\s*of\s*duty|elden\s*ring|cyberpunk|dragon\s*ball)\b)',
+            r'fifa|ea\s*sports|call\s*of\s*duty|elden\s*ring|cyberpunk|dragon\s*ball)\b)',
+            alvo_norm,
+        ) or re.match(
+            # 'Bundle Nintendo Switch 2 + EA Sports FC 27': o bundle abre o
+            # título e a plataforma vem depois — também é console, não jogo.
+            r'^\s*(?:bundle|pacote)\b.{0,50}?'
+            r'\b(?:playstation|ps[0-9]|xbox|nintendo|switch|console|handheld)\b',
             alvo_norm,
         ):
             continue  # é bundle/pacote de console, não um jogo avulso
