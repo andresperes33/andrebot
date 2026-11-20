@@ -1265,6 +1265,7 @@ def detectar_categoria(texto, titulo=None):
         _eh_anuncio_desconto,
         _eh_anuncio_alerta_ofertas,
         _eh_anuncio_app_missoes,
+        _eh_anuncio_app_roleta,
         _eh_linha_valor_cupom,
         _eh_linha_titulo_produto,
     )
@@ -1293,6 +1294,7 @@ def detectar_categoria(texto, titulo=None):
                     or _eh_anuncio_desconto(linha_norm)
                     or _eh_anuncio_alerta_ofertas(linha_norm)
                     or _eh_anuncio_app_missoes(linha_norm)
+                    or _eh_anuncio_app_roleta(linha_norm)
                     or _eh_linha_valor_cupom(_norm(_limpar_compat(linha_norm)))
                 ):
                     return 'cupom'

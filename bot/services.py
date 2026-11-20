@@ -1417,6 +1417,24 @@ def _eh_anuncio_app_missoes(limpa):
     return bool(_RE_LOJA_PARCERIA_CUPOM.search(baixa))
 
 
+def _eh_anuncio_app_roleta(limpa):
+    """True para promoção de roleta/sorteio no app de loja parceira.
+
+    Ex.: '(APP) Roleta na Amazon - Contas Selecionadas',
+         'Roleta na Shopee - contas selecionadas'. É uma promoção de app
+    (sem produto), então pertence à categoria 'cupom'.
+    Exige a loja parceira para não classificar roleta genérica.
+    """
+    baixa = unicodedata.normalize('NFKD', limpa or '').encode(
+        'ascii', 'ignore'
+    ).decode('ascii').casefold()
+    if not baixa or len(baixa) > 160:
+        return False
+    if not re.search(r'\broleta\b|\bcontas\s+selecionad[oa]s?\b', baixa):
+        return False
+    return bool(_RE_LOJA_PARCERIA_CUPOM.search(baixa))
+
+
 def _eh_anuncio_desconto(limpa):
     """True para anúncio de desconto/cupom SEM a palavra 'cupom'.
 
