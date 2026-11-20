@@ -1180,6 +1180,8 @@ _TERMOS_CABECALHO = [
     'resgatou ontem', 'resgataram ontem', 'quem pegou ontem', 'pegou ontem',
     'parcelado', 'parcelado em', 'em até', 'sem juros', 'com cupom',
     'para primeira compra', 'primeira compra na', 'conta prime',
+    'torne-se prime', 'torne se prime', 'prime 30 dias',
+    '30 dias de teste', 'teste gratis', 'teste grátis',
     'para primeira', 'na amazon e conta', 'na shopee e conta',
     'use o cupom', 'usar o cupom', 'aplique o cupom',
     'valido em selecionados', 'válido em selecionados', 'selecionados na lista',
@@ -1479,11 +1481,21 @@ def _eh_linha_valor_cupom(linha):
     Não é nome de produto: o token final é o CÓDIGO do cupom. Aceita com ou
     sem '$' porque o título é limpo (símbolos removidos) antes desta checagem.
     """
-    return bool(re.search(
+    texto = linha or ''
+    if re.search(
         r'\br\$?\s*[\d.,]+(?:\s+(?:off|de|desconto))?'
         r'\s+(?:em|acima|a partir|para)\b'
         r'[^\d]{0,50}r\$?\s*[\d.,]+',
-        linha or '',
+        texto,
+        flags=re.IGNORECASE,
+    ):
+        return True
+    # 'R$ 250,00 OFF em Samsung: SAMSUNG250' — o alvo é uma marca, não um
+    # segundo valor em reais, e o token final é o código do cupom.
+    return bool(re.search(
+        r'\br\$?\s*[\d.,]+\s+(?:off|de|desconto)\b\s+'
+        r'(?:em|no|na)\s+[a-z0-9][\w\s-]{0,40}:\s*[a-z0-9]{4,}',
+        texto,
         flags=re.IGNORECASE,
     ))
 
@@ -1574,6 +1586,12 @@ def _eh_linha_titulo_produto(linha):
         for token in re.findall(r'\b[a-z0-9]{4,}\b', linha_low)
     ):
         return False
+    # Linha de VALOR/CONDIÇÃO de cupom ('R$ 170 em R$ 1.000: AEMEGA15',
+    # 'R$ 250 OFF em Samsung: SAMSUNG250') não é nome de produto. Vem ANTES
+    # dos termos de produto porque a marca citada no cupom (Samsung, Amazon)
+    # também aparece em nomes de produtos reais.
+    if _eh_linha_valor_cupom(linha):
+        return False
     tem_termo = any(t in linha for t in _TERMOS_PRODUTO)
     tem_cupom = re.search(r'\bcupoms?\b', linha)
     # Linha com 'cupom' e sem termo de produto → anúncio de cupom, não produto.
@@ -1581,11 +1599,6 @@ def _eh_linha_titulo_produto(linha):
         return False
     if tem_termo:
         return True
-    # Linha de VALOR de cupom ('R$ 170,00 em R$ 1.000,00: AEMEGA15',
-    # 'R$ 170 em R$ 1.000: CODIGO') não é nome de produto: o token final é
-    # o CÓDIGO do cupom, não um modelo de produto.
-    if _eh_linha_valor_cupom(linha):
-        return False
     # Linha só de desconto ('R$ 150,00 OFF a partir de R$ 999,00: 3SQUENT4150')
     # sem termo de produto: o token com letra+dígito é o CÓDIGO do cupom, não
     # um modelo de produto — senão a heurística de 'modelo' faria a postagem
