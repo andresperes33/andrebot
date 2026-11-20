@@ -877,6 +877,24 @@ def detectar_categoria(texto, titulo=None):
         alvo_norm = _norm(_limpar_compat(alvo))
         if not alvo_norm:
             continue
+        # '256GB de Armazenamento' em celular/tablet/notebook é o espaço
+        # interno do aparelho, não um SSD/HD avulso. Ignora SÓ o termo
+        # 'armazenamento' nesses casos; ssd/nvme/hdd explícitos continuam
+        # valendo (ex.: 'SSD 1TB para notebook').
+        if (
+            re.search(r'\barmazenamento\b', alvo_norm)
+            and re.search(
+                r'\b(?:celular|smartphone|iphone|tablet|tablete|ipad|'
+                r'notebook|laptop|macbook)\b',
+                alvo_norm,
+            )
+            and not re.search(
+                r'\b(?:ssd|nvme|m\.2|hdd|hard\s*disk|disco\s*rigido|'
+                r'disco\s*s[oó]lido|sata)\b',
+                alvo_norm,
+            )
+        ):
+            continue
         if re.search(r'\b(?:ssd|nvme|m\.2|hard\s*disk|disco\s*rigido|disco\s*s[oó]lido|armazenamento|sata)\b', alvo_norm):
             return 'ssd'
 
